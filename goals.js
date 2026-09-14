@@ -29,6 +29,10 @@
   let goalTransactions =
     [];
 
+  /* =========================================================
+     BASIC HELPERS
+  ========================================================= */
+
   const money =
     value =>
       Number.isFinite(
@@ -207,21 +211,51 @@
       );
 
     return date
-      ? date
-          .toLocaleDateString(
-            "en-US",
-            {
-              month:
-                "short",
+      ? date.toLocaleDateString(
+          "en-US",
+          {
+            month:
+              "short",
 
-              day:
-                "numeric",
+            day:
+              "numeric",
 
-              year:
-                "numeric"
-            }
-          )
+            year:
+              "numeric"
+          }
+        )
       : "No target date";
+  }
+
+  function formatMonthYear(
+    value
+  ) {
+    const date =
+      value instanceof Date
+        ? value
+        : new Date(
+            value
+          );
+
+    if (
+      !date ||
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "";
+    }
+
+    return date.toLocaleDateString(
+      "en-US",
+      {
+        month:
+          "long",
+
+        year:
+          "numeric"
+      }
+    );
   }
 
   function daysUntil(
@@ -253,6 +287,65 @@
       ) /
         86400000
     );
+  }
+
+  function monthsBetween(
+    start,
+    end
+  ) {
+    const startDate =
+      new Date(
+        start
+      );
+
+    const endDate =
+      new Date(
+        end
+      );
+
+    if (
+      Number.isNaN(
+        startDate.getTime()
+      ) ||
+      Number.isNaN(
+        endDate.getTime()
+      )
+    ) {
+      return 0;
+    }
+
+    return Math.max(
+      1,
+      (
+        (
+          endDate.getFullYear() -
+          startDate.getFullYear()
+        ) *
+          12
+      ) +
+        (
+          endDate.getMonth() -
+          startDate.getMonth()
+        ) +
+        1
+    );
+  }
+
+  function addMonths(
+    date,
+    months
+  ) {
+    const result =
+      new Date(
+        date
+      );
+
+    result.setMonth(
+      result.getMonth() +
+        months
+    );
+
+    return result;
   }
 
   function icon(
@@ -432,7 +525,7 @@
   }
 
   /* =========================================================
-     BUILD GOAL PLAN
+     SMART PAYCHECK GOAL PLAN
   ========================================================= */
 
   function goalPlan(
@@ -751,6 +844,398 @@
       totalPlanned
     };
   }
+
+  /* =========================================================
+     SAVINGS PACE
+  ========================================================= */
+
+  function transactionsForGoal(
+    goalId
+  ) {
+    return goalTransactions
+      .filter(
+        transaction =>
+          Number(
+            transaction.goal_id
+          ) ===
+          Number(
+            goalId
+          )
+      )
+      .sort(
+        (
+          a,
+          b
+        ) =>
+          new Date(
+            a.created_at
+          ) -
+          new Date(
+            b.created_at
+          )
+      );
+  }
+
+  function netTransactionAmount(
+    transaction
+  ) {
+    const amount =
+      money(
+        transaction.amount
+      );
+
+    return transaction
+      .transaction_type ===
+      "withdrawal"
+        ? -amount
+        : amount;
+  }
+
+  function thisMonthSaved(
+    goalId = null
+  ) {
+    const now =
+      new Date();
+
+    const month =
+      now.getMonth();
+
+    const year =
+      now.getFullYear();
+
+    return goalTransactions
+      .filter(
+        transaction => {
+          if (
+            goalId !== null &&
+            Number(
+              transaction.goal_id
+            ) !==
+            Number(
+              goalId
+            )
+          ) {
+            return false;
+          }
+
+          const date =
+            new Date(
+              transaction.created_at
+            );
+
+          return (
+            !Number.isNaN(
+              date.getTime()
+            ) &&
+            date.getMonth() ===
+              month &&
+            date.getFullYear() ===
+              year
+          );
+        }
+      )
+      .reduce(
+        (
+          total,
+          transaction
+        ) =>
+          total +
+          netTransactionAmount(
+            transaction
+          ),
+        0
+      );
+  }
+
+  function savingsPace(
+    goal
+  ) {
+    const transactions =
+      transactionsForGoal(
+        goal.id
+      );
+
+    const deposits =
+      transactions.filter(
+        transaction =>
+          transaction
+            .transaction_type ===
+          "deposit"
+      );
+
+    const target =
+      money(
+        goal.target_amount
+      );
+
+    const saved =
+      money(
+        goal.saved_amount
+      );
+
+    const remaining =
+      Math.max(
+        target -
+          saved,
+        0
+      );
+
+    const monthSaved =
+      thisMonthSaved(
+        goal.id
+      );
+
+    if (
+      remaining <=
+      0.004
+    ) {
+      return {
+        ready:
+          true,
+
+        monthSaved,
+
+        averageMonthly:
+          0,
+
+        projectedDate:
+          null,
+
+        status:
+          "Goal Reached",
+
+        cls:
+          "complete",
+
+        differenceDays:
+          null,
+
+        message:
+          "This goal is fully funded."
+      };
+    }
+
+    if (
+      deposits.length <
+      2
+    ) {
+      return {
+        ready:
+          false,
+
+        monthSaved,
+
+        averageMonthly:
+          null,
+
+        projectedDate:
+          null,
+
+        status:
+          "Building History",
+
+        cls:
+          "neutral",
+
+        differenceDays:
+          null,
+
+        message:
+          "Keep adding money to this goal. Once you have more activity, Stretch My Check can estimate your savings pace."
+      };
+    }
+
+    const firstActivity =
+      new Date(
+        transactions[0]
+          .created_at
+      );
+
+    const now =
+      new Date();
+
+    const months =
+      monthsBetween(
+        firstActivity,
+        now
+      );
+
+    const netSaved =
+      transactions.reduce(
+        (
+          total,
+          transaction
+        ) =>
+          total +
+          netTransactionAmount(
+            transaction
+          ),
+        0
+      );
+
+    const averageMonthly =
+      Math.max(
+        0,
+        netSaved /
+          months
+      );
+
+    if (
+      averageMonthly <=
+      0.004
+    ) {
+      return {
+        ready:
+          false,
+
+        monthSaved,
+
+        averageMonthly:
+          0,
+
+        projectedDate:
+          null,
+
+        status:
+          "Needs Momentum",
+
+        cls:
+          "attention",
+
+        differenceDays:
+          null,
+
+        message:
+          "Your recent withdrawals are offsetting your savings. Add more money to create a reliable projection."
+      };
+    }
+
+    const monthsNeeded =
+      Math.ceil(
+        remaining /
+          averageMonthly
+      );
+
+    const projectedDate =
+      addMonths(
+        now,
+        monthsNeeded
+      );
+
+    const targetDate =
+      localDate(
+        goal.target_date
+      );
+
+    let status =
+      "Projected";
+
+    let cls =
+      "neutral";
+
+    let differenceDays =
+      null;
+
+    let message =
+      `At your current pace, you could reach this goal around ${formatMonthYear(
+        projectedDate
+      )}.`;
+
+    if (
+      targetDate
+    ) {
+      differenceDays =
+        Math.round(
+          (
+            targetDate -
+            projectedDate
+          ) /
+            86400000
+        );
+
+      if (
+        projectedDate <=
+        targetDate
+      ) {
+        status =
+          "On Pace";
+
+        cls =
+          "track";
+
+        if (
+          differenceDays >=
+          7
+        ) {
+          const weeks =
+            Math.max(
+              1,
+              Math.round(
+                differenceDays /
+                  7
+              )
+            );
+
+          message =
+            `At your current pace, you could reach this goal about ${weeks} ${
+              weeks === 1
+                ? "week"
+                : "weeks"
+            } early.`;
+        } else {
+          message =
+            "At your current pace, you are projected to reach this goal by your target date.";
+        }
+
+      } else {
+        status =
+          "Behind Pace";
+
+        cls =
+          "attention";
+
+        const daysLate =
+          Math.abs(
+            differenceDays
+          );
+
+        const weeks =
+          Math.max(
+            1,
+            Math.round(
+              daysLate /
+                7
+            )
+          );
+
+        message =
+          `At your current pace, this goal is projected about ${weeks} ${
+            weeks === 1
+              ? "week"
+              : "weeks"
+          } after your target date.`;
+      }
+    }
+
+    return {
+      ready:
+        true,
+
+      monthSaved,
+
+      averageMonthly,
+
+      projectedDate,
+
+      status,
+
+      cls,
+
+      differenceDays,
+
+      message
+    };
+  }
     /* =========================================================
      STYLES
   ========================================================= */
@@ -761,7 +1246,7 @@
     );
 
   style.id =
-    "smcGoalsStylesV3";
+    "smcGoalsStylesV4";
 
   style.textContent = `
 
@@ -790,7 +1275,7 @@
 
       grid-template-columns:
         repeat(
-          4,
+          5,
           minmax(0,1fr)
         );
 
@@ -846,6 +1331,11 @@
 
       font-weight:
         850;
+    }
+
+    .smc-goal-summary-value.good {
+      color:
+        #67e7c4;
     }
 
     .smc-goal-summary-note {
@@ -981,7 +1471,8 @@
     .smc-goal-progress-line,
     .smc-goal-plan-top,
     .smc-goal-plan-row,
-    .smc-goal-activity-row {
+    .smc-goal-activity-row,
+    .smc-goal-pace-head {
       display:
         flex;
 
@@ -1021,7 +1512,8 @@
 
     .smc-goal-type,
     .smc-goal-status,
-    .smc-plan-chip {
+    .smc-plan-chip,
+    .smc-goal-pace-chip {
       display:
         inline-flex;
 
@@ -1193,7 +1685,9 @@
 
     .smc-goal-status.track,
     .smc-goal-status.complete,
-    .smc-plan-chip.good {
+    .smc-plan-chip.good,
+    .smc-goal-pace-chip.track,
+    .smc-goal-pace-chip.complete {
       color:
         #73e6c9;
 
@@ -1206,7 +1700,8 @@
     }
 
     .smc-goal-status.attention,
-    .smc-plan-chip.warn {
+    .smc-plan-chip.warn,
+    .smc-goal-pace-chip.attention {
       color:
         #ffb071;
 
@@ -1218,7 +1713,8 @@
         rgba(255,157,85,.20);
     }
 
-    .smc-goal-status.neutral {
+    .smc-goal-status.neutral,
+    .smc-goal-pace-chip.neutral {
       color:
         #a6bbc4;
 
@@ -1559,6 +2055,141 @@
 
       line-height:
         1.5;
+    }
+
+    /* =====================================================
+       SAVINGS PACE
+    ===================================================== */
+
+    .smc-goal-pace {
+      margin-top:
+        22px;
+
+      padding-top:
+        18px;
+
+      border-top:
+        1px solid
+        rgba(132,175,192,.12);
+    }
+
+    .smc-goal-pace-head {
+      align-items:
+        center;
+
+      margin-bottom:
+        12px;
+    }
+
+    .smc-goal-pace-title {
+      color:
+        #fff;
+
+      font-size:
+        14px;
+
+      font-weight:
+        800;
+    }
+
+    .smc-goal-pace-chip {
+      padding:
+        5px 8px;
+    }
+
+    .smc-goal-pace-grid {
+      display:
+        grid;
+
+      grid-template-columns:
+        repeat(
+          3,
+          minmax(0,1fr)
+        );
+
+      gap:
+        9px;
+    }
+
+    .smc-goal-pace-stat {
+      padding:
+        13px;
+
+      border-radius:
+        12px;
+
+      background:
+        #0b1b24;
+
+      border:
+        1px solid
+        rgba(132,175,192,.11);
+    }
+
+    .smc-goal-pace-stat small {
+      display:
+        block;
+
+      color:
+        #758e99;
+
+      font-size:
+        9px;
+
+      text-transform:
+        uppercase;
+    }
+
+    .smc-goal-pace-stat strong {
+      display:
+        block;
+
+      margin-top:
+        5px;
+
+      color:
+        #fff;
+
+      font-size:
+        14px;
+    }
+
+    .smc-goal-pace-message {
+      margin-top:
+        10px;
+
+      padding:
+        12px;
+
+      border-radius:
+        11px;
+
+      background:
+        rgba(69,225,192,.05);
+
+      border:
+        1px solid
+        rgba(69,225,192,.11);
+
+      color:
+        #89a5af;
+
+      font-size:
+        10px;
+
+      line-height:
+        1.5;
+    }
+
+    .smc-goal-pace-message.attention {
+      background:
+        rgba(147,87,39,.08);
+
+      border-color:
+        rgba(255,176,113,.13);
+
+      color:
+        #d7b393;
     }
 
     /* =====================================================
@@ -2143,6 +2774,19 @@
     ===================================================== */
 
     @media(
+      max-width:1250px
+    ) {
+
+      .smc-goals-summary {
+        grid-template-columns:
+          repeat(
+            3,
+            minmax(0,1fr)
+          );
+      }
+    }
+
+    @media(
       max-width:1100px
     ) {
 
@@ -2180,7 +2824,8 @@
       .smc-goals-summary,
       .smc-goal-grid,
       .smc-goal-grid-2,
-      .smc-goal-plan-summary {
+      .smc-goal-plan-summary,
+      .smc-goal-pace-grid {
         grid-template-columns:
           1fr;
       }
@@ -2425,6 +3070,29 @@
               <div
                 class="smc-goal-summary-label"
               >
+                Saved This Month
+              </div>
+
+              <div
+                id="smcGoalsThisMonth"
+                class="smc-goal-summary-value good"
+              >
+                $0.00
+              </div>
+
+              <div
+                class="smc-goal-summary-note"
+              >
+                Net goal activity this month
+              </div>
+            </article>
+
+            <article
+              class="smc-goal-summary-card"
+            >
+              <div
+                class="smc-goal-summary-label"
+              >
                 Total Goal Amount
               </div>
 
@@ -2501,7 +3169,8 @@
 
               <p>
                 Select a goal to see its
-                paycheck plan and recent activity.
+                paycheck plan, savings pace,
+                and recent activity.
               </p>
             </div>
 
@@ -2591,10 +3260,20 @@
         0
       );
 
+    const savedThisMonth =
+      thisMonthSaved();
+
     setText(
       "smcGoalsTotalSaved",
       currency(
         totalSaved
+      )
+    );
+
+    setText(
+      "smcGoalsThisMonth",
+      currency(
+        savedThisMonth
       )
     );
 
@@ -2693,7 +3372,7 @@
   }
 
   /* =========================================================
-     TRANSACTION HELPERS
+     ACTIVITY HELPERS
   ========================================================= */
 
   function formatActivityDate(
@@ -2797,11 +3476,10 @@
     }
 
     const latest =
-      transactions
-        .slice(
-          0,
-          8
-        );
+      transactions.slice(
+        0,
+        8
+      );
 
     const rows =
       latest
@@ -2947,6 +3625,134 @@
   }
 
   /* =========================================================
+     SAVINGS PACE DISPLAY
+  ========================================================= */
+
+  function renderSavingsPace(
+    goal
+  ) {
+    const pace =
+      savingsPace(
+        goal
+      );
+
+    const estimated =
+      pace.projectedDate
+        ? formatMonthYear(
+            pace.projectedDate
+          )
+        : pace.status ===
+            "Goal Reached"
+          ? "Complete"
+          : "Not enough data";
+
+    const average =
+      pace.averageMonthly ===
+        null ||
+      pace.averageMonthly ===
+        undefined
+        ? "Learning"
+        : currency(
+            pace.averageMonthly
+          );
+
+    return `
+      <div
+        class="smc-goal-pace"
+      >
+
+        <div
+          class="smc-goal-pace-head"
+        >
+
+          <div
+            class="smc-goal-pace-title"
+          >
+            Savings Pace
+          </div>
+
+          <div
+            class="
+              smc-goal-pace-chip
+              ${pace.cls}
+            "
+          >
+            ${esc(
+              pace.status
+            )}
+          </div>
+
+        </div>
+
+        <div
+          class="smc-goal-pace-grid"
+        >
+
+          <div
+            class="smc-goal-pace-stat"
+          >
+            <small>
+              This Month
+            </small>
+
+            <strong>
+              ${currency(
+                pace.monthSaved
+              )}
+            </strong>
+          </div>
+
+          <div
+            class="smc-goal-pace-stat"
+          >
+            <small>
+              Avg. Monthly
+            </small>
+
+            <strong>
+              ${esc(
+                average
+              )}
+            </strong>
+          </div>
+
+          <div
+            class="smc-goal-pace-stat"
+          >
+            <small>
+              Est. Goal Date
+            </small>
+
+            <strong>
+              ${esc(
+                estimated
+              )}
+            </strong>
+          </div>
+
+        </div>
+
+        <div
+          class="
+            smc-goal-pace-message
+            ${
+              pace.cls ===
+              "attention"
+                ? "attention"
+                : ""
+            }
+          "
+        >
+          ${esc(
+            pace.message
+          )}
+        </div>
+
+      </div>
+    `;
+  }
+
+  /* =========================================================
      RIGHT-SIDE GOAL PLAN PANEL
   ========================================================= */
 
@@ -2993,7 +3799,8 @@
               Select a goal on the left.
               Stretch My Check will turn
               it into a paycheck-by-paycheck
-              savings path.
+              savings path and track your
+              actual savings pace.
             </p>
 
           </div>
@@ -3274,6 +4081,10 @@
         }
       </div>
 
+      ${renderSavingsPace(
+        goal
+      )}
+
       ${renderActivity()}
     `;
   }
@@ -3393,6 +4204,11 @@
 
             const plan =
               goalPlan(
+                goal
+              );
+
+            const pace =
+              savingsPace(
                 goal
               );
 
@@ -3589,6 +4405,58 @@
                   >
                     ${esc(
                       plan.detail
+                    )}
+                  </div>
+
+                </div>
+
+                <div
+                  class="smc-goal-guidance"
+                >
+
+                  <div
+                    class="smc-goal-guidance-head"
+                  >
+                    <div
+                      class="smc-goal-guidance-title"
+                    >
+                      Savings Pace
+                    </div>
+
+                    <div
+                      class="
+                        smc-goal-status
+                        ${pace.cls}
+                      "
+                    >
+                      ${esc(
+                        pace.status
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    class="smc-goal-guidance-main"
+                  >
+                    ${
+                      pace.projectedDate
+                        ? esc(
+                            formatMonthYear(
+                              pace.projectedDate
+                            )
+                          )
+                        : pace.status ===
+                            "Goal Reached"
+                          ? "Complete"
+                          : "Still learning your pace"
+                    }
+                  </div>
+
+                  <div
+                    class="smc-goal-guidance-detail"
+                  >
+                    ${esc(
+                      pace.message
                     )}
                   </div>
 
@@ -4152,10 +5020,9 @@
           "savings";
 
       const iconSelect =
-        document
-          .getElementById(
-            "smcGoalIcon"
-          );
+        document.getElementById(
+          "smcGoalIcon"
+        );
 
       const currentIcon =
         icon(
@@ -4236,6 +5103,53 @@
     clearMessage();
 
     openModal();
+  }
+
+  /* =========================================================
+     TRANSACTION RECORD HELPER
+  ========================================================= */
+
+  async function recordTransaction({
+    userId,
+    goalId,
+    type,
+    amount,
+    note = null
+  }) {
+    if (
+      !userId ||
+      !goalId ||
+      amount <= 0
+    ) {
+      return {
+        error:
+          new Error(
+            "Invalid transaction data."
+          )
+      };
+    }
+
+    return await sb
+      .from(
+        "goal_transactions"
+      )
+      .insert({
+        user_id:
+          userId,
+
+        goal_id:
+          goalId,
+
+        transaction_type:
+          type,
+
+        amount:
+          amount,
+
+        note:
+          note ||
+          null
+      });
   }
 
   /* =========================================================
@@ -4359,12 +5273,35 @@
           .toISOString()
     };
 
-    let response;
+    /* =====================================================
+       EDIT EXISTING GOAL
+    ===================================================== */
 
     if (
       editingGoalId
     ) {
-      response =
+      const existingGoal =
+        goals.find(
+          item =>
+            Number(
+              item.id
+            ) ===
+            Number(
+              editingGoalId
+            )
+        );
+
+      const previousSaved =
+        money(
+          existingGoal
+            ?.saved_amount
+        );
+
+      const difference =
+        saved -
+        previousSaved;
+
+      const updateResponse =
         await sb
           .from(
             "financial_goals"
@@ -4379,34 +5316,196 @@
           .eq(
             "user_id",
             currentUser.id
+          )
+          .select("id");
+
+      if (
+        updateResponse.error
+      ) {
+        console.error(
+          updateResponse.error
+        );
+
+        message(
+          updateResponse.error
+            .message ||
+          "Could not save this goal."
+        );
+
+        return;
+      }
+
+      if (
+        Math.abs(
+          difference
+        ) >=
+        0.005
+      ) {
+        const transactionResponse =
+          await recordTransaction({
+            userId:
+              currentUser.id,
+
+            goalId:
+              editingGoalId,
+
+            type:
+              difference > 0
+                ? "deposit"
+                : "withdrawal",
+
+            amount:
+              Math.abs(
+                difference
+              ),
+
+            note:
+              "Balance adjustment"
+          });
+
+        if (
+          transactionResponse.error
+        ) {
+          console.error(
+            transactionResponse.error
           );
 
-    } else {
-      response =
-        await sb
-          .from(
-            "financial_goals"
-          )
-          .insert(
-            payload
+          /*
+            Restore the original saved
+            amount if history recording fails.
+          */
+
+          await sb
+            .from(
+              "financial_goals"
+            )
+            .update({
+              saved_amount:
+                previousSaved,
+
+              updated_at:
+                new Date()
+                  .toISOString()
+            })
+            .eq(
+              "id",
+              editingGoalId
+            )
+            .eq(
+              "user_id",
+              currentUser.id
+            );
+
+          message(
+            "The balance adjustment could not be recorded, so the saved amount was restored."
           );
+
+          return;
+        }
+      }
+
+      selectedGoalId =
+        editingGoalId;
+
+      await loadGoals();
+
+      closeModal();
+
+      return;
     }
 
+    /* =====================================================
+       CREATE NEW GOAL
+    ===================================================== */
+
+    const createResponse =
+      await sb
+        .from(
+          "financial_goals"
+        )
+        .insert(
+          payload
+        )
+        .select("*")
+        .single();
+
     if (
-      response.error
+      createResponse.error
     ) {
       console.error(
-        response.error
+        createResponse.error
       );
 
       message(
-        response.error
+        createResponse.error
           .message ||
-          "Could not save this goal."
+        "Could not create this goal."
       );
 
       return;
     }
+
+    const newGoal =
+      createResponse.data;
+
+    if (
+      saved >=
+      0.005
+    ) {
+      const transactionResponse =
+        await recordTransaction({
+          userId:
+            currentUser.id,
+
+          goalId:
+            newGoal.id,
+
+          type:
+            "deposit",
+
+          amount:
+            saved,
+
+          note:
+            "Starting balance"
+        });
+
+      if (
+        transactionResponse.error
+      ) {
+        console.error(
+          transactionResponse.error
+        );
+
+        /*
+          Remove the new goal if its
+          starting history cannot be recorded.
+        */
+
+        await sb
+          .from(
+            "financial_goals"
+          )
+          .delete()
+          .eq(
+            "id",
+            newGoal.id
+          )
+          .eq(
+            "user_id",
+            currentUser.id
+          );
+
+        message(
+          "The starting balance could not be recorded, so the goal was not created."
+        );
+
+        return;
+      }
+    }
+
+    selectedGoalId =
+      newGoal.id;
 
     await loadGoals();
 
@@ -4594,10 +5693,12 @@
   }
 
   /* =========================================================
-     APPLY MONEY CHANGE + WRITE HISTORY
+     APPLY MONEY CHANGE + HISTORY
   ========================================================= */
 
   async function applyMoneyChange() {
+    clearMessage();
+
     const currentUser =
       await user();
 
@@ -4708,45 +5809,28 @@
       message(
         updateResponse.error
           .message ||
-          "Could not update this goal."
-      );
-
-      return;
-    }
-
-    if (
-      !updateResponse.data ||
-      !updateResponse.data.length
-    ) {
-      message(
-        "The goal could not be updated."
+        "Could not update this goal."
       );
 
       return;
     }
 
     const transactionResponse =
-      await sb
-        .from(
-          "goal_transactions"
-        )
-        .insert({
-          user_id:
-            currentUser.id,
+      await recordTransaction({
+        userId:
+          currentUser.id,
 
-          goal_id:
-            goalId,
+        goalId,
 
-          transaction_type:
-            transactionType,
+        type:
+          transactionType,
 
-          amount:
-            amount,
+        amount,
 
-          note:
-            note ||
-            null
-        });
+        note:
+          note ||
+          null
+      });
 
     if (
       transactionResponse.error
@@ -4754,11 +5838,6 @@
       console.error(
         transactionResponse.error
       );
-
-      /*
-        Roll the goal balance back if
-        transaction history fails.
-      */
 
       const rollbackResponse =
         await sb
