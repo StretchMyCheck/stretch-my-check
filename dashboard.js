@@ -3,8 +3,7 @@
 
   /* =========================================================
      STRETCH MY CHECK
-     MONEY DASHBOARD + MAKE IT TO PAYDAY
-     dashboard.js
+     DASHBOARD + MAKE IT TO PAYDAY + CAN I AFFORD THIS?
      ========================================================= */
 
   const money = value => {
@@ -23,9 +22,7 @@
 
     const parts = value.split("-").map(Number);
 
-    if (parts.length !== 3) {
-      return null;
-    }
+    if (parts.length !== 3) return null;
 
     const [year, month, day] = parts;
 
@@ -191,8 +188,6 @@
       border:
         1px solid
         rgba(255,255,255,.18);
-      backdrop-filter:
-        blur(8px);
     }
 
     .dashboard-label {
@@ -286,9 +281,99 @@
       color: white;
     }
 
-    .dashboard-empty-note {
-      color:
-        rgba(255,255,255,.78);
+    .afford-card {
+      margin-top: 18px;
+      border-radius: 18px;
+      padding: 20px;
+      background: white;
+      color: #17242c;
+    }
+
+    .afford-card h3 {
+      margin: 0 0 6px;
+      font-size: 21px;
+    }
+
+    .afford-card p {
+      margin: 0 0 15px;
+      color: #667681;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .afford-grid {
+      display: grid;
+      grid-template-columns:
+        1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .afford-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .afford-field label {
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .afford-field input {
+      width: 100%;
+      border: 1px solid #d6e0e5;
+      border-radius: 10px;
+      padding: 12px 13px;
+      min-height: 45px;
+    }
+
+    .afford-button {
+      border: 0;
+      border-radius: 10px;
+      min-height: 45px;
+      padding: 12px 16px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #247c8b;
+      color: white;
+    }
+
+    .afford-result {
+      display: none;
+      margin-top: 14px;
+      border-radius: 13px;
+      padding: 14px 15px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .afford-result.show {
+      display: block;
+    }
+
+    .afford-result.good {
+      background: #e9f8ef;
+      border: 1px solid #a9ddbc;
+      color: #17663b;
+    }
+
+    .afford-result.tight {
+      background: #fff7df;
+      border: 1px solid #ebd187;
+      color: #765a07;
+    }
+
+    .afford-result.bad {
+      background: #fff0f0;
+      border: 1px solid #efb4b4;
+      color: #9b2828;
+    }
+
+    .afford-result strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 16px;
     }
 
     @media (max-width: 850px) {
@@ -303,6 +388,10 @@
 
       .money-dashboard-header {
         flex-direction: column;
+      }
+
+      .afford-grid {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -321,14 +410,6 @@
 
       .dashboard-stats {
         grid-template-columns: 1fr 1fr;
-      }
-
-      .dashboard-stat {
-        padding: 13px;
-      }
-
-      .dashboard-stat strong {
-        font-size: 17px;
       }
     }
 
@@ -430,45 +511,29 @@
       <div class="dashboard-stats">
 
         <div class="dashboard-stat">
-          <span>
-            Money Available Now
-          </span>
-          <strong
-            id="dashboardCurrentMoney"
-          >
+          <span>Money Available Now</span>
+          <strong id="dashboardCurrentMoney">
             $0.00
           </strong>
         </div>
 
         <div class="dashboard-stat">
-          <span>
-            Bills Before Payday
-          </span>
-          <strong
-            id="dashboardBillsBeforePayday"
-          >
+          <span>Bills Before Payday</span>
+          <strong id="dashboardBillsBeforePayday">
             $0.00
           </strong>
         </div>
 
         <div class="dashboard-stat">
-          <span>
-            Protected Cushion
-          </span>
-          <strong
-            id="dashboardCushion"
-          >
+          <span>Protected Cushion</span>
+          <strong id="dashboardCushion">
             $0.00
           </strong>
         </div>
 
         <div class="dashboard-stat">
-          <span>
-            Daily Safe Spending
-          </span>
-          <strong
-            id="dashboardDailySafe"
-          >
+          <span>Daily Safe Spending</span>
+          <strong id="dashboardDailySafe">
             $0.00
           </strong>
         </div>
@@ -479,29 +544,77 @@
         id="dashboardExplanation"
         class="dashboard-explanation"
       >
-        <span class="dashboard-empty-note">
-          Your personalized money forecast
-          will appear here as you fill out
-          the planner.
-        </span>
+        Your personalized money forecast
+        will appear here as you fill out
+        the planner.
+      </div>
+
+      <div class="afford-card">
+
+        <h3>
+          Can I Afford This?
+        </h3>
+
+        <p>
+          Enter a purchase you're thinking about.
+          Stretch My Check will show you how it
+          affects your money before payday.
+        </p>
+
+        <div class="afford-grid">
+
+          <div class="afford-field">
+            <label for="affordName">
+              What are you buying?
+            </label>
+
+            <input
+              id="affordName"
+              type="text"
+              placeholder="Example: Birthday party"
+            >
+          </div>
+
+          <div class="afford-field">
+            <label for="affordAmount">
+              Cost
+            </label>
+
+            <input
+              id="affordAmount"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Example: 175"
+            >
+          </div>
+
+          <button
+            id="affordButton"
+            class="afford-button"
+            type="button"
+          >
+            CHECK IT
+          </button>
+
+        </div>
+
+        <div
+          id="affordResult"
+          class="afford-result"
+        ></div>
+
       </div>
 
     </div>
   `;
-
-  /* =========================================================
-     INSERT DASHBOARD
-     ========================================================= */
 
   const intro =
     document.querySelector(
       ".intro-card"
     );
 
-  if (
-    intro &&
-    intro.parentNode
-  ) {
+  if (intro && intro.parentNode) {
     intro.insertAdjacentElement(
       "afterend",
       dashboard
@@ -513,7 +626,7 @@
   }
 
   /* =========================================================
-     READ PAYCHECKS
+     DATA HELPERS
      ========================================================= */
 
   function getPaychecks() {
@@ -528,18 +641,16 @@
             ".paycheck-date"
           )?.value || "";
 
-        const amount =
-          money(
-            entry.querySelector(
-              ".paycheck-amount"
-            )?.value
-          );
-
         return {
           date:
             parseLocalDate(dateValue),
 
-          amount
+          amount:
+            money(
+              entry.querySelector(
+                ".paycheck-amount"
+              )?.value
+            )
         };
       })
       .filter(
@@ -552,10 +663,6 @@
       );
   }
 
-  /* =========================================================
-     NEXT PAYCHECK
-     ========================================================= */
-
   function getNextPaycheck(
     paychecks,
     today
@@ -564,32 +671,22 @@
       paychecks.find(
         paycheck =>
           paycheck.date >= today
-      ) ||
-      null
+      ) || null
     );
   }
-
-  /* =========================================================
-     BILLS BEFORE PAYDAY
-     ========================================================= */
 
   function getBillsBeforePayday(
     today,
     payday
   ) {
-    if (!payday) {
-      return 0;
-    }
+    if (!payday) return 0;
 
     return [
       ...document.querySelectorAll(
         ".bill-entry"
       )
     ].reduce(
-      (
-        total,
-        entry
-      ) => {
+      (total, entry) => {
         const type =
           entry.querySelector(
             ".bill-type"
@@ -620,12 +717,6 @@
           return total;
         }
 
-        /*
-          Bills due today or any day
-          before the next paycheck must
-          stay reserved.
-        */
-
         if (
           dueDate >= today &&
           dueDate < payday
@@ -638,10 +729,6 @@
       0
     );
   }
-
-  /* =========================================================
-     LIVING MONEY BEFORE PAYDAY
-     ========================================================= */
 
   function necessityForOnePeriod(
     amountId,
@@ -668,51 +755,124 @@
       return amount;
     }
 
-    /*
-      When the user entered a total
-      for the whole planning period,
-      reserve an equal share for the
-      upcoming paycheck period.
-    */
-
-    const divisor =
+    return (
+      amount /
       Math.max(
         paycheckCount,
         1
-      );
-
-    return amount / divisor;
+      )
+    );
   }
 
   function getLivingMoneyNeeded(
     paycheckCount
   ) {
-    const groceries =
+    return (
       necessityForOnePeriod(
         "groceryAmount",
         "groceryMode",
         paycheckCount
-      );
-
-    const gas =
+      )
+      +
       necessityForOnePeriod(
         "gasAmount",
         "gasMode",
         paycheckCount
-      );
-
-    const other =
+      )
+      +
       necessityForOnePeriod(
         "otherAmount",
         "otherMode",
         paycheckCount
+      )
+    );
+  }
+
+  function getDashboardState() {
+    const startingBalance =
+      money(
+        document.getElementById(
+          "startingBalance"
+        )?.value
       );
 
-    return (
-      groceries +
-      gas +
-      other
-    );
+    const cushion =
+      money(
+        document.getElementById(
+          "protectedCushion"
+        )?.value
+      );
+
+    const today =
+      todayDate();
+
+    const paychecks =
+      getPaychecks();
+
+    const nextPaycheck =
+      getNextPaycheck(
+        paychecks,
+        today
+      );
+
+    const billsBeforePayday =
+      getBillsBeforePayday(
+        today,
+        nextPaycheck?.date
+      );
+
+    const livingMoney =
+      nextPaycheck
+        ? getLivingMoneyNeeded(
+            paychecks.length
+          )
+        : 0;
+
+    const safeToSpend =
+      startingBalance
+      - cushion
+      - billsBeforePayday
+      - livingMoney;
+
+    const displayedSafe =
+      Math.max(
+        safeToSpend,
+        0
+      );
+
+    const daysUntilPayday =
+      nextPaycheck
+        ? daysBetween(
+            today,
+            nextPaycheck.date
+          )
+        : 0;
+
+    const spendingDays =
+      Math.max(
+        daysUntilPayday,
+        1
+      );
+
+    const dailySafe =
+      nextPaycheck
+        ? displayedSafe /
+          spendingDays
+        : 0;
+
+    return {
+      startingBalance,
+      cushion,
+      today,
+      paychecks,
+      nextPaycheck,
+      billsBeforePayday,
+      livingMoney,
+      safeToSpend,
+      displayedSafe,
+      daysUntilPayday,
+      dailySafe
+    };
   }
 
   /* =========================================================
@@ -790,176 +950,73 @@
      ========================================================= */
 
   function updateDashboard() {
-    const startingBalance =
-      money(
-        document.getElementById(
-          "startingBalance"
-        )?.value
-      );
+    const state =
+      getDashboardState();
 
-    const cushion =
-      money(
-        document.getElementById(
-          "protectedCushion"
-        )?.value
-      );
+    const {
+      startingBalance,
+      cushion,
+      nextPaycheck,
+      billsBeforePayday,
+      livingMoney,
+      safeToSpend,
+      displayedSafe,
+      daysUntilPayday,
+      dailySafe
+    } = state;
 
-    const today =
-      todayDate();
+    document.getElementById(
+      "dashboardSafeToSpend"
+    ).textContent =
+      currency(displayedSafe);
 
-    const paychecks =
-      getPaychecks();
+    document.getElementById(
+      "dashboardCurrentMoney"
+    ).textContent =
+      currency(startingBalance);
 
-    const nextPaycheck =
-      getNextPaycheck(
-        paychecks,
-        today
-      );
+    document.getElementById(
+      "dashboardBillsBeforePayday"
+    ).textContent =
+      currency(billsBeforePayday);
 
-    const billsBeforePayday =
-      getBillsBeforePayday(
-        today,
-        nextPaycheck?.date
-      );
+    document.getElementById(
+      "dashboardCushion"
+    ).textContent =
+      currency(cushion);
 
-    const livingMoney =
+    document.getElementById(
+      "dashboardDailySafe"
+    ).textContent =
       nextPaycheck
-        ? getLivingMoneyNeeded(
-            paychecks.length
+        ? currency(dailySafe)
+        : "—";
+
+    document.getElementById(
+      "dashboardNextPaycheck"
+    ).textContent =
+      nextPaycheck
+        ? currency(nextPaycheck.amount)
+        : "—";
+
+    document.getElementById(
+      "dashboardNextPaycheckDate"
+    ).textContent =
+      nextPaycheck
+        ? (
+            daysUntilPayday === 0
+              ? `${formatDate(
+                  nextPaycheck.date
+                )} • Payday is today`
+              : `${formatDate(
+                  nextPaycheck.date
+                )} • ${daysUntilPayday} day${
+                  daysUntilPayday === 1
+                    ? ""
+                    : "s"
+                } away`
           )
-        : 0;
-
-    const safeToSpend =
-      startingBalance -
-      cushion -
-      billsBeforePayday -
-      livingMoney;
-
-    const displayedSafe =
-      Math.max(
-        safeToSpend,
-        0
-      );
-
-    const daysUntilPayday =
-      nextPaycheck
-        ? daysBetween(
-            today,
-            nextPaycheck.date
-          )
-        : 0;
-
-    const spendingDays =
-      Math.max(
-        daysUntilPayday,
-        1
-      );
-
-    const dailySafe =
-      nextPaycheck
-        ? displayedSafe /
-          spendingDays
-        : 0;
-
-    /* ------------------------- */
-    /* MAIN NUMBERS */
-    /* ------------------------- */
-
-    const safeElement =
-      document.getElementById(
-        "dashboardSafeToSpend"
-      );
-
-    const currentElement =
-      document.getElementById(
-        "dashboardCurrentMoney"
-      );
-
-    const billsElement =
-      document.getElementById(
-        "dashboardBillsBeforePayday"
-      );
-
-    const cushionElement =
-      document.getElementById(
-        "dashboardCushion"
-      );
-
-    const dailyElement =
-      document.getElementById(
-        "dashboardDailySafe"
-      );
-
-    const paycheckElement =
-      document.getElementById(
-        "dashboardNextPaycheck"
-      );
-
-    const paycheckDateElement =
-      document.getElementById(
-        "dashboardNextPaycheckDate"
-      );
-
-    if (safeElement) {
-      safeElement.textContent =
-        currency(displayedSafe);
-    }
-
-    if (currentElement) {
-      currentElement.textContent =
-        currency(startingBalance);
-    }
-
-    if (billsElement) {
-      billsElement.textContent =
-        currency(
-          billsBeforePayday
-        );
-    }
-
-    if (cushionElement) {
-      cushionElement.textContent =
-        currency(cushion);
-    }
-
-    if (dailyElement) {
-      dailyElement.textContent =
-        nextPaycheck
-          ? currency(dailySafe)
-          : "—";
-    }
-
-    if (paycheckElement) {
-      paycheckElement.textContent =
-        nextPaycheck
-          ? currency(
-              nextPaycheck.amount
-            )
-          : "—";
-    }
-
-    if (paycheckDateElement) {
-      paycheckDateElement.textContent =
-        nextPaycheck
-          ? (
-              daysUntilPayday === 0
-                ? `${formatDate(
-                    nextPaycheck.date
-                  )} • Payday is today`
-                : `${formatDate(
-                    nextPaycheck.date
-                  )} • ${daysUntilPayday} day${
-                    daysUntilPayday === 1
-                      ? ""
-                      : "s"
-                  } away`
-            )
-          : "Add a future paycheck date";
-    }
-
-    /* ------------------------- */
-    /* FORECAST */
-    /* ------------------------- */
+        : "Add a future paycheck date";
 
     const forecast =
       getForecast(
@@ -973,79 +1030,58 @@
         "moneyWeather"
       );
 
-    if (weather) {
-      weather.className =
-        "money-weather";
+    weather.className =
+      "money-weather";
 
-      if (
+    if (forecast.className) {
+      weather.classList.add(
         forecast.className
-      ) {
-        weather.classList.add(
-          forecast.className
-        );
-      }
-
-      weather.textContent =
-        forecast.text;
+      );
     }
 
-    /* ------------------------- */
-    /* MAIN MESSAGE */
-    /* ------------------------- */
+    weather.textContent =
+      forecast.text;
 
     const safeMessage =
       document.getElementById(
         "dashboardSafeMessage"
       );
 
-    if (safeMessage) {
-      if (!nextPaycheck) {
-        safeMessage.textContent =
-          "Add your next paycheck date so Stretch My Check can calculate how far your current money needs to last.";
-      } else if (
-        safeToSpend < 0
-      ) {
-        safeMessage.textContent =
-          `You're ${currency(
-            Math.abs(safeToSpend)
-          )} short of covering the money that needs to stay protected before payday.`;
-      } else if (
-        displayedSafe === 0
-      ) {
-        safeMessage.textContent =
-          "Your current money is already needed for bills, necessities, or your protected cushion.";
-      } else {
-        safeMessage.textContent =
-          `You can use about ${currency(
-            dailySafe
-          )} per day and still protect the money we've reserved.`;
-      }
+    if (!nextPaycheck) {
+      safeMessage.textContent =
+        "Add your next paycheck date so Stretch My Check can calculate how far your current money needs to last.";
     }
 
-    /* ------------------------- */
-    /* EXPLANATION */
-    /* ------------------------- */
+    else if (safeToSpend < 0) {
+      safeMessage.textContent =
+        `You're ${currency(
+          Math.abs(safeToSpend)
+        )} short of covering the money that needs to stay protected before payday.`;
+    }
+
+    else if (displayedSafe === 0) {
+      safeMessage.textContent =
+        "Your current money is already needed for bills, necessities, or your protected cushion.";
+    }
+
+    else {
+      safeMessage.textContent =
+        `You can use about ${currency(
+          dailySafe
+        )} per day and still protect the money we've reserved.`;
+    }
 
     const explanation =
       document.getElementById(
         "dashboardExplanation"
       );
 
-    if (!explanation) {
-      return;
-    }
-
     if (
       startingBalance <= 0 &&
       !nextPaycheck
     ) {
-      explanation.innerHTML = `
-        <span class="dashboard-empty-note">
-          Your personalized money forecast
-          will appear here as you fill out
-          the planner.
-        </span>
-      `;
+      explanation.textContent =
+        "Your personalized money forecast will appear here as you fill out the planner.";
 
       return;
     }
@@ -1090,33 +1126,245 @@
       );
     }
 
-    if (!parts.length) {
-      explanation.innerHTML = `
-        Nothing is currently reserved before
-        <strong>${formatDate(
-          nextPaycheck.date
-        )}</strong>.
-        Based on the information entered,
-        your available money is not currently
-        assigned to a bill, living expense,
-        or protected cushion.
-      `;
-    } else {
-      explanation.innerHTML = `
-        Before
-        <strong>${formatDate(
-          nextPaycheck.date
-        )}</strong>,
-        Stretch My Check is keeping
-        ${parts.join(", ")}.
-        That leaves
-        <strong>${currency(
-          displayedSafe
-        )}</strong>
-        available to spend safely.
-      `;
-    }
+    explanation.innerHTML =
+      parts.length
+        ? `
+          Before
+          <strong>${formatDate(
+            nextPaycheck.date
+          )}</strong>,
+          Stretch My Check is keeping
+          ${parts.join(", ")}.
+          That leaves
+          <strong>${currency(
+            displayedSafe
+          )}</strong>
+          available to spend safely.
+        `
+        : `
+          Nothing is currently reserved before
+          <strong>${formatDate(
+            nextPaycheck.date
+          )}</strong>.
+          Based on the information entered,
+          your current money is not assigned
+          to bills, necessities, or your cushion.
+        `;
   }
+
+  /* =========================================================
+     CAN I AFFORD THIS?
+     ========================================================= */
+
+  function checkAffordability() {
+    const result =
+      document.getElementById(
+        "affordResult"
+      );
+
+    const name =
+      document.getElementById(
+        "affordName"
+      ).value.trim()
+      || "this purchase";
+
+    const amount =
+      money(
+        document.getElementById(
+          "affordAmount"
+        ).value
+      );
+
+    result.className =
+      "afford-result";
+
+    if (amount <= 0) {
+      result.classList.add(
+        "show",
+        "bad"
+      );
+
+      result.innerHTML = `
+        <strong>
+          Enter a purchase amount first.
+        </strong>
+        Add the cost so Stretch My Check
+        can compare it to your current plan.
+      `;
+
+      return;
+    }
+
+    const state =
+      getDashboardState();
+
+    if (!state.nextPaycheck) {
+      result.classList.add(
+        "show",
+        "bad"
+      );
+
+      result.innerHTML = `
+        <strong>
+          Add your next payday first.
+        </strong>
+        Stretch My Check needs to know how long
+        your current money has to last.
+      `;
+
+      return;
+    }
+
+    const remainingSafe =
+      state.safeToSpend - amount;
+
+    const days =
+      Math.max(
+        state.daysUntilPayday,
+        1
+      );
+
+    const newDaily =
+      Math.max(
+        remainingSafe,
+        0
+      ) / days;
+
+    if (remainingSafe < 0) {
+      result.classList.add(
+        "show",
+        "bad"
+      );
+
+      result.innerHTML = `
+        <strong>
+          Not safely right now.
+        </strong>
+
+        ${name} costs
+        <strong>${currency(amount)}</strong>.
+
+        That is
+        <strong>${currency(
+          Math.abs(remainingSafe)
+        )}</strong>
+        more than your current safe-to-spend amount.
+
+        Buying it now would cut into money
+        being protected for bills, necessities,
+        or your cushion.
+      `;
+
+      return;
+    }
+
+    if (
+      remainingSafe === 0 ||
+      newDaily < 10
+    ) {
+      result.classList.add(
+        "show",
+        "tight"
+      );
+
+      result.innerHTML = `
+        <strong>
+          You could buy it, but things would be very tight.
+        </strong>
+
+        After spending
+        <strong>${currency(amount)}</strong>
+        on ${name}, you would have
+        <strong>${currency(
+          remainingSafe
+        )}</strong>
+        of safe money left until payday.
+
+        That is about
+        <strong>${currency(
+          newDaily
+        )} per day</strong>.
+      `;
+
+      return;
+    }
+
+    if (newDaily < 25) {
+      result.classList.add(
+        "show",
+        "tight"
+      );
+
+      result.innerHTML = `
+        <strong>
+          Yes — but watch your spending afterward.
+        </strong>
+
+        After spending
+        <strong>${currency(amount)}</strong>
+        on ${name}, you would still have
+        <strong>${currency(
+          remainingSafe
+        )}</strong>
+        safe to spend.
+
+        Your new daily safe amount would be about
+        <strong>${currency(
+          newDaily
+        )}</strong>.
+      `;
+
+      return;
+    }
+
+    result.classList.add(
+      "show",
+      "good"
+    );
+
+    result.innerHTML = `
+      <strong>
+        Yes — this fits your current plan.
+      </strong>
+
+      After spending
+      <strong>${currency(amount)}</strong>
+      on ${name}, you would still have
+      <strong>${currency(
+        remainingSafe
+      )}</strong>
+      safe to spend before payday.
+
+      That leaves about
+      <strong>${currency(
+        newDaily
+      )} per day</strong>.
+    `;
+  }
+
+  document
+    .getElementById(
+      "affordButton"
+    )
+    .addEventListener(
+      "click",
+      checkAffordability
+    );
+
+  document
+    .getElementById(
+      "affordAmount"
+    )
+    .addEventListener(
+      "keydown",
+      event => {
+        if (
+          event.key === "Enter"
+        ) {
+          checkAffordability();
+        }
+      }
+    );
 
   /* =========================================================
      LIVE UPDATES
@@ -1161,24 +1409,18 @@
       }
 
       if (
-        target.closest(
-          "#addPaycheck"
-        ) ||
-        target.closest(
-          "#addBill"
-        ) ||
-        target.closest(
-          ".remove-paycheck"
-        ) ||
-        target.closest(
-          ".remove-bill"
-        ) ||
-        target.closest(
-          "#resetButton"
-        ) ||
-        target.closest(
-          "#optimizeButton"
-        ) ||
+        target.closest("#addPaycheck")
+        ||
+        target.closest("#addBill")
+        ||
+        target.closest(".remove-paycheck")
+        ||
+        target.closest(".remove-bill")
+        ||
+        target.closest("#resetPlanner")
+        ||
+        target.closest("#optimizeButton")
+        ||
         target.textContent
           ?.trim() === "Load"
       ) {
@@ -1189,11 +1431,6 @@
       }
     }
   );
-
-  /*
-    Watch for paycheck/bill rows being
-    added or removed dynamically.
-  */
 
   const observer =
     new MutationObserver(
@@ -1220,18 +1457,10 @@
     );
   }
 
-  /* =========================================================
-     PUBLIC REFRESH HOOK
-     ========================================================= */
-
   window.StretchMyCheckDashboard = {
     refresh:
       updateDashboard
   };
-
-  /* =========================================================
-     INITIAL CALCULATION
-     ========================================================= */
 
   window.setTimeout(
     updateDashboard,
