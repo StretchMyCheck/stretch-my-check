@@ -1,19 +1,14 @@
 (() => {
   "use strict";
 
-  /* =========================================================
-     STRETCH MY CHECK
-     GOALS & SINKING FUNDS
-     Smart guidance + add/withdraw money
-  ========================================================= */
-
-  const supabaseClient =
+  const sb =
     window.supabaseClient;
 
-  if (!supabaseClient) {
+  if (!sb) {
     console.error(
       "Stretch My Check Goals: Supabase client is not available."
     );
+
     return;
   }
 
@@ -22,74 +17,81 @@
   let editingGoalId =
     null;
 
-  let activeMoneyGoal =
+  let moneyGoal =
     null;
 
-  let activeMoneyMode =
+  let moneyMode =
     null;
 
-  /* =========================================================
-     HELPERS
-  ========================================================= */
+  let selectedGoalId =
+    null;
 
-  function money(value) {
-    const number =
-      parseFloat(value);
-
-    return Number.isFinite(number)
-      ? number
-      : 0;
-  }
-
-  function currency(value) {
-    return new Intl.NumberFormat(
-      "en-US",
-      {
-        style: "currency",
-        currency: "USD"
-      }
-    ).format(
+  const money =
+    value =>
       Number.isFinite(
-        Number(value)
+        parseFloat(value)
       )
-        ? Number(value)
-        : 0
-    );
-  }
+        ? parseFloat(value)
+        : 0;
 
-  function escapeHTML(value) {
-    return String(
-      value ?? ""
-    )
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
+  const currency =
+    value =>
+      new Intl.NumberFormat(
+        "en-US",
+        {
+          style: "currency",
+          currency: "USD"
+        }
+      ).format(
+        money(value)
+      );
 
-  function percent(
-    saved,
-    target
-  ) {
-    if (target <= 0) {
-      return 0;
-    }
-
-    return Math.max(
-      0,
-      Math.min(
-        100,
-        (
-          saved /
-          target
-        ) *
-        100
+  const esc =
+    value =>
+      String(
+        value ?? ""
       )
-    );
-  }
+        .replace(
+          /&/g,
+          "&amp;"
+        )
+        .replace(
+          /</g,
+          "&lt;"
+        )
+        .replace(
+          />/g,
+          "&gt;"
+        )
+        .replace(
+          /"/g,
+          "&quot;"
+        )
+        .replace(
+          /'/g,
+          "&#039;"
+        );
 
-  function parseLocalDate(
+  const pct =
+    (
+      saved,
+      target
+    ) =>
+      target > 0
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              (
+                saved /
+                target
+              ) *
+                100
+            )
+          )
+        : 0;
+
+  function localDate(
     value
   ) {
     if (!value) {
@@ -99,28 +101,25 @@
     if (
       value instanceof Date
     ) {
-      const copy =
+      const date =
         new Date(value);
 
-      copy.setHours(
+      date.setHours(
         0,
         0,
         0,
         0
       );
 
-      return copy;
+      return date;
     }
 
-    const clean =
+    const parts =
       String(value)
         .slice(
           0,
           10
-        );
-
-    const parts =
-      clean
+        )
         .split("-")
         .map(Number);
 
@@ -154,38 +153,60 @@
       : date;
   }
 
+  function key(
+    value
+  ) {
+    const date =
+      localDate(value);
+
+    if (!date) {
+      return "";
+    }
+
+    return `${
+      date.getFullYear()
+    }-${
+      String(
+        date.getMonth() + 1
+      ).padStart(
+        2,
+        "0"
+      )
+    }-${
+      String(
+        date.getDate()
+      ).padStart(
+        2,
+        "0"
+      )
+    }`;
+  }
+
   function formatDate(
     value
   ) {
     const date =
-      parseLocalDate(
-        value
-      );
-
-    if (!date) {
-      return "No target date";
-    }
+      localDate(value);
 
     return date
-      .toLocaleDateString(
-        "en-US",
-        {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        }
-      );
+      ? date.toLocaleDateString(
+          "en-US",
+          {
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+          }
+        )
+      : "No target date";
   }
 
   function daysUntil(
     value
   ) {
-    const target =
-      parseLocalDate(
-        value
-      );
+    const date =
+      localDate(value);
 
-    if (!target) {
+    if (!date) {
       return null;
     }
 
@@ -201,34 +222,34 @@
 
     return Math.ceil(
       (
-        target -
+        date -
         today
       ) /
-      86400000
+        86400000
     );
   }
 
-  function getIcon(goal) {
-    if (
+  function icon(
+    goal
+  ) {
+    return (
       goal.icon &&
-      goal.icon !== "target"
-    ) {
-      return goal.icon;
-    }
-
-    return goal.goal_type ===
-      "sinking"
+      goal.icon !==
+        "target"
+    )
+      ? goal.icon
+      : goal.goal_type ===
+          "sinking"
         ? "💰"
         : "🎯";
   }
 
-  async function getUser() {
+  async function user() {
     const {
       data,
       error
     } =
-      await supabaseClient.auth
-        .getUser();
+      await sb.auth.getUser();
 
     if (error) {
       console.error(
@@ -238,47 +259,17 @@
       return null;
     }
 
-    return data?.user ||
-      null;
-  }
-
-  function dateKey(value) {
-    const date =
-      parseLocalDate(
-        value
-      );
-
-    if (!date) {
-      return "";
-    }
-
-    const year =
-      date.getFullYear();
-
-    const month =
-      String(
-        date.getMonth() + 1
-      ).padStart(
-        2,
-        "0"
-      );
-
-    const day =
-      String(
-        date.getDate()
-      ).padStart(
-        2,
-        "0"
-      );
-
-    return `${year}-${month}-${day}`;
+    return (
+      data?.user ||
+      null
+    );
   }
 
   /* =========================================================
-     PAYCHECK / GUIDANCE DATA
+     PAYCHECK DATA
   ========================================================= */
 
-  function collectCurrentPaychecks() {
+  function currentPaychecks() {
     const today =
       new Date();
 
@@ -290,55 +281,45 @@
     );
 
     return [
-      ...document
-        .querySelectorAll(
-          ".paycheck-entry"
-        )
+      ...document.querySelectorAll(
+        ".paycheck-entry"
+      )
     ]
       .map(
         (
           entry,
           index
         ) => {
-          const name =
-            entry
-              .querySelector(
-                ".paycheck-name"
-              )
-              ?.value
-              ?.trim()
-            ||
-            `Paycheck ${
-              index + 1
-            }`;
-
           const dateValue =
-            entry
-              .querySelector(
-                ".paycheck-date"
-              )
-              ?.value ||
+            entry.querySelector(
+              ".paycheck-date"
+            )?.value ||
             "";
 
-          const date =
-            parseLocalDate(
-              dateValue
-            );
-
-          const amount =
-            money(
-              entry
-                .querySelector(
-                  ".paycheck-amount"
-                )
-                ?.value
-            );
-
           return {
-            name,
-            date,
+            name:
+              entry.querySelector(
+                ".paycheck-name"
+              )
+                ?.value
+                ?.trim() ||
+              `Paycheck ${
+                index + 1
+              }`,
+
             dateValue,
-            amount
+
+            date:
+              localDate(
+                dateValue
+              ),
+
+            amount:
+              money(
+                entry.querySelector(
+                  ".paycheck-amount"
+                )?.value
+              )
           };
         }
       )
@@ -358,41 +339,45 @@
       );
   }
 
-  function optimizedPaycheckMap() {
+  function optimizedMap() {
     const map =
       new Map();
 
-    const optimized =
-      window.latestPlannerData
+    const paychecks =
+      window
+        .latestPlannerData
         ?.paychecks;
 
     if (
       !Array.isArray(
-        optimized
+        paychecks
       )
     ) {
       return map;
     }
 
-    optimized.forEach(
+    paychecks.forEach(
       paycheck => {
-        const key =
-          dateKey(
+        const dateKey =
+          key(
             paycheck.dateValue ||
             paycheck.date
           );
 
-        if (!key) {
+        if (!dateKey) {
           return;
         }
 
         map.set(
-          key,
+          dateKey,
           {
             safeToSpend:
-              money(
-                paycheck
-                  .safeToSpend
+              Math.max(
+                0,
+                money(
+                  paycheck
+                    .safeToSpend
+                )
               ),
 
             runningBalance:
@@ -412,7 +397,11 @@
     return map;
   }
 
-  function buildGoalGuidance(
+  /* =========================================================
+     BUILD A PAYCHECK-BY-PAYCHECK GOAL PLAN
+  ========================================================= */
+
+  function goalPlan(
     goal
   ) {
     const target =
@@ -428,12 +417,12 @@
     const remaining =
       Math.max(
         target -
-        saved,
+          saved,
         0
       );
 
     const targetDate =
-      parseLocalDate(
+      localDate(
         goal.target_date
       );
 
@@ -445,17 +434,22 @@
         status:
           "Goal Reached",
 
-        className:
+        cls:
           "complete",
 
         headline:
           "You reached this goal.",
 
         detail:
-          "Nice work — this goal is fully funded.",
+          "This goal is fully funded.",
 
-        amountPerCheck:
-          null
+        rows: [],
+
+        shortfall:
+          0,
+
+        totalPlanned:
+          0
       };
     }
 
@@ -464,7 +458,7 @@
         status:
           "Flexible Goal",
 
-        className:
+        cls:
           "neutral",
 
         headline:
@@ -473,56 +467,34 @@
           )} left to save`,
 
         detail:
-          "Add a target date if you want Stretch My Check to calculate a per-paycheck savings target.",
+          "Add a target date to build a paycheck-by-paycheck path.",
 
-        amountPerCheck:
-          null
-      };
-    }
+        rows: [],
 
-    const days =
-      daysUntil(
-        goal.target_date
-      );
+        shortfall:
+          remaining,
 
-    if (
-      days !== null &&
-      days < 0
-    ) {
-      return {
-        status:
-          "Past Target Date",
-
-        className:
-          "attention",
-
-        headline:
-          `${currency(
-            remaining
-          )} still needed`,
-
-        detail:
-          "Your target date has passed. Update the date or adjust the goal amount to rebuild your savings plan.",
-
-        amountPerCheck:
-          null
+        totalPlanned:
+          0
       };
     }
 
     const paychecks =
-      collectCurrentPaychecks()
+      currentPaychecks()
         .filter(
           paycheck =>
             paycheck.date <=
             targetDate
         );
 
-    if (!paychecks.length) {
+    if (
+      !paychecks.length
+    ) {
       return {
         status:
           "Add Paychecks",
 
-        className:
+        cls:
           "neutral",
 
         headline:
@@ -531,110 +503,209 @@
           )} left to save`,
 
         detail:
-          "Add upcoming paychecks in My Plan through this target date to get a per-paycheck recommendation.",
+          "Add upcoming paychecks in My Plan through this target date.",
 
-        amountPerCheck:
-          null
+        rows: [],
+
+        shortfall:
+          remaining,
+
+        totalPlanned:
+          0
       };
     }
 
-    const amountPerCheck =
-      remaining /
-      paychecks.length;
+    const optimized =
+      optimizedMap();
 
-    const optimizedMap =
-      optimizedPaycheckMap();
-
-    let optimizedChecks =
-      0;
-
-    let totalSafeCapacity =
-      0;
-
-    paychecks.forEach(
-      paycheck => {
-        const optimized =
-          optimizedMap.get(
-            dateKey(
+    const hasOptimized =
+      paychecks.some(
+        paycheck =>
+          optimized.has(
+            key(
               paycheck.date
             )
-          );
+          )
+      );
 
-        if (optimized) {
-          optimizedChecks++;
+    let left =
+      remaining;
 
-          totalSafeCapacity +=
-            Math.max(
-              0,
-              optimized
-                .safeToSpend
-            );
-        }
-      }
-    );
-
-    const checkWord =
-      paychecks.length === 1
-        ? "paycheck"
-        : "paychecks";
+    const rows = [];
 
     if (
-      optimizedChecks > 0
+      hasOptimized
     ) {
-      const canFit =
-        totalSafeCapacity >=
-        remaining;
+      const eligible =
+        paychecks.map(
+          paycheck => ({
+            ...paycheck,
 
-      return {
-        status:
-          canFit
-            ? "On Track"
-            : "Needs Attention",
+            safe:
+              optimized.get(
+                key(
+                  paycheck.date
+                )
+              )
+                ?.safeToSpend ??
+              0
+          })
+        );
 
-        className:
-          canFit
-            ? "track"
-            : "attention",
+      for (
+        let index = 0;
+        index <
+        eligible.length;
+        index++
+      ) {
+        const paycheck =
+          eligible[index];
 
-        headline:
-          `${currency(
-            amountPerCheck
-          )} per paycheck`,
+        const checksLeft =
+          eligible.length -
+          index;
 
-        detail:
-          `Based on ${
-            paychecks.length
-          } upcoming ${checkWord} currently in My Plan. Your optimized plan shows about ${
-            currency(
-              totalSafeCapacity
-            )
-          } of safe spending room across the matched checks.`,
+        const evenNeed =
+          checksLeft > 0
+            ? left /
+              checksLeft
+            : left;
 
-        amountPerCheck
-      };
+        const contribution =
+          Math.min(
+            paycheck.safe,
+            Math.max(
+              0,
+              evenNeed
+            ),
+            left
+          );
+
+        rows.push({
+          ...paycheck,
+
+          contribution,
+
+          skip:
+            contribution <=
+            0.004
+        });
+
+        left =
+          Math.max(
+            0,
+            left -
+              contribution
+          );
+      }
+
+    } else {
+      const each =
+        remaining /
+        paychecks.length;
+
+      paychecks.forEach(
+        (
+          paycheck,
+          index
+        ) => {
+          const contribution =
+            index ===
+            paychecks.length -
+              1
+              ? Math.max(
+                  0,
+                  remaining -
+                    each *
+                      (
+                        paychecks.length -
+                        1
+                      )
+                )
+              : each;
+
+          rows.push({
+            ...paycheck,
+
+            safe:
+              null,
+
+            contribution,
+
+            skip:
+              false
+          });
+        }
+      );
+
+      left =
+        0;
     }
+
+    const totalPlanned =
+      rows.reduce(
+        (
+          total,
+          row
+        ) =>
+          total +
+          row.contribution,
+        0
+      );
+
+    const shortfall =
+      Math.max(
+        0,
+        remaining -
+          totalPlanned
+      );
+
+    const onTrack =
+      shortfall <
+      0.01;
+
+    const firstContribution =
+      rows.find(
+        row =>
+          row.contribution >
+          0
+      );
 
     return {
       status:
-        "Savings Target",
+        onTrack
+          ? "On Track"
+          : "Needs Attention",
 
-      className:
-        "neutral",
+      cls:
+        onTrack
+          ? "track"
+          : "attention",
 
       headline:
-        `${currency(
-          amountPerCheck
-        )} per paycheck`,
+        onTrack
+          ? `${currency(
+              firstContribution
+                ?.contribution ||
+                0
+            )} next recommended`
+          : `${currency(
+              shortfall
+            )} gap remains`,
 
       detail:
-        `Based on ${
-          paychecks.length
-        } upcoming ${checkWord} currently entered in My Plan. Run Optimize My Money to compare this goal against your safe spending room.`,
+        hasOptimized
+          ? "Built from your upcoming paychecks and current optimized safe-spending room."
+          : "Built from your upcoming paychecks. Run Optimize My Money for safety-aware recommendations.",
 
-      amountPerCheck
+      rows,
+
+      shortfall,
+
+      totalPlanned
     };
   }
-  /* =========================================================
+    /* =========================================================
      STYLES
   ========================================================= */
 
@@ -644,25 +715,30 @@
     );
 
   style.id =
-    "smcGoalsStyles";
+    "smcGoalsStylesV2";
 
   style.textContent = `
 
     #smcGoalsPage {
-      --goal-card: #101f29;
-      --goal-card-soft: #132630;
-      --goal-border:
+      --g-border:
         rgba(132,175,192,.17);
-      --goal-text: #f4f8fa;
-      --goal-muted: #8fa6b1;
-      --goal-teal: #45e1c0;
-      --goal-purple: #9b6dff;
-      --goal-orange: #ff9d55;
-      --goal-red: #ff7479;
+
+      --g-muted:
+        #8fa6b1;
+
+      --g-teal:
+        #45e1c0;
+
+      --g-bg:
+        #0d1a23;
+
+      --g-card:
+        #11232d;
     }
 
     .smc-goals-shell {
       display: grid;
+
       gap: 18px;
     }
 
@@ -672,19 +748,17 @@
       grid-template-columns:
         repeat(
           4,
-          minmax(0, 1fr)
+          minmax(0,1fr)
         );
 
       gap: 14px;
     }
 
-    .smc-goal-summary-card {
-      min-height: 132px;
-
-      padding: 20px;
-
-      border-radius: 18px;
-
+    .smc-goal-summary-card,
+    .smc-goals-toolbar,
+    .smc-goal-card,
+    .smc-goal-plan-panel,
+    .smc-goal-signed-out {
       background:
         linear-gradient(
           145deg,
@@ -694,97 +768,108 @@
 
       border:
         1px solid
-        var(--goal-border);
+        var(--g-border);
 
-      box-shadow:
-        0 14px 35px
-        rgba(0,0,0,.10);
+      border-radius:
+        18px;
+    }
+
+    .smc-goal-summary-card {
+      min-height:
+        132px;
+
+      padding:
+        20px;
     }
 
     .smc-goal-summary-label {
       color:
-        var(--goal-muted);
+        var(--g-muted);
 
-      font-size: 12px;
+      font-size:
+        12px;
 
-      margin-bottom: 14px;
+      margin-bottom:
+        14px;
     }
 
     .smc-goal-summary-value {
-      color: white;
+      color:
+        #fff;
 
-      font-size: 27px;
+      font-size:
+        27px;
 
-      font-weight: 850;
-
-      line-height: 1;
+      font-weight:
+        850;
     }
 
     .smc-goal-summary-note {
-      color: #77909b;
+      color:
+        #77909b;
 
-      font-size: 11px;
+      font-size:
+        11px;
 
-      margin-top: 9px;
-
-      line-height: 1.45;
+      margin-top:
+        9px;
     }
 
     .smc-goals-toolbar {
-      display: flex;
+      display:
+        flex;
 
-      align-items: center;
+      align-items:
+        center;
 
       justify-content:
         space-between;
 
-      gap: 16px;
+      gap:
+        16px;
 
-      flex-wrap: wrap;
+      flex-wrap:
+        wrap;
 
-      padding: 20px;
-
-      border-radius: 18px;
-
-      border:
-        1px solid
-        var(--goal-border);
-
-      background:
-        linear-gradient(
-          145deg,
-          #101f29,
-          #0c1921
-        );
+      padding:
+        20px;
     }
 
     .smc-goals-toolbar h2 {
-      margin: 0;
+      margin:
+        0;
 
-      color: white;
+      color:
+        #fff;
 
-      font-size: 21px;
+      font-size:
+        21px;
     }
 
     .smc-goals-toolbar p {
-      margin: 5px 0 0;
+      margin:
+        5px 0 0;
 
       color:
-        var(--goal-muted);
+        var(--g-muted);
 
-      font-size: 12px;
+      font-size:
+        12px;
     }
 
     .smc-goal-primary {
-      min-height: 43px;
+      min-height:
+        43px;
 
       border:
         1px solid
         rgba(69,225,192,.35);
 
-      border-radius: 999px;
+      border-radius:
+        999px;
 
-      padding: 10px 18px;
+      padding:
+        10px 18px;
 
       background:
         linear-gradient(
@@ -793,95 +878,90 @@
           #258f87
         );
 
-      color: white;
+      color:
+        #fff;
 
-      font-weight: 800;
+      font-weight:
+        800;
 
-      cursor: pointer;
+      cursor:
+        pointer;
     }
 
-    .smc-goal-primary:hover {
-      filter:
-        brightness(1.08);
+    .smc-goals-workspace {
+      display:
+        grid;
+
+      grid-template-columns:
+        minmax(300px,390px)
+        minmax(0,1fr);
+
+      gap:
+        15px;
+
+      align-items:
+        start;
     }
 
     .smc-goal-grid {
-      display: grid;
+      display:
+        grid;
 
       grid-template-columns:
-        repeat(
-          3,
-          minmax(0, 1fr)
-        );
+        1fr;
 
-      gap: 15px;
+      gap:
+        15px;
     }
 
     .smc-goal-card {
-      position: relative;
+      padding:
+        20px;
 
-      padding: 20px;
-
-      border-radius: 19px;
-
-      border:
-        1px solid
-        var(--goal-border);
-
-      background:
-        radial-gradient(
-          circle at 90% 5%,
-          rgba(69,225,192,.08),
-          transparent 35%
-        ),
-        linear-gradient(
-          145deg,
-          #11232d,
-          #0d1a23
-        );
-
-      overflow: hidden;
+      cursor:
+        pointer;
     }
 
-    .smc-goal-card.completed {
+    .smc-goal-card.selected {
       border-color:
-        rgba(69,225,192,.32);
+        rgba(69,225,192,.48);
 
-      background:
-        radial-gradient(
-          circle at 100% 0%,
-          rgba(69,225,192,.16),
-          transparent 38%
-        ),
-        linear-gradient(
-          145deg,
-          #12322f,
-          #0d1d24
-        );
+      box-shadow:
+        0 0 0 2px
+        rgba(69,225,192,.08);
     }
 
-    .smc-goal-top {
-      display: flex;
+    .smc-goal-top,
+    .smc-goal-money-row,
+    .smc-goal-guidance-head,
+    .smc-goal-progress-line,
+    .smc-goal-plan-top,
+    .smc-goal-plan-row {
+      display:
+        flex;
 
       justify-content:
         space-between;
 
-      gap: 12px;
-
-      align-items:
-        flex-start;
+      gap:
+        12px;
     }
 
     .smc-goal-icon {
-      width: 46px;
+      width:
+        46px;
 
-      height: 46px;
+      height:
+        46px;
 
-      display: grid;
+      display:
+        grid;
 
-      place-items: center;
+      place-items:
+        center;
 
-      border-radius: 14px;
+      border-radius:
+        14px;
 
       background:
         rgba(69,225,192,.10);
@@ -890,99 +970,121 @@
         1px solid
         rgba(69,225,192,.17);
 
-      font-size: 24px;
+      font-size:
+        24px;
     }
 
-    .smc-goal-type {
-      display: inline-flex;
+    .smc-goal-type,
+    .smc-goal-status,
+    .smc-plan-chip {
+      display:
+        inline-flex;
 
-      align-items: center;
+      align-items:
+        center;
 
-      padding: 5px 9px;
+      border-radius:
+        999px;
 
-      border-radius: 999px;
+      font-size:
+        10px;
 
-      background:
-        rgba(104,127,143,.12);
-
-      color: #9ab0ba;
-
-      font-size: 10px;
-
-      font-weight: 750;
+      font-weight:
+        800;
 
       text-transform:
         uppercase;
 
-      letter-spacing: .04em;
+      letter-spacing:
+        .04em;
+    }
+
+    .smc-goal-type {
+      padding:
+        5px 9px;
+
+      background:
+        rgba(104,127,143,.12);
+
+      color:
+        #9ab0ba;
     }
 
     .smc-goal-name {
-      margin: 17px 0 4px;
+      margin:
+        17px 0 4px;
 
-      color: white;
+      color:
+        #fff;
 
-      font-size: 19px;
+      font-size:
+        19px;
 
-      font-weight: 820;
-
-      line-height: 1.2;
+      font-weight:
+        820;
     }
 
     .smc-goal-date {
-      color: #7f98a4;
+      color:
+        #7f98a4;
 
-      font-size: 11px;
+      font-size:
+        11px;
     }
 
     .smc-goal-money-row {
-      display: flex;
-
-      justify-content:
-        space-between;
-
-      gap: 12px;
-
-      margin-top: 19px;
+      margin-top:
+        19px;
 
       align-items:
         flex-end;
     }
 
     .smc-goal-saved {
-      color: white;
+      color:
+        #fff;
 
-      font-size: 24px;
+      font-size:
+        24px;
 
-      font-weight: 850;
+      font-weight:
+        850;
     }
 
     .smc-goal-target {
-      color: #8298a3;
+      color:
+        #8298a3;
 
-      font-size: 11px;
+      font-size:
+        11px;
 
-      text-align: right;
+      text-align:
+        right;
     }
 
     .smc-goal-progress-track {
-      position: relative;
+      height:
+        10px;
 
-      height: 10px;
+      margin-top:
+        15px;
 
-      margin-top: 15px;
+      border-radius:
+        999px;
 
-      border-radius: 999px;
+      overflow:
+        hidden;
 
-      overflow: hidden;
-
-      background: #263640;
+      background:
+        #263640;
     }
 
     .smc-goal-progress-fill {
-      height: 100%;
+      height:
+        100%;
 
-      border-radius: inherit;
+      border-radius:
+        inherit;
 
       background:
         linear-gradient(
@@ -990,88 +1092,65 @@
           #27a892,
           #45e1c0
         );
-
-      transition:
-        width .35s ease;
     }
 
     .smc-goal-progress-line {
-      display: flex;
+      margin-top:
+        8px;
 
-      justify-content:
-        space-between;
+      color:
+        #8da3ae;
 
-      gap: 12px;
-
-      margin-top: 8px;
-
-      color: #8da3ae;
-
-      font-size: 11px;
+      font-size:
+        11px;
     }
 
-    /* =======================================================
-       SMART SAVINGS GUIDANCE
-    ======================================================= */
+    /* =====================================================
+       SMART GUIDANCE
+    ===================================================== */
 
     .smc-goal-guidance {
-      margin-top: 15px;
+      margin-top:
+        15px;
 
-      padding: 13px;
+      padding:
+        13px;
 
-      border-radius: 13px;
+      border-radius:
+        13px;
 
-      background: #0d1d26;
+      background:
+        #0d1d26;
 
       border:
         1px solid
         rgba(132,175,192,.13);
     }
 
-    .smc-goal-guidance-head {
-      display: flex;
-
-      align-items: center;
-
-      justify-content:
-        space-between;
-
-      gap: 10px;
-
-      margin-bottom: 7px;
-    }
-
     .smc-goal-guidance-title {
-      color: #dce9ed;
+      color:
+        #dce9ed;
 
-      font-size: 11px;
+      font-size:
+        11px;
 
-      font-weight: 800;
+      font-weight:
+        800;
 
       text-transform:
         uppercase;
-
-      letter-spacing: .04em;
     }
 
     .smc-goal-status {
-      padding: 4px 8px;
-
-      border-radius: 999px;
-
-      font-size: 9px;
-
-      font-weight: 850;
-
-      text-transform:
-        uppercase;
-
-      letter-spacing: .04em;
+      padding:
+        4px 8px;
     }
 
     .smc-goal-status.track,
-    .smc-goal-status.complete {
-      color: #73e6c9;
+    .smc-goal-status.complete,
+    .smc-plan-chip.good {
+      color:
+        #73e6c9;
 
       background:
         rgba(31,121,103,.18);
@@ -1081,8 +1160,10 @@
         rgba(69,225,192,.20);
     }
 
-    .smc-goal-status.attention {
-      color: #ffb071;
+    .smc-goal-status.attention,
+    .smc-plan-chip.warn {
+      color:
+        #ffb071;
 
       background:
         rgba(142,79,30,.19);
@@ -1093,7 +1174,8 @@
     }
 
     .smc-goal-status.neutral {
-      color: #a6bbc4;
+      color:
+        #a6bbc4;
 
       background:
         rgba(96,126,139,.14);
@@ -1104,180 +1186,414 @@
     }
 
     .smc-goal-guidance-main {
-      color: white;
+      color:
+        #fff;
 
-      font-size: 15px;
+      font-size:
+        15px;
 
-      font-weight: 820;
+      font-weight:
+        820;
+
+      margin-top:
+        7px;
     }
 
     .smc-goal-guidance-detail {
-      margin-top: 5px;
+      margin-top:
+        5px;
 
-      color: #809aa6;
+      color:
+        #809aa6;
 
-      font-size: 10px;
+      font-size:
+        10px;
 
-      line-height: 1.45;
+      line-height:
+        1.45;
     }
 
-    .smc-goal-notes {
-      min-height: 26px;
-
-      margin-top: 12px;
-
-      color: #8da3ae;
-
-      font-size: 11px;
-
-      line-height: 1.5;
-    }
-
-    /* =======================================================
+    /* =====================================================
        GOAL BUTTONS
-    ======================================================= */
+    ===================================================== */
 
     .smc-goal-actions {
-      display: grid;
+      display:
+        grid;
 
       grid-template-columns:
         1fr 1fr 1fr;
 
-      gap: 8px;
+      gap:
+        8px;
 
-      margin-top: 17px;
+      margin-top:
+        17px;
     }
 
     .smc-goal-action {
-      min-height: 39px;
+      min-height:
+        39px;
 
-      border-radius: 10px;
+      border-radius:
+        10px;
 
       border:
         1px solid
         rgba(132,175,192,.17);
 
-      background: #132630;
+      background:
+        #132630;
 
-      color: #e4eef1;
+      color:
+        #e4eef1;
 
-      font-weight: 750;
+      font-weight:
+        750;
 
-      cursor: pointer;
+      cursor:
+        pointer;
     }
 
     .smc-goal-action.add {
+      color:
+        var(--g-teal);
+
       border-color:
         rgba(69,225,192,.27);
-
-      color:
-        var(--goal-teal);
 
       background:
         rgba(30,112,101,.17);
     }
 
     .smc-goal-action.withdraw {
+      color:
+        #bba0ff;
+
       border-color:
         rgba(155,109,255,.22);
-
-      color: #bba0ff;
 
       background:
         rgba(90,61,150,.14);
     }
 
-    .smc-goal-action:hover {
-      filter:
-        brightness(1.08);
+    /* =====================================================
+       RIGHT-SIDE GOAL PLAN
+    ===================================================== */
+
+    .smc-goal-plan-panel {
+      padding:
+        22px;
+
+      min-height:
+        500px;
+
+      position:
+        sticky;
+
+      top:
+        18px;
     }
 
-    /* =======================================================
-       EMPTY GOALS
-    ======================================================= */
+    .smc-goal-plan-top {
+      align-items:
+        flex-start;
 
-    .smc-goal-empty {
-      grid-column: 1 / -1;
+      border-bottom:
+        1px solid
+        rgba(132,175,192,.12);
 
-      padding: 42px 24px;
+      padding-bottom:
+        18px;
+    }
 
-      text-align: center;
+    .smc-goal-plan-kicker {
+      color:
+        #45e1c0;
 
-      border-radius: 18px;
+      font-size:
+        10px;
 
-      background:
-        linear-gradient(
-          145deg,
-          #101f29,
-          #0c1921
+      font-weight:
+        850;
+
+      text-transform:
+        uppercase;
+
+      letter-spacing:
+        .08em;
+    }
+
+    .smc-goal-plan-title {
+      color:
+        #fff;
+
+      font-size:
+        24px;
+
+      font-weight:
+        850;
+
+      margin:
+        5px 0;
+    }
+
+    .smc-goal-plan-sub {
+      color:
+        #839ba6;
+
+      font-size:
+        11px;
+    }
+
+    .smc-goal-plan-summary {
+      display:
+        grid;
+
+      grid-template-columns:
+        repeat(
+          3,
+          minmax(0,1fr)
         );
 
-      border:
-        1px dashed
-        rgba(132,175,192,.23);
+      gap:
+        10px;
 
-      color: #91a7b2;
+      margin:
+        18px 0;
     }
 
-    .smc-goal-empty-icon {
-      width: 64px;
-
-      height: 64px;
-
-      display: grid;
-
-      place-items: center;
-
-      margin: 0 auto 13px;
-
-      border-radius: 50%;
-
+    .smc-goal-plan-stat {
       background:
-        rgba(69,225,192,.08);
+        #0b1b24;
+
+      border:
+        1px solid
+        rgba(132,175,192,.12);
+
+      border-radius:
+        12px;
+
+      padding:
+        13px;
+    }
+
+    .smc-goal-plan-stat small {
+      display:
+        block;
 
       color:
-        var(--goal-teal);
+        #78909b;
 
-      font-size: 30px;
+      font-size:
+        9px;
+
+      text-transform:
+        uppercase;
     }
 
-    .smc-goal-empty h3 {
-      margin: 0 0 7px;
+    .smc-goal-plan-stat strong {
+      display:
+        block;
 
-      color: white;
+      color:
+        #fff;
 
-      font-size: 20px;
+      margin-top:
+        5px;
+
+      font-size:
+        15px;
     }
 
-    .smc-goal-empty p {
+    .smc-goal-plan-list {
+      display:
+        grid;
+
+      gap:
+        9px;
+    }
+
+    .smc-goal-plan-row {
+      align-items:
+        center;
+
+      padding:
+        13px;
+
+      border-radius:
+        12px;
+
+      background:
+        #0b1b24;
+
+      border:
+        1px solid
+        rgba(132,175,192,.11);
+    }
+
+    .smc-plan-date {
+      color:
+        #fff;
+
+      font-weight:
+        750;
+
+      font-size:
+        12px;
+    }
+
+    .smc-plan-name {
+      color:
+        #7e97a2;
+
+      font-size:
+        10px;
+
+      margin-top:
+        3px;
+    }
+
+    .smc-plan-amount {
+      text-align:
+        right;
+
+      color:
+        #45e1c0;
+
+      font-weight:
+        850;
+    }
+
+    .smc-plan-skip {
+      color:
+        #8fa6b1;
+    }
+
+    .smc-plan-safe {
+      color:
+        #6f8792;
+
+      font-size:
+        9px;
+
+      margin-top:
+        3px;
+    }
+
+    .smc-plan-chip {
+      padding:
+        4px 8px;
+
+      margin-top:
+        14px;
+    }
+
+    .smc-goal-plan-note {
+      margin-top:
+        14px;
+
+      padding:
+        12px;
+
+      border-radius:
+        11px;
+
+      background:
+        rgba(69,225,192,.06);
+
+      border:
+        1px solid
+        rgba(69,225,192,.12);
+
+      color:
+        #89a5af;
+
+      font-size:
+        10px;
+
+      line-height:
+        1.5;
+    }
+
+    .smc-goal-empty,
+    .smc-plan-empty {
+      padding:
+        34px 22px;
+
+      text-align:
+        center;
+
+      color:
+        #91a7b2;
+    }
+
+    .smc-plan-empty {
+      display:
+        grid;
+
+      place-items:
+        center;
+
+      min-height:
+        420px;
+    }
+
+    .smc-plan-empty h3 {
+      color:
+        #fff;
+
       margin:
-        0 auto 18px;
-
-      max-width: 480px;
-
-      line-height: 1.55;
-
-      font-size: 12px;
+        8px 0;
     }
 
-    /* =======================================================
+    .smc-plan-empty p {
+      max-width:
+        460px;
+
+      line-height:
+        1.5;
+
+      font-size:
+        12px;
+    }
+
+    .smc-goal-signed-out {
+      padding:
+        32px;
+
+      text-align:
+        center;
+
+      color:
+        var(--g-muted);
+    }
+
+    /* =====================================================
        MODAL
-    ======================================================= */
+    ===================================================== */
 
     .smc-goal-modal-overlay {
-      position: fixed;
+      position:
+        fixed;
 
-      inset: 0;
+      inset:
+        0;
 
-      z-index: 12000;
+      z-index:
+        12000;
 
-      display: none;
+      display:
+        none;
 
-      align-items: center;
+      align-items:
+        center;
 
-      justify-content: center;
+      justify-content:
+        center;
 
-      padding: 18px;
+      padding:
+        18px;
 
       background:
         rgba(3,10,14,.82);
@@ -1287,21 +1603,28 @@
     }
 
     .smc-goal-modal-overlay.show {
-      display: flex;
+      display:
+        flex;
     }
 
     .smc-goal-modal {
-      width: 100%;
+      width:
+        100%;
 
-      max-width: 560px;
+      max-width:
+        560px;
 
-      max-height: 90vh;
+      max-height:
+        90vh;
 
-      overflow-y: auto;
+      overflow:
+        auto;
 
-      padding: 23px;
+      padding:
+        23px;
 
-      border-radius: 20px;
+      border-radius:
+        20px;
 
       background:
         linear-gradient(
@@ -1314,152 +1637,163 @@
         1px solid
         rgba(132,175,192,.20);
 
-      box-shadow:
-        0 28px 80px
-        rgba(0,0,0,.45);
+      color:
+        #fff;
+    }
 
-      color: white;
+    .smc-goal-modal-head,
+    .smc-goal-modal-actions {
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        10px;
     }
 
     .smc-goal-modal-head {
-      display: flex;
-
       justify-content:
         space-between;
 
-      align-items: center;
-
-      gap: 15px;
-
-      margin-bottom: 18px;
+      margin-bottom:
+        18px;
     }
 
     .smc-goal-modal-head h2 {
-      margin: 0;
-
-      color: white;
-
-      font-size: 23px;
+      margin:
+        0;
     }
 
     .smc-goal-close {
-      width: 40px;
+      width:
+        40px;
 
-      height: 40px;
+      height:
+        40px;
 
-      border-radius: 10px;
+      border-radius:
+        10px;
 
       border:
         1px solid
         rgba(132,175,192,.17);
 
-      background: #172a35;
+      background:
+        #172a35;
 
-      color: white;
+      color:
+        #fff;
 
-      font-size: 20px;
+      font-size:
+        20px;
 
-      cursor: pointer;
+      cursor:
+        pointer;
     }
 
     .smc-goal-field {
-      display: flex;
+      display:
+        flex;
 
-      flex-direction: column;
+      flex-direction:
+        column;
 
-      gap: 7px;
+      gap:
+        7px;
 
-      margin-bottom: 14px;
+      margin-bottom:
+        14px;
     }
 
     .smc-goal-field label {
-      color: #aec1ca;
+      color:
+        #aec1ca;
 
-      font-size: 13px;
+      font-size:
+        13px;
 
-      font-weight: 750;
+      font-weight:
+        750;
     }
 
     .smc-goal-field input,
     .smc-goal-field select,
     .smc-goal-field textarea {
-      width: 100%;
+      width:
+        100%;
 
-      box-sizing: border-box;
+      box-sizing:
+        border-box;
 
-      min-height: 46px;
+      min-height:
+        46px;
 
-      padding: 11px 12px;
+      padding:
+        11px 12px;
 
-      border-radius: 11px;
+      border-radius:
+        11px;
 
       border:
         1px solid
         rgba(132,175,192,.22);
 
-      background: #081923;
+      background:
+        #081923;
 
-      color: white;
+      color:
+        #fff;
 
-      font: inherit;
+      font:
+        inherit;
     }
 
     .smc-goal-field textarea {
-      min-height: 88px;
-
-      resize: vertical;
-    }
-
-    .smc-goal-field input:focus,
-    .smc-goal-field select:focus,
-    .smc-goal-field textarea:focus {
-      outline: none;
-
-      border-color:
-        var(--goal-teal);
-
-      box-shadow:
-        0 0 0 3px
-        rgba(69,225,192,.10);
+      min-height:
+        88px;
     }
 
     .smc-goal-grid-2 {
-      display: grid;
+      display:
+        grid;
 
       grid-template-columns:
-        repeat(
-          2,
-          minmax(0,1fr)
-        );
+        1fr 1fr;
 
-      gap: 12px;
+      gap:
+        12px;
     }
 
     .smc-goal-modal-actions {
-      display: flex;
-
-      gap: 10px;
-
       justify-content:
         flex-end;
 
-      flex-wrap: wrap;
+      flex-wrap:
+        wrap;
 
-      margin-top: 19px;
+      margin-top:
+        19px;
     }
 
     .smc-goal-cancel,
     .smc-goal-save,
     .smc-goal-delete {
-      min-height: 43px;
+      min-height:
+        43px;
 
-      padding: 10px 17px;
+      padding:
+        10px 17px;
 
-      border-radius: 10px;
+      border-radius:
+        10px;
 
-      font-weight: 750;
+      font-weight:
+        750;
 
-      cursor: pointer;
+      cursor:
+        pointer;
     }
 
     .smc-goal-cancel {
@@ -1467,9 +1801,11 @@
         1px solid
         rgba(132,175,192,.17);
 
-      background: #172a35;
+      background:
+        #172a35;
 
-      color: #d7e4e9;
+      color:
+        #d7e4e9;
     }
 
     .smc-goal-save {
@@ -1484,13 +1820,13 @@
           #258f87
         );
 
-      color: white;
-
-      font-weight: 800;
+      color:
+        #fff;
     }
 
     .smc-goal-delete {
-      margin-right: auto;
+      margin-right:
+        auto;
 
       border:
         1px solid
@@ -1499,102 +1835,72 @@
       background:
         rgba(133,42,49,.17);
 
-      color: #ff969a;
+      color:
+        #ff969a;
     }
 
     .smc-goal-message {
-      display: none;
+      display:
+        none;
 
-      margin-top: 12px;
+      margin-top:
+        12px;
 
-      padding: 11px 12px;
+      padding:
+        11px;
 
-      border-radius: 10px;
+      border-radius:
+        10px;
 
-      font-size: 12px;
-
-      line-height: 1.45;
+      font-size:
+        12px;
     }
 
     .smc-goal-message.show {
-      display: block;
+      display:
+        block;
     }
 
     .smc-goal-message.good {
-      color: #91dfc1;
+      color:
+        #91dfc1;
 
       background:
         rgba(29,102,74,.16);
-
-      border:
-        1px solid
-        rgba(92,231,177,.20);
     }
 
     .smc-goal-message.bad {
-      color: #ff9a9d;
+      color:
+        #ff9a9d;
 
       background:
         rgba(126,41,47,.17);
-
-      border:
-        1px solid
-        rgba(255,116,121,.22);
     }
 
-    .smc-goal-message.info {
-      color: #a9c7d2;
-
-      background:
-        rgba(64,108,123,.15);
-
-      border:
-        1px solid
-        rgba(132,175,192,.17);
-    }
-
-    .smc-goal-signed-out {
-      padding: 32px;
-
-      border-radius: 18px;
-
-      text-align: center;
-
-      background:
-        linear-gradient(
-          145deg,
-          #101f29,
-          #0c1921
-        );
-
-      border:
-        1px solid
-        var(--goal-border);
-
-      color:
-        var(--goal-muted);
-    }
-
-    .smc-goal-signed-out h3 {
-      color: white;
-
-      margin: 0 0 8px;
-    }
-
-    /* =======================================================
+    /* =====================================================
        RESPONSIVE
-    ======================================================= */
+    ===================================================== */
 
-    @media (
-      max-width: 1100px
+    @media(
+      max-width:1100px
     ) {
 
       .smc-goals-summary {
         grid-template-columns:
           repeat(
             2,
-            minmax(0,1fr)
+            1fr
           );
+      }
+
+      .smc-goals-workspace {
+        grid-template-columns:
+          1fr;
+      }
+
+      .smc-goal-plan-panel {
+        position:
+          static;
       }
 
       .smc-goal-grid {
@@ -1606,13 +1912,19 @@
       }
     }
 
-    @media (
-      max-width: 720px
+    @media(
+      max-width:720px
     ) {
 
       .smc-goals-summary,
       .smc-goal-grid,
-      .smc-goal-grid-2 {
+      .smc-goal-grid-2,
+      .smc-goal-plan-summary {
+        grid-template-columns:
+          1fr;
+      }
+
+      .smc-goal-actions {
         grid-template-columns:
           1fr;
       }
@@ -1626,12 +1938,8 @@
       }
 
       .smc-goal-primary {
-        width: 100%;
-      }
-
-      .smc-goal-actions {
-        grid-template-columns:
-          1fr;
+        width:
+          100%;
       }
     }
   `;
@@ -1642,18 +1950,18 @@
     );
 
   /* =========================================================
-     MODAL
+     MODAL SHELL
   ========================================================= */
 
-  const modalOverlay =
+  const modal =
     document.createElement(
       "div"
     );
 
-  modalOverlay.className =
+  modal.className =
     "smc-goal-modal-overlay";
 
-  modalOverlay.innerHTML = `
+  modal.innerHTML = `
     <div
       class="smc-goal-modal"
     >
@@ -1672,7 +1980,6 @@
           id="smcGoalClose"
           class="smc-goal-close"
           type="button"
-          aria-label="Close"
         >
           ×
         </button>
@@ -1693,7 +2000,7 @@
 
   document.body
     .appendChild(
-      modalOverlay
+      modal
     );
 
   const modalTitle =
@@ -1712,16 +2019,14 @@
     );
 
   function openModal() {
-    modalOverlay
-      .classList
+    modal.classList
       .add(
         "show"
       );
   }
 
   function closeModal() {
-    modalOverlay
-      .classList
+    modal.classList
       .remove(
         "show"
       );
@@ -1729,24 +2034,13 @@
     editingGoalId =
       null;
 
-    activeMoneyGoal =
+    moneyGoal =
       null;
 
-    activeMoneyMode =
+    moneyMode =
       null;
 
     clearMessage();
-  }
-
-  function showMessage(
-    message,
-    type = "info"
-  ) {
-    modalMessage.textContent =
-      message;
-
-    modalMessage.className =
-      `smc-goal-message show ${type}`;
   }
 
   function clearMessage() {
@@ -1757,67 +2051,54 @@
       "smc-goal-message";
   }
 
+  function message(
+    text,
+    type = "bad"
+  ) {
+    modalMessage.textContent =
+      text;
+
+    modalMessage.className =
+      `smc-goal-message show ${type}`;
+  }
+
   document
     .getElementById(
       "smcGoalClose"
     )
-    .addEventListener(
-      "click",
-      closeModal
-    );
+    .onclick =
+      closeModal;
 
-  modalOverlay
-    .addEventListener(
-      "click",
-      event => {
-
-        if (
-          event.target ===
-          modalOverlay
-        ) {
-          closeModal();
-        }
+  modal.addEventListener(
+    "click",
+    event => {
+      if (
+        event.target ===
+        modal
+      ) {
+        closeModal();
       }
-    );
-
-  document
-    .addEventListener(
-      "keydown",
-      event => {
-
-        if (
-          event.key ===
-            "Escape" &&
-          modalOverlay
-            .classList
-            .contains(
-              "show"
-            )
-        ) {
-          closeModal();
-        }
-      }
-    );  
-      /* =========================================================
-     PAGE
+    }
+  );
+    /* =========================================================
+     PAGE BUILD
   ========================================================= */
 
-  function getGoalsPage() {
-    return document
-      .getElementById(
-        "smcGoalsPage"
-      );
+  function page() {
+    return document.getElementById(
+      "smcGoalsPage"
+    );
   }
 
-  function buildGoalsPage() {
-    const page =
-      getGoalsPage();
+  function buildPage() {
+    const goalsPage =
+      page();
 
-    if (!page) {
+    if (!goalsPage) {
       return false;
     }
 
-    page.innerHTML = `
+    goalsPage.innerHTML = `
       <div
         class="smc-page-heading"
       >
@@ -1844,7 +2125,7 @@
         <div
           id="smcGoalsSignedOut"
           class="smc-goal-signed-out"
-          style="display:none;"
+          style="display:none"
         >
 
           <h3>
@@ -1854,7 +2135,7 @@
           <p>
             Your savings goals and
             sinking funds are stored
-            securely with your account.
+            with your account.
           </p>
 
         </div>
@@ -1957,7 +2238,6 @@
                 class="smc-goal-summary-value"
                 style="
                   font-size:20px;
-                  line-height:1.2;
                 "
               >
                 None yet
@@ -1985,8 +2265,8 @@
               </h2>
 
               <p>
-                Savings goals and sinking
-                funds all in one place.
+                Select a goal to see its
+                paycheck-by-paycheck path.
               </p>
 
             </div>
@@ -2002,9 +2282,20 @@
           </div>
 
           <div
-            id="smcGoalsGrid"
-            class="smc-goal-grid"
-          ></div>
+            class="smc-goals-workspace"
+          >
+
+            <div
+              id="smcGoalsGrid"
+              class="smc-goal-grid"
+            ></div>
+
+            <aside
+              id="smcGoalPlanPanel"
+              class="smc-goal-plan-panel"
+            ></aside>
+
+          </div>
 
         </div>
 
@@ -2015,96 +2306,26 @@
       .getElementById(
         "smcAddGoal"
       )
-      ?.addEventListener(
-        "click",
-        showGoalForm
-      );
+      .onclick =
+        () =>
+          showGoalForm();
 
     return true;
   }
 
-  /* =========================================================
-     LOAD GOALS
-  ========================================================= */
-
-  async function loadGoals() {
-    const user =
-      await getUser();
-
-    const signedOut =
+  function setText(
+    id,
+    value
+  ) {
+    const element =
       document.getElementById(
-        "smcGoalsSignedOut"
+        id
       );
 
-    const app =
-      document.getElementById(
-        "smcGoalsApp"
-      );
-
-    if (!user) {
-      goals = [];
-
-      if (signedOut) {
-        signedOut.style.display =
-          "block";
-      }
-
-      if (app) {
-        app.style.display =
-          "none";
-      }
-
-      return;
+    if (element) {
+      element.textContent =
+        value;
     }
-
-    if (signedOut) {
-      signedOut.style.display =
-        "none";
-    }
-
-    if (app) {
-      app.style.display =
-        "";
-    }
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from(
-          "financial_goals"
-        )
-        .select(
-          "id, user_id, goal_name, goal_type, target_amount, saved_amount, target_date, icon, notes, created_at, updated_at"
-        )
-        .eq(
-          "user_id",
-          user.id
-        )
-        .order(
-          "updated_at",
-          {
-            ascending: false
-          }
-        );
-
-    if (error) {
-      console.error(
-        error
-      );
-
-      goals = [];
-
-      renderGoals();
-
-      return;
-    }
-
-    goals =
-      data || [];
-
-    renderGoals();
   }
 
   /* =========================================================
@@ -2138,62 +2359,34 @@
         0
       );
 
-    const overall =
-      percent(
-        totalSaved,
-        totalTarget
-      );
-
-    const set =
-      (
-        id,
-        value
-      ) => {
-        const element =
-          document.getElementById(
-            id
-          );
-
-        if (element) {
-          element.textContent =
-            value;
-        }
-      };
-
-    set(
+    setText(
       "smcGoalsTotalSaved",
       currency(
         totalSaved
       )
     );
 
-    set(
+    setText(
       "smcGoalsTotalTarget",
       currency(
         totalTarget
       )
     );
 
-    set(
+    setText(
       "smcGoalsOverall",
       `${
         Math.round(
-          overall
+          pct(
+            totalSaved,
+            totalTarget
+          )
         )
       }%`
     );
 
     const unfinished =
       goals
-        .filter(
-          goal =>
-            money(
-              goal.target_amount
-            ) >
-            money(
-              goal.saved_amount
-            )
-        )
         .map(
           goal => ({
             ...goal,
@@ -2206,6 +2399,10 @@
                 goal.saved_amount
               )
           })
+        )
+        .filter(
+          goal =>
+            goal.remaining > 0
         )
         .sort(
           (
@@ -2222,12 +2419,12 @@
       const closest =
         unfinished[0];
 
-      set(
+      setText(
         "smcGoalsClosest",
         closest.goal_name
       );
 
-      set(
+      setText(
         "smcGoalsClosestNote",
         `${
           currency(
@@ -2239,23 +2436,23 @@
     } else if (
       goals.length
     ) {
-      set(
+      setText(
         "smcGoalsClosest",
         "All Complete 🎉"
       );
 
-      set(
+      setText(
         "smcGoalsClosestNote",
         "You reached every current goal."
       );
 
     } else {
-      set(
+      setText(
         "smcGoalsClosest",
         "None yet"
       );
 
-      set(
+      setText(
         "smcGoalsClosestNote",
         "Create your first goal"
       );
@@ -2263,7 +2460,350 @@
   }
 
   /* =========================================================
-     RENDER GOALS
+     RIGHT-SIDE GOAL PLAN PANEL
+  ========================================================= */
+
+  function renderPlanPanel() {
+    const panel =
+      document.getElementById(
+        "smcGoalPlanPanel"
+      );
+
+    if (!panel) {
+      return;
+    }
+
+    const goal =
+      goals.find(
+        item =>
+          Number(
+            item.id
+          ) ===
+          Number(
+            selectedGoalId
+          )
+      );
+
+    if (!goal) {
+      panel.innerHTML = `
+        <div
+          class="smc-plan-empty"
+        >
+
+          <div>
+
+            <div
+              style="
+                font-size:34px;
+              "
+            >
+              🧭
+            </div>
+
+            <h3>
+              Your Goal Plan
+            </h3>
+
+            <p>
+              Select a goal on the left.
+              Stretch My Check will turn
+              the recommendation into a
+              paycheck-by-paycheck path
+              here.
+            </p>
+
+          </div>
+
+        </div>
+      `;
+
+      return;
+    }
+
+    const plan =
+      goalPlan(
+        goal
+      );
+
+    const remaining =
+      Math.max(
+        money(
+          goal.target_amount
+        ) -
+        money(
+          goal.saved_amount
+        ),
+        0
+      );
+
+    const days =
+      daysUntil(
+        goal.target_date
+      );
+
+    const rows =
+      plan.rows.length
+        ? plan.rows
+            .map(
+              row => `
+                <div
+                  class="smc-goal-plan-row"
+                >
+
+                  <div>
+
+                    <div
+                      class="smc-plan-date"
+                    >
+                      ${esc(
+                        formatDate(
+                          row.dateValue
+                        )
+                      )}
+                    </div>
+
+                    <div
+                      class="smc-plan-name"
+                    >
+                      ${esc(
+                        row.name
+                      )}
+                    </div>
+
+                  </div>
+
+                  <div>
+
+                    <div
+                      class="${
+                        row.skip
+                          ? "smc-plan-amount smc-plan-skip"
+                          : "smc-plan-amount"
+                      }"
+                    >
+                      ${
+                        row.skip
+                          ? "Skip this check"
+                          : `Save ${
+                              currency(
+                                row.contribution
+                              )
+                            }`
+                      }
+                    </div>
+
+                    ${
+                      row.safe ===
+                        null ||
+                      row.safe ===
+                        undefined
+                        ? ""
+                        : `
+                          <div
+                            class="smc-plan-safe"
+                          >
+                            Safe room:
+                            ${currency(
+                              row.safe
+                            )}
+                          </div>
+                        `
+                    }
+
+                  </div>
+
+                </div>
+              `
+            )
+            .join("")
+        : `
+          <div
+            class="smc-goal-plan-note"
+          >
+            ${esc(
+              plan.detail
+            )}
+          </div>
+        `;
+
+    panel.innerHTML = `
+      <div
+        class="smc-goal-plan-top"
+      >
+
+        <div>
+
+          <div
+            class="smc-goal-plan-kicker"
+          >
+            Your Path to
+            ${currency(
+              goal.target_amount
+            )}
+          </div>
+
+          <div
+            class="smc-goal-plan-title"
+          >
+            ${esc(
+              goal.goal_name
+            )}
+          </div>
+
+          <div
+            class="smc-goal-plan-sub"
+          >
+            ${esc(
+              formatDate(
+                goal.target_date
+              )
+            )}
+
+            ${
+              days === null
+                ? ""
+                : days >= 0
+                  ? ` • ${days} days away`
+                  : " • target date passed"
+            }
+          </div>
+
+        </div>
+
+        <div
+          class="smc-goal-icon"
+        >
+          ${esc(
+            icon(
+              goal
+            )
+          )}
+        </div>
+
+      </div>
+
+      <span
+        class="
+          smc-plan-chip
+          ${
+            plan.cls ===
+            "attention"
+              ? "warn"
+              : "good"
+          }
+        "
+      >
+        ${esc(
+          plan.status
+        )}
+      </span>
+
+      <div
+        class="smc-goal-plan-summary"
+      >
+
+        <div
+          class="smc-goal-plan-stat"
+        >
+
+          <small>
+            Saved
+          </small>
+
+          <strong>
+            ${currency(
+              goal.saved_amount
+            )}
+          </strong>
+
+        </div>
+
+        <div
+          class="smc-goal-plan-stat"
+        >
+
+          <small>
+            Still Needed
+          </small>
+
+          <strong>
+            ${currency(
+              remaining
+            )}
+          </strong>
+
+        </div>
+
+        <div
+          class="smc-goal-plan-stat"
+        >
+
+          <small>
+            Planned
+          </small>
+
+          <strong>
+            ${currency(
+              plan.totalPlanned
+            )}
+          </strong>
+
+        </div>
+
+      </div>
+
+      <div
+        style="
+          color:#fff;
+          font-weight:800;
+          font-size:14px;
+          margin-bottom:10px;
+        "
+      >
+        Paycheck Plan
+      </div>
+
+      <div
+        class="smc-goal-plan-list"
+      >
+        ${rows}
+      </div>
+
+      <div
+        class="smc-goal-plan-note"
+      >
+
+        ${esc(
+          plan.detail
+        )}
+
+        ${
+          plan.shortfall > 0 &&
+          plan.rows.length
+            ? `
+              <br><br>
+
+              <strong
+                style="
+                  color:#ffb071;
+                "
+              >
+                ${currency(
+                  plan.shortfall
+                )}
+                is not currently covered
+                by safe spending room.
+              </strong>
+            `
+            : ""
+        }
+
+      </div>
+    `;
+  }
+
+  /* =========================================================
+     LEFT-SIDE GOAL CARDS
   ========================================================= */
 
   function renderGoals() {
@@ -2278,29 +2818,36 @@
       return;
     }
 
-    if (!goals.length) {
+    if (
+      !goals.length
+    ) {
+      selectedGoalId =
+        null;
+
       grid.innerHTML = `
         <div
           class="smc-goal-empty"
         >
 
           <div
-            class="smc-goal-empty-icon"
+            style="
+              font-size:34px;
+            "
           >
             🎯
           </div>
 
-          <h3>
+          <h3
+            style="
+              color:#fff;
+            "
+          >
             Start with one goal
           </h3>
 
           <p>
-            Whether you're saving for
-            an emergency fund, a trip,
-            birthdays, car repairs or
-            something bigger, Stretch
-            My Check can help you keep
-            track of your progress.
+            Create a savings goal
+            or sinking fund to begin.
           </p>
 
           <button
@@ -2318,12 +2865,31 @@
         .getElementById(
           "smcEmptyAddGoal"
         )
-        ?.addEventListener(
-          "click",
-          showGoalForm
-        );
+        .onclick =
+          () =>
+            showGoalForm();
+
+      renderPlanPanel();
 
       return;
+    }
+
+    const selectedStillExists =
+      goals.some(
+        goal =>
+          Number(
+            goal.id
+          ) ===
+          Number(
+            selectedGoalId
+          )
+      );
+
+    if (
+      !selectedStillExists
+    ) {
+      selectedGoalId =
+        goals[0].id;
     }
 
     grid.innerHTML =
@@ -2341,7 +2907,7 @@
               );
 
             const progress =
-              percent(
+              pct(
                 saved,
                 target
               );
@@ -2349,64 +2915,56 @@
             const remaining =
               Math.max(
                 target -
-                saved,
+                  saved,
                 0
               );
 
-            const complete =
-              target > 0 &&
-              saved >= target;
+            const plan =
+              goalPlan(
+                goal
+              );
+
+            const selected =
+              Number(
+                goal.id
+              ) ===
+              Number(
+                selectedGoalId
+              );
 
             const days =
               daysUntil(
                 goal.target_date
               );
 
-            let dateNote =
-              formatDate(
-                goal.target_date
-              );
-
-            if (
-              days !== null
-            ) {
-              if (
-                days > 0
-              ) {
-                dateNote +=
-                  ` • ${days} day${
-                    days === 1
-                      ? ""
-                      : "s"
-                  } away`;
-
-              } else if (
-                days === 0
-              ) {
-                dateNote +=
-                  " • Today";
-
-              } else {
-                dateNote +=
-                  " • Target date passed";
-              }
-            }
-
-            const guidance =
-              buildGoalGuidance(
-                goal
-              );
+            const dateText =
+              `${
+                formatDate(
+                  goal.target_date
+                )
+              }${
+                days === null
+                  ? ""
+                  : days > 0
+                    ? ` • ${days} days away`
+                    : days === 0
+                      ? " • Today"
+                      : " • Target date passed"
+              }`;
 
             return `
               <article
                 class="
                   smc-goal-card
                   ${
-                    complete
-                      ? "completed"
+                    selected
+                      ? "selected"
                       : ""
                   }
                 "
+                data-select-goal="${
+                  goal.id
+                }"
               >
 
                 <div
@@ -2416,8 +2974,8 @@
                   <div
                     class="smc-goal-icon"
                   >
-                    ${escapeHTML(
-                      getIcon(
+                    ${esc(
+                      icon(
                         goal
                       )
                     )}
@@ -2439,7 +2997,7 @@
                 <div
                   class="smc-goal-name"
                 >
-                  ${escapeHTML(
+                  ${esc(
                     goal.goal_name
                   )}
                 </div>
@@ -2447,8 +3005,8 @@
                 <div
                   class="smc-goal-date"
                 >
-                  ${escapeHTML(
-                    dateNote
+                  ${esc(
+                    dateText
                   )}
                 </div>
 
@@ -2470,7 +3028,6 @@
                       style="
                         color:#7f98a4;
                         font-size:10px;
-                        margin-top:3px;
                       "
                     >
                       saved
@@ -2496,8 +3053,7 @@
                   <div
                     class="smc-goal-progress-fill"
                     style="
-                      width:
-                      ${progress}%;
+                      width:${progress}%;
                     "
                   ></div>
 
@@ -2508,16 +3064,14 @@
                 >
 
                   <span>
-                    ${
-                      Math.round(
-                        progress
-                      )
-                    }%
+                    ${Math.round(
+                      progress
+                    )}%
                   </span>
 
                   <span>
                     ${
-                      complete
+                      remaining <= 0
                         ? "Goal reached 🎉"
                         : `${
                             currency(
@@ -2546,13 +3100,11 @@
                     <div
                       class="
                         smc-goal-status
-                        ${
-                          guidance.className
-                        }
+                        ${plan.cls}
                       "
                     >
-                      ${escapeHTML(
-                        guidance.status
+                      ${esc(
+                        plan.status
                       )}
                     </div>
 
@@ -2561,32 +3113,38 @@
                   <div
                     class="smc-goal-guidance-main"
                   >
-                    ${escapeHTML(
-                      guidance.headline
+                    ${esc(
+                      plan.headline
                     )}
                   </div>
 
                   <div
                     class="smc-goal-guidance-detail"
                   >
-                    ${escapeHTML(
-                      guidance.detail
+                    ${esc(
+                      plan.detail
                     )}
                   </div>
 
                 </div>
 
-                <div
-                  class="smc-goal-notes"
-                >
-                  ${
-                    goal.notes
-                      ? escapeHTML(
+                ${
+                  goal.notes
+                    ? `
+                      <div
+                        style="
+                          color:#8da3ae;
+                          font-size:11px;
+                          margin-top:12px;
+                        "
+                      >
+                        ${esc(
                           goal.notes
-                        )
-                      : "&nbsp;"
-                  }
-                </div>
+                        )}
+                      </div>
+                    `
+                    : ""
+                }
 
                 <div
                   class="smc-goal-actions"
@@ -2597,10 +3155,10 @@
                       smc-goal-action
                       add
                     "
-                    type="button"
-                    data-add-money="${
+                    data-add="${
                       goal.id
                     }"
+                    type="button"
                   >
                     + Add Money
                   </button>
@@ -2610,20 +3168,20 @@
                       smc-goal-action
                       withdraw
                     "
-                    type="button"
-                    data-withdraw-money="${
+                    data-withdraw="${
                       goal.id
                     }"
+                    type="button"
                   >
                     − Withdraw
                   </button>
 
                   <button
                     class="smc-goal-action"
-                    type="button"
-                    data-manage-goal="${
+                    data-manage="${
                       goal.id
                     }"
+                    type="button"
                   >
                     Manage
                   </button>
@@ -2638,114 +3196,186 @@
 
     grid
       .querySelectorAll(
-        "[data-add-money]"
+        "[data-select-goal]"
       )
       .forEach(
-        button => {
-          button
-            .addEventListener(
-              "click",
-              () => {
-                const id =
-                  Number(
-                    button
-                      .dataset
-                      .addMoney
-                  );
-
-                const goal =
-                  goals.find(
-                    item =>
-                      Number(
-                        item.id
-                      ) === id
-                  );
-
-                if (goal) {
-                  showMoneyChange(
-                    goal,
-                    "add"
-                  );
-                }
+        card => {
+          card.addEventListener(
+            "click",
+            event => {
+              if (
+                event.target.closest(
+                  "button"
+                )
+              ) {
+                return;
               }
-            );
+
+              selectedGoalId =
+                Number(
+                  card.dataset
+                    .selectGoal
+                );
+
+              renderGoals();
+            }
+          );
         }
       );
 
     grid
       .querySelectorAll(
-        "[data-withdraw-money]"
+        "[data-add]"
       )
       .forEach(
         button => {
-          button
-            .addEventListener(
-              "click",
-              () => {
-                const id =
-                  Number(
-                    button
-                      .dataset
-                      .withdrawMoney
-                  );
-
-                const goal =
-                  goals.find(
-                    item =>
-                      Number(
-                        item.id
-                      ) === id
-                  );
-
-                if (goal) {
-                  showMoneyChange(
-                    goal,
-                    "withdraw"
-                  );
-                }
-              }
-            );
+          button.onclick =
+            () =>
+              showMoneyChange(
+                goals.find(
+                  goal =>
+                    Number(
+                      goal.id
+                    ) ===
+                    Number(
+                      button.dataset
+                        .add
+                    )
+                ),
+                "add"
+              );
         }
       );
 
     grid
       .querySelectorAll(
-        "[data-manage-goal]"
+        "[data-withdraw]"
       )
       .forEach(
         button => {
-          button
-            .addEventListener(
-              "click",
-              () => {
-                const id =
-                  Number(
-                    button
-                      .dataset
-                      .manageGoal
-                  );
-
-                const goal =
-                  goals.find(
-                    item =>
-                      Number(
-                        item.id
-                      ) === id
-                  );
-
-                if (goal) {
-                  showGoalForm(
-                    goal
-                  );
-                }
-              }
-            );
+          button.onclick =
+            () =>
+              showMoneyChange(
+                goals.find(
+                  goal =>
+                    Number(
+                      goal.id
+                    ) ===
+                    Number(
+                      button.dataset
+                        .withdraw
+                    )
+                ),
+                "withdraw"
+              );
         }
       );
+
+    grid
+      .querySelectorAll(
+        "[data-manage]"
+      )
+      .forEach(
+        button => {
+          button.onclick =
+            () =>
+              showGoalForm(
+                goals.find(
+                  goal =>
+                    Number(
+                      goal.id
+                    ) ===
+                    Number(
+                      button.dataset
+                        .manage
+                    )
+                )
+              );
+        }
+      );
+
+    renderPlanPanel();
+  }
+    /* =========================================================
+     LOAD GOALS
+  ========================================================= */
+
+  async function loadGoals() {
+    const currentUser =
+      await user();
+
+    const signedOut =
+      document.getElementById(
+        "smcGoalsSignedOut"
+      );
+
+    const app =
+      document.getElementById(
+        "smcGoalsApp"
+      );
+
+    if (!currentUser) {
+      goals = [];
+
+      if (signedOut) {
+        signedOut.style.display =
+          "block";
+      }
+
+      if (app) {
+        app.style.display =
+          "none";
+      }
+
+      return;
+    }
+
+    if (signedOut) {
+      signedOut.style.display =
+        "none";
+    }
+
+    if (app) {
+      app.style.display =
+        "";
+    }
+
+    const {
+      data,
+      error
+    } =
+      await sb
+        .from(
+          "financial_goals"
+        )
+        .select("*")
+        .eq(
+          "user_id",
+          currentUser.id
+        )
+        .order(
+          "updated_at",
+          {
+            ascending: false
+          }
+        );
+
+    if (error) {
+      console.error(
+        error
+      );
+
+      goals = [];
+    } else {
+      goals =
+        data || [];
+    }
+
+    renderGoals();
   }
 
   /* =========================================================
-     GOAL FORM
+     ADD / EDIT GOAL
   ========================================================= */
 
   function showGoalForm(
@@ -2753,8 +3383,7 @@
   ) {
     const existing =
       Boolean(
-        goal &&
-        goal.id
+        goal?.id
       );
 
     editingGoalId =
@@ -2762,10 +3391,10 @@
         ? goal.id
         : null;
 
-    activeMoneyGoal =
+    moneyGoal =
       null;
 
-    activeMoneyMode =
+    moneyMode =
       null;
 
     modalTitle.textContent =
@@ -2774,22 +3403,18 @@
         : "Add Goal";
 
     modalBody.innerHTML = `
-
       <div
         class="smc-goal-field"
       >
 
-        <label
-          for="smcGoalName"
-        >
+        <label>
           Goal name
         </label>
 
         <input
           id="smcGoalName"
-          type="text"
           maxlength="80"
-          placeholder="Example: Emergency Fund"
+          placeholder="Emergency Fund"
         >
 
       </div>
@@ -2802,9 +3427,7 @@
           class="smc-goal-field"
         >
 
-          <label
-            for="smcGoalType"
-          >
+          <label>
             Goal type
           </label>
 
@@ -2832,9 +3455,7 @@
           class="smc-goal-field"
         >
 
-          <label
-            for="smcGoalIcon"
-          >
+          <label>
             Icon
           </label>
 
@@ -2842,51 +3463,75 @@
             id="smcGoalIcon"
           >
 
-            <option value="🎯">
+            <option
+              value="🎯"
+            >
               🎯 Goal
             </option>
 
-            <option value="💰">
+            <option
+              value="💰"
+            >
               💰 Savings
             </option>
 
-            <option value="🚗">
+            <option
+              value="🚗"
+            >
               🚗 Car
             </option>
 
-            <option value="🏠">
+            <option
+              value="🏠"
+            >
               🏠 Home
             </option>
 
-            <option value="✈️">
+            <option
+              value="✈️"
+            >
               ✈️ Travel
             </option>
 
-            <option value="🎂">
+            <option
+              value="🎂"
+            >
               🎂 Birthday
             </option>
 
-            <option value="🎄">
+            <option
+              value="🎄"
+            >
               🎄 Holidays
             </option>
 
-            <option value="🧯">
+            <option
+              value="🧯"
+            >
               🧯 Emergency
             </option>
 
-            <option value="🎓">
+            <option
+              value="🎓"
+            >
               🎓 School
             </option>
 
-            <option value="💻">
+            <option
+              value="💻"
+            >
               💻 Technology
             </option>
 
-            <option value="💳">
+            <option
+              value="💳"
+            >
               💳 Debt
             </option>
 
-            <option value="✨">
+            <option
+              value="✨"
+            >
               ✨ Something Else
             </option>
 
@@ -2904,9 +3549,7 @@
           class="smc-goal-field"
         >
 
-          <label
-            for="smcGoalTarget"
-          >
+          <label>
             Target amount
           </label>
 
@@ -2915,7 +3558,6 @@
             type="number"
             min="0"
             step="0.01"
-            placeholder="5000"
           >
 
         </div>
@@ -2924,9 +3566,7 @@
           class="smc-goal-field"
         >
 
-          <label
-            for="smcGoalSaved"
-          >
+          <label>
             Already saved
           </label>
 
@@ -2935,7 +3575,6 @@
             type="number"
             min="0"
             step="0.01"
-            placeholder="0"
           >
 
         </div>
@@ -2946,11 +3585,8 @@
         class="smc-goal-field"
       >
 
-        <label
-          for="smcGoalDate"
-        >
+        <label>
           Target date
-
           <span
             style="
               color:#718a96;
@@ -2959,7 +3595,6 @@
           >
             (optional)
           </span>
-
         </label>
 
         <input
@@ -2973,11 +3608,8 @@
         class="smc-goal-field"
       >
 
-        <label
-          for="smcGoalNotes"
-        >
+        <label>
           Notes
-
           <span
             style="
               color:#718a96;
@@ -2986,7 +3618,6 @@
           >
             (optional)
           </span>
-
         </label>
 
         <textarea
@@ -3060,24 +3691,23 @@
           "smcGoalIcon"
         );
 
-      const goalIcon =
-        getIcon(
+      const currentIcon =
+        icon(
           goal
         );
 
-      const optionExists =
+      if (
         [
           ...iconSelect.options
         ].some(
           option =>
             option.value ===
-            goalIcon
-        );
-
-      iconSelect.value =
-        optionExists
-          ? goalIcon
-          : "🎯";
+            currentIcon
+        )
+      ) {
+        iconSelect.value =
+          currentIcon;
+      }
 
       document
         .getElementById(
@@ -3118,19 +3748,15 @@
       .getElementById(
         "smcCancelGoal"
       )
-      .addEventListener(
-        "click",
-        closeModal
-      );
+      .onclick =
+        closeModal;
 
     document
       .getElementById(
         "smcSaveGoal"
       )
-      .addEventListener(
-        "click",
-        saveGoal
-      );
+      .onclick =
+        saveGoal;
 
     document
       .getElementById(
@@ -3145,20 +3771,20 @@
 
     openModal();
   }
-    /* =========================================================
+
+  /* =========================================================
      SAVE GOAL
   ========================================================= */
 
   async function saveGoal() {
     clearMessage();
 
-    const user =
-      await getUser();
+    const currentUser =
+      await user();
 
-    if (!user) {
-      showMessage(
-        "Sign in before saving a goal.",
-        "bad"
+    if (!currentUser) {
+      message(
+        "Sign in before saving a goal."
       );
 
       return;
@@ -3171,20 +3797,6 @@
         )
         .value
         .trim();
-
-    const type =
-      document
-        .getElementById(
-          "smcGoalType"
-        )
-        .value;
-
-    const icon =
-      document
-        .getElementById(
-          "smcGoalIcon"
-        )
-        .value;
 
     const target =
       money(
@@ -3204,70 +3816,47 @@
           .value
       );
 
-    const targetDate =
-      document
-        .getElementById(
-          "smcGoalDate"
-        )
-        .value ||
-      null;
-
-    const notes =
-      document
-        .getElementById(
-          "smcGoalNotes"
-        )
-        .value
-        .trim();
-
     if (!name) {
-      showMessage(
-        "Give this goal a name.",
-        "bad"
+      message(
+        "Give this goal a name."
       );
 
       return;
     }
 
-    if (target <= 0) {
-      showMessage(
-        "Enter a target amount greater than $0.",
-        "bad"
+    if (
+      target <= 0
+    ) {
+      message(
+        "Enter a target amount greater than $0."
       );
 
       return;
     }
 
-    if (saved < 0) {
-      showMessage(
-        "Saved amount cannot be negative.",
-        "bad"
+    if (
+      saved < 0
+    ) {
+      message(
+        "Saved amount cannot be negative."
       );
 
       return;
     }
-
-    const saveButton =
-      document
-        .getElementById(
-          "smcSaveGoal"
-        );
-
-    saveButton.disabled =
-      true;
-
-    saveButton.textContent =
-      "Saving...";
 
     const payload = {
       user_id:
-        user.id,
+        currentUser.id,
 
       goal_name:
         name,
 
       goal_type:
-        type,
+        document
+          .getElementById(
+            "smcGoalType"
+          )
+          .value,
 
       target_amount:
         target,
@@ -3276,93 +3865,78 @@
         saved,
 
       target_date:
-        targetDate,
+        document
+          .getElementById(
+            "smcGoalDate"
+          )
+          .value ||
+        null,
 
-      icon,
+      icon:
+        document
+          .getElementById(
+            "smcGoalIcon"
+          )
+          .value,
 
       notes:
-        notes || null,
+        document
+          .getElementById(
+            "smcGoalNotes"
+          )
+          .value
+          .trim() ||
+        null,
 
       updated_at:
         new Date()
           .toISOString()
     };
 
-    let error =
-      null;
+    const response =
+      editingGoalId
+        ? await sb
+            .from(
+              "financial_goals"
+            )
+            .update(
+              payload
+            )
+            .eq(
+              "id",
+              editingGoalId
+            )
+            .eq(
+              "user_id",
+              currentUser.id
+            )
+        : await sb
+            .from(
+              "financial_goals"
+            )
+            .insert(
+              payload
+            );
 
     if (
-      editingGoalId
+      response.error
     ) {
-      const response =
-        await supabaseClient
-          .from(
-            "financial_goals"
-          )
-          .update(
-            payload
-          )
-          .eq(
-            "id",
-            editingGoalId
-          )
-          .eq(
-            "user_id",
-            user.id
-          );
-
-      error =
-        response.error;
-
-    } else {
-      const response =
-        await supabaseClient
-          .from(
-            "financial_goals"
-          )
-          .insert(
-            payload
-          );
-
-      error =
-        response.error;
-    }
-
-    saveButton.disabled =
-      false;
-
-    saveButton.textContent =
-      editingGoalId
-        ? "Save Changes"
-        : "Create Goal";
-
-    if (error) {
       console.error(
-        error
+        response.error
       );
 
-      showMessage(
-        error.message ||
-          "Could not save this goal.",
-        "bad"
+      message(
+        response.error
+          .message ||
+          "Could not save this goal."
       );
 
       return;
     }
 
-    showMessage(
-      editingGoalId
-        ? "Goal updated."
-        : "Goal created.",
-      "good"
-    );
-
     await loadGoals();
 
-    window.setTimeout(
-      closeModal,
-      450
-    );
+    closeModal();
   }
 
   /* =========================================================
@@ -3373,10 +3947,14 @@
     goal,
     mode
   ) {
-    activeMoneyGoal =
+    if (!goal) {
+      return;
+    }
+
+    moneyGoal =
       goal;
 
-    activeMoneyMode =
+    moneyMode =
       mode;
 
     editingGoalId =
@@ -3392,7 +3970,6 @@
         : "Add Money";
 
     modalBody.innerHTML = `
-
       <div
         style="
           padding:15px;
@@ -3420,13 +3997,13 @@
 
         <div
           style="
-            color:white;
+            color:#fff;
             font-size:20px;
             font-weight:800;
             margin-top:4px;
           "
         >
-          ${escapeHTML(
+          ${esc(
             goal.goal_name
           )}
         </div>
@@ -3439,17 +4016,13 @@
           "
         >
           Currently saved:
-          ${
-            currency(
-              goal.saved_amount
-            )
-          }
+          ${currency(
+            goal.saved_amount
+          )}
           of
-          ${
-            currency(
-              goal.target_amount
-            )
-          }
+          ${currency(
+            goal.target_amount
+          )}
         </div>
 
       </div>
@@ -3458,9 +4031,7 @@
         class="smc-goal-field"
       >
 
-        <label
-          for="smcGoalMoneyAmount"
-        >
+        <label>
           ${
             isWithdraw
               ? "Amount to withdraw"
@@ -3474,37 +4045,16 @@
           min="0.01"
           step="0.01"
           placeholder="50"
-          autofocus
         >
 
       </div>
-
-      ${
-        isWithdraw
-          ? `
-            <div
-              style="
-                color:#8fa6b1;
-                font-size:11px;
-                line-height:1.5;
-                margin-top:-4px;
-              "
-            >
-              Use this when you spend
-              money from a sinking fund
-              or need to correct the
-              saved balance.
-            </div>
-          `
-          : ""
-      }
 
       <div
         class="smc-goal-modal-actions"
       >
 
         <button
-          id="smcCancelMoneyChange"
+          id="smcCancelMoney"
           class="smc-goal-cancel"
           type="button"
         >
@@ -3512,7 +4062,7 @@
         </button>
 
         <button
-          id="smcSaveMoneyChange"
+          id="smcSaveMoney"
           class="smc-goal-save"
           type="button"
         >
@@ -3528,37 +4078,17 @@
 
     document
       .getElementById(
-        "smcCancelMoneyChange"
+        "smcCancelMoney"
       )
-      .addEventListener(
-        "click",
-        closeModal
-      );
+      .onclick =
+        closeModal;
 
     document
       .getElementById(
-        "smcSaveMoneyChange"
+        "smcSaveMoney"
       )
-      .addEventListener(
-        "click",
-        applyMoneyChange
-      );
-
-    document
-      .getElementById(
-        "smcGoalMoneyAmount"
-      )
-      .addEventListener(
-        "keydown",
-        event => {
-          if (
-            event.key ===
-            "Enter"
-          ) {
-            applyMoneyChange();
-          }
-        }
-      );
+      .onclick =
+        applyMoneyChange;
 
     clearMessage();
 
@@ -3566,24 +4096,13 @@
   }
 
   async function applyMoneyChange() {
+    const currentUser =
+      await user();
+
     if (
-      !activeMoneyGoal ||
-      !activeMoneyMode
+      !currentUser ||
+      !moneyGoal
     ) {
-      return;
-    }
-
-    clearMessage();
-
-    const user =
-      await getUser();
-
-    if (!user) {
-      showMessage(
-        "Sign in before updating a goal.",
-        "bad"
-      );
-
       return;
     }
 
@@ -3596,10 +4115,11 @@
           .value
       );
 
-    if (amount <= 0) {
-      showMessage(
-        "Enter an amount greater than $0.",
-        "bad"
+    if (
+      amount <= 0
+    ) {
+      message(
+        "Enter an amount greater than $0."
       );
 
       return;
@@ -3607,54 +4127,39 @@
 
     const currentSaved =
       money(
-        activeMoneyGoal
+        moneyGoal
           .saved_amount
       );
 
-    const isWithdraw =
-      activeMoneyMode ===
-      "withdraw";
-
     if (
-      isWithdraw &&
+      moneyMode ===
+        "withdraw" &&
       amount >
         currentSaved
     ) {
-      showMessage(
+      message(
         `You only have ${
           currency(
             currentSaved
           )
-        } saved in this goal.`,
-        "bad"
+        } saved in this goal.`
       );
 
       return;
     }
 
     const newSaved =
-      isWithdraw
-        ? currentSaved - amount
-        : currentSaved + amount;
-
-    const button =
-      document
-        .getElementById(
-          "smcSaveMoneyChange"
-        );
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      isWithdraw
-        ? "Withdrawing..."
-        : "Adding...";
+      moneyMode ===
+        "withdraw"
+        ? currentSaved -
+          amount
+        : currentSaved +
+          amount;
 
     const {
       error
     } =
-      await supabaseClient
+      await sb
         .from(
           "financial_goals"
         )
@@ -3668,56 +4173,32 @@
         })
         .eq(
           "id",
-          activeMoneyGoal.id
+          moneyGoal.id
         )
         .eq(
           "user_id",
-          user.id
+          currentUser.id
         );
-
-    button.disabled =
-      false;
-
-    button.textContent =
-      isWithdraw
-        ? "Withdraw Money"
-        : "Add Money";
 
     if (error) {
       console.error(
         error
       );
 
-      showMessage(
+      message(
         error.message ||
-          "Could not update this goal.",
-        "bad"
+          "Could not update this goal."
       );
 
       return;
     }
 
-    showMessage(
-      isWithdraw
-        ? `${
-            currency(
-              amount
-            )
-          } withdrawn.`
-        : `${
-            currency(
-              amount
-            )
-          } added.`,
-      "good"
-    );
+    selectedGoalId =
+      moneyGoal.id;
 
     await loadGoals();
 
-    window.setTimeout(
-      closeModal,
-      450
-    );
+    closeModal();
   }
 
   /* =========================================================
@@ -3754,17 +4235,17 @@
       return;
     }
 
-    const user =
-      await getUser();
+    const currentUser =
+      await user();
 
-    if (!user) {
+    if (!currentUser) {
       return;
     }
 
     const {
       error
     } =
-      await supabaseClient
+      await sb
         .from(
           "financial_goals"
         )
@@ -3775,7 +4256,7 @@
         )
         .eq(
           "user_id",
-          user.id
+          currentUser.id
         );
 
     if (error) {
@@ -3783,13 +4264,24 @@
         error
       );
 
-      showMessage(
+      message(
         error.message ||
-          "Could not delete this goal.",
-        "bad"
+          "Could not delete this goal."
       );
 
       return;
+    }
+
+    if (
+      Number(
+        selectedGoalId
+      ) ===
+      Number(
+        editingGoalId
+      )
+    ) {
+      selectedGoalId =
+        null;
     }
 
     closeModal();
@@ -3798,10 +4290,10 @@
   }
 
   /* =========================================================
-     REFRESH SMART GUIDANCE
+     REFRESH WHEN PLAN CHANGES
   ========================================================= */
 
-  function refreshGoalGuidanceSoon() {
+  function refreshSoon() {
     window.setTimeout(
       () => {
         if (
@@ -3816,34 +4308,32 @@
 
   window.addEventListener(
     "stretchmycheck:plan-loaded",
-    refreshGoalGuidanceSoon
+    refreshSoon
   );
 
-  document
-    .addEventListener(
-      "change",
-      event => {
-        if (
-          event.target
-            .matches(
-              ".paycheck-date, .paycheck-amount, .paycheck-name"
-            )
-        ) {
-          refreshGoalGuidanceSoon();
-        }
+  document.addEventListener(
+    "change",
+    event => {
+      if (
+        event.target.matches(
+          ".paycheck-date, .paycheck-amount, .paycheck-name"
+        )
+      ) {
+        refreshSoon();
       }
-    );
+    }
+  );
 
   /* =========================================================
      STARTUP
   ========================================================= */
 
-  function initialize() {
+  function init() {
     if (
-      !buildGoalsPage()
+      !buildPage()
     ) {
       window.setTimeout(
-        initialize,
+        init,
         250
       );
 
@@ -3853,13 +4343,13 @@
     loadGoals();
   }
 
-  supabaseClient.auth
+  sb.auth
     .onAuthStateChange(
       () => {
         window.setTimeout(
           () => {
             if (
-              getGoalsPage()
+              page()
             ) {
               loadGoals();
             }
@@ -3874,11 +4364,12 @@
       loadGoals,
 
     openAddGoal:
-      showGoalForm
+      () =>
+        showGoalForm()
   };
 
   window.setTimeout(
-    initialize,
+    init,
     350
   );
 
