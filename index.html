@@ -1,0 +1,4505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Stretch My Check</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --navy: #183240;
+      --navy-light: #294d5f;
+
+      --teal: #247c8b;
+      --teal-dark: #195d68;
+
+      --bg: #f3f6f8;
+      --card: #ffffff;
+
+      --text: #17242c;
+      --muted: #667681;
+
+      --border: #d6e0e5;
+
+      --good-bg: #e9f8ef;
+      --good-border: #a9ddbc;
+      --good-text: #17663b;
+
+      --warning-bg: #fff7df;
+      --warning-border: #ebd187;
+
+      --bad-bg: #fff0f0;
+      --bad-border: #efb4b4;
+
+      --reserve-bg: #f2f5f7;
+    }
+
+    body {
+      margin: 0;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .topbar {
+      background:
+        linear-gradient(
+          135deg,
+          var(--navy),
+          var(--navy-light)
+        );
+
+      color: white;
+
+      border-radius: 22px;
+
+      padding: 30px;
+
+      margin-bottom: 20px;
+    }
+
+    .topbar-row {
+      display: flex;
+
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 22px;
+    }
+
+    .topbar h1 {
+      margin: 0 0 8px;
+
+      font-size: 35px;
+    }
+
+    .topbar p {
+      margin: 0;
+
+      max-width: 620px;
+
+      line-height: 1.5;
+
+      opacity: .94;
+    }
+
+    .account-buttons {
+      display: flex;
+
+      gap: 9px;
+
+      flex-wrap: wrap;
+    }
+
+    .account-button {
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .13
+        );
+
+      color: white;
+
+      border:
+        1px solid
+        rgba(
+          255,
+          255,
+          255,
+          .28
+        );
+
+      border-radius: 10px;
+
+      padding: 11px 14px;
+
+      font-weight: 700;
+    }
+
+    .account-button:disabled {
+      opacity: .7;
+    }
+
+    .intro-card {
+      background: white;
+
+      border-radius: 18px;
+
+      padding: 22px;
+
+      margin-bottom: 18px;
+
+      box-shadow:
+        0 8px 24px
+        rgba(0,0,0,.055);
+    }
+
+    .intro-card h2 {
+      margin: 0 0 8px;
+
+      font-size: 24px;
+    }
+
+    .intro-card p {
+      margin: 0;
+
+      color: var(--muted);
+
+      line-height: 1.55;
+    }
+
+    .steps {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          4,
+          minmax(0,1fr)
+        );
+
+      gap: 10px;
+
+      margin-top: 18px;
+    }
+
+    .step {
+      background: #f4f7f8;
+
+      border-radius: 12px;
+
+      padding: 13px;
+
+      font-size: 13px;
+
+      text-align: center;
+
+      font-weight: 700;
+    }
+
+    .card {
+      background: var(--card);
+
+      border-radius: 18px;
+
+      padding: 23px;
+
+      margin-bottom: 18px;
+
+      box-shadow:
+        0 8px 24px
+        rgba(0,0,0,.055);
+    }
+
+    .card h2 {
+      margin:
+        0 0 17px;
+
+      font-size: 23px;
+    }
+
+    .subtext {
+      color: var(--muted);
+
+      line-height: 1.5;
+
+      margin-top: -8px;
+
+      margin-bottom: 18px;
+    }
+
+    .grid-2 {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(0,1fr)
+        );
+
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+
+      flex-direction: column;
+
+      gap: 7px;
+
+      min-width: 0;
+    }
+
+    label {
+      font-size: 14px;
+
+      font-weight: 750;
+    }
+
+    input,
+    select {
+      width: 100%;
+
+      border:
+        1px solid
+        var(--border);
+
+      border-radius: 10px;
+
+      padding: 12px 13px;
+
+      background: white;
+
+      color: var(--text);
+
+      min-height: 45px;
+    }
+
+    input:focus,
+    select:focus {
+      outline:
+        2px solid
+        #a6d1d8;
+
+      border-color: var(--teal);
+    }
+
+    .helper {
+      font-size: 12px;
+
+      color: var(--muted);
+
+      line-height: 1.45;
+    }
+
+    .section-header {
+      display: flex;
+
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 15px;
+
+      flex-wrap: wrap;
+
+      margin-bottom: 16px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+    }
+
+    .btn {
+      border: 0;
+
+      border-radius: 10px;
+
+      padding: 11px 14px;
+
+      font-weight: 750;
+
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--teal);
+
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--teal-dark);
+    }
+
+    .btn-secondary {
+      background: #e9eff2;
+
+      color: var(--text);
+    }
+
+    .btn-danger {
+      background: #f8e5e5;
+
+      color: #a12424;
+    }
+
+    .btn-wide {
+      width: 100%;
+
+      padding: 16px;
+
+      font-size: 17px;
+    }
+
+    .row-card {
+      border:
+        1px solid
+        var(--border);
+
+      border-radius: 14px;
+
+      padding: 15px;
+
+      margin-bottom: 12px;
+
+      background: #fbfcfd;
+    }
+
+    .row-top {
+      display: flex;
+
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 12px;
+
+      margin-bottom: 12px;
+    }
+
+    .row-title {
+      font-weight: 800;
+    }
+
+    .paycheck-row {
+      display: grid;
+
+      grid-template-columns:
+        1.4fr 1fr 1fr auto;
+
+      gap: 10px;
+
+      align-items: end;
+    }
+
+    .bill-grid {
+      display: grid;
+
+      grid-template-columns:
+        1.3fr .8fr .9fr .9fr;
+
+      gap: 11px;
+
+      align-items: end;
+    }
+
+    .bill-details {
+      margin-top: 12px;
+
+      padding-top: 12px;
+
+      border-top:
+        1px dashed
+        var(--border);
+    }
+
+    .flex-options {
+      display: none;
+    }
+
+    .flex-options.show {
+      display: block;
+    }
+
+    .single-date {
+      display: none;
+
+      margin-top: 12px;
+    }
+
+    .single-date.show {
+      display: block;
+    }
+
+    .date-range {
+      display: none;
+
+      grid-template-columns:
+        1fr 1fr;
+
+      gap: 12px;
+
+      margin-top: 12px;
+    }
+
+    .date-range.show {
+      display: grid;
+    }
+
+    .necessity-row {
+      display: grid;
+
+      grid-template-columns:
+        1.2fr 1fr 1fr;
+
+      gap: 12px;
+
+      align-items: end;
+
+      margin-bottom: 14px;
+    }
+
+    .results {
+      display: none;
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    .status {
+      padding: 15px;
+
+      border-radius: 12px;
+
+      line-height: 1.55;
+
+      margin-bottom: 16px;
+    }
+
+    .status.good {
+      background: var(--good-bg);
+
+      border:
+        1px solid
+        var(--good-border);
+    }
+
+    .status.warning {
+      background: var(--warning-bg);
+
+      border:
+        1px solid
+        var(--warning-border);
+    }
+
+    .status.bad {
+      background: var(--bad-bg);
+
+      border:
+        1px solid
+        var(--bad-border);
+    }
+
+    .result-summary {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          4,
+          minmax(0,1fr)
+        );
+
+      gap: 12px;
+
+      margin-bottom: 18px;
+    }
+
+    .summary-tile {
+      background: #f4f7f8;
+
+      border-radius: 12px;
+
+      padding: 14px;
+
+      text-align: center;
+
+      min-width: 0;
+    }
+
+    .summary-tile span {
+      display: block;
+
+      color: var(--muted);
+
+      font-size: 13px;
+
+      margin-bottom: 5px;
+    }
+
+    .summary-tile strong {
+      font-size: 21px;
+
+      word-break: break-word;
+    }
+
+    .summary-tile.safe {
+      background: var(--good-bg);
+
+      border:
+        1px solid
+        var(--good-border);
+    }
+
+    .summary-tile.safe strong {
+      color: var(--good-text);
+    }
+
+    .week-card {
+      border:
+        1px solid
+        var(--border);
+
+      border-radius: 15px;
+
+      padding: 18px;
+
+      margin-bottom: 16px;
+
+      background: white;
+    }
+
+    .week-card.negative {
+      border-color: #dfa5a5;
+
+      background: #fffafa;
+    }
+
+    .week-heading {
+      display: flex;
+
+      justify-content: space-between;
+      align-items: flex-start;
+
+      gap: 12px;
+
+      margin-bottom: 14px;
+
+      flex-wrap: wrap;
+    }
+
+    .week-heading h3 {
+      margin: 0 0 4px;
+    }
+
+    .week-date {
+      color: var(--muted);
+
+      font-size: 13px;
+    }
+
+    .running-balance {
+      font-size: 23px;
+
+      font-weight: 850;
+    }
+
+    .bill-list {
+      border-top:
+        1px solid
+        var(--border);
+
+      margin-top: 12px;
+
+      padding-top: 8px;
+    }
+
+    .bill-item {
+      display: grid;
+
+      grid-template-columns:
+        1fr auto;
+
+      gap: 10px;
+
+      padding: 9px 0;
+
+      border-bottom:
+        1px solid
+        #edf1f3;
+    }
+
+    .bill-item:last-child {
+      border-bottom: 0;
+    }
+
+    .bill-meta {
+      color: var(--muted);
+
+      font-size: 12px;
+
+      margin-top: 3px;
+    }
+
+    .money-breakdown {
+      display: grid;
+
+      grid-template-columns:
+        1fr 1fr;
+
+      gap: 10px;
+
+      margin-top: 14px;
+    }
+
+    .reserve-box,
+    .cushion-box {
+      background: var(--reserve-bg);
+
+      border-radius: 12px;
+
+      padding: 14px;
+    }
+
+    .reserve-box span,
+    .cushion-box span {
+      display: block;
+
+      color: var(--muted);
+
+      font-size: 12px;
+
+      margin-bottom: 5px;
+    }
+
+    .reserve-box strong,
+    .cushion-box strong {
+      font-size: 18px;
+    }
+
+    .safe-spend-box {
+      background: var(--good-bg);
+
+      border:
+        1px solid
+        var(--good-border);
+
+      border-radius: 14px;
+
+      padding: 18px;
+
+      margin-top: 12px;
+    }
+
+    .safe-spend-label {
+      color: #346247;
+
+      font-size: 13px;
+
+      font-weight: 800;
+
+      margin-bottom: 4px;
+    }
+
+    .safe-spend-number {
+      font-size: 31px;
+
+      font-weight: 900;
+
+      color: var(--good-text);
+
+      margin-bottom: 5px;
+    }
+
+    .safe-spend-note {
+      color: #456052;
+
+      font-size: 12px;
+
+      line-height: 1.45;
+    }
+
+    .results-actions {
+      display: flex;
+
+      gap: 10px;
+
+      flex-wrap: wrap;
+
+      margin-top: 17px;
+    }
+
+    .footer-note {
+      text-align: center;
+
+      color: var(--muted);
+
+      font-size: 12px;
+
+      padding:
+        12px 0 25px;
+    }
+
+    @media (
+      max-width: 800px
+    ) {
+
+      .app {
+        padding: 10px;
+      }
+
+      .topbar {
+        border-radius: 16px;
+
+        padding: 22px;
+      }
+
+      .topbar-row {
+        flex-direction: column;
+
+        align-items: flex-start;
+      }
+
+      .grid-2,
+      .steps,
+      .result-summary,
+      .paycheck-row,
+      .bill-grid,
+      .necessity-row,
+      .money-breakdown,
+      .date-range {
+        grid-template-columns: 1fr;
+      }
+
+      .result-summary {
+        grid-template-columns:
+          repeat(
+            2,
+            minmax(0,1fr)
+          );
+      }
+
+      input,
+      select,
+      button {
+        font-size: 16px;
+      }
+    }
+
+    @media (
+      max-width: 480px
+    ) {
+
+      .result-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar h1 {
+        font-size: 29px;
+      }
+    }
+
+    @media print {
+
+      body {
+        background: white;
+      }
+
+      .topbar,
+      .intro-card,
+      .no-print,
+      .footer-note {
+        display: none !important;
+      }
+
+      .app {
+        max-width: none;
+
+        padding: 0;
+      }
+
+      .card {
+        box-shadow: none;
+
+        border:
+          1px solid
+          #ccc;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- ========================= -->
+  <!-- HEADER -->
+  <!-- ========================= -->
+
+  <header class="topbar">
+
+    <div class="topbar-row">
+
+      <div>
+
+        <h1>
+          Stretch My Check
+        </h1>
+
+        <p>
+          Know what to pay, what to protect,
+          and what you can safely spend.
+        </p>
+
+      </div>
+
+      <div class="account-buttons">
+
+        <button
+          class="account-button"
+          disabled
+        >
+          Create Account — Coming Soon
+        </button>
+
+        <button
+          class="account-button"
+          disabled
+        >
+          Sign In
+        </button>
+
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <!-- ========================= -->
+  <!-- INTRO -->
+  <!-- ========================= -->
+
+  <section class="intro-card">
+
+    <h2>
+      Stretch My Check Planner
+    </h2>
+
+    <p>
+      Enter what you have now, your upcoming
+      paychecks, bills, and everyday expenses.
+      We'll build a plan that tells you what to
+      pay, when to pay it, what money needs to
+      stay reserved, and how much you can safely
+      spend.
+    </p>
+
+    <div class="steps">
+
+      <div class="step">
+        1. Add Your Money
+      </div>
+
+      <div class="step">
+        2. Add Paychecks
+      </div>
+
+      <div class="step">
+        3. Add Bills
+      </div>
+
+      <div class="step">
+        4. Get Your Plan
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================= -->
+  <!-- STARTING MONEY -->
+  <!-- ========================= -->
+
+  <section class="card no-print">
+
+    <h2>
+      Starting Money
+    </h2>
+
+    <div class="grid-2">
+
+      <div class="field">
+
+        <label for="startingBalance">
+
+          Money available right now
+
+        </label>
+
+        <input
+          id="startingBalance"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="Example: 300"
+        >
+
+        <div class="helper">
+
+          Include money already available
+          before your first paycheck.
+
+        </div>
+
+      </div>
+
+
+      <div class="field">
+
+        <label for="protectedCushion">
+
+          Protected cushion
+
+        </label>
+
+        <input
+          id="protectedCushion"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="Example: 100"
+        >
+
+        <div class="helper">
+
+          Money you want the planner
+          to try to leave untouched.
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================= -->
+  <!-- PAYCHECKS -->
+  <!-- ========================= -->
+
+  <section class="card no-print">
+
+    <div class="section-header">
+
+      <h2>
+        Your Paychecks
+      </h2>
+
+      <button
+        id="addPaycheck"
+        class="btn btn-secondary"
+        type="button"
+      >
+        + Add Paycheck
+      </button>
+
+    </div>
+
+    <div id="paychecksContainer"></div>
+
+  </section>
+
+
+  <!-- ========================= -->
+  <!-- BILLS -->
+  <!-- ========================= -->
+
+  <section class="card no-print">
+
+    <div class="section-header">
+
+      <h2>
+        Your Bills
+      </h2>
+
+      <button
+        id="addBill"
+        class="btn btn-secondary"
+        type="button"
+      >
+        + Add Bill
+      </button>
+
+    </div>
+
+    <div class="subtext">
+
+      Fixed bills stay tied to their due
+      dates. Flexible bills can be moved
+      to the paycheck that keeps your
+      overall plan healthiest.
+
+    </div>
+
+    <div id="billsContainer"></div>
+
+  </section>
+
+
+  <!-- ========================= -->
+  <!-- LIVING EXPENSES -->
+  <!-- ========================= -->
+
+  <section class="card no-print">
+
+    <h2>
+      Living Expenses
+    </h2>
+
+    <div class="subtext">
+
+      Tell us whether each amount is for
+      the entire plan or needed from every
+      paycheck.
+
+    </div>
+
+
+    <div class="necessity-row">
+
+      <div class="field">
+
+        <label for="groceryAmount">
+          Groceries
+        </label>
+
+        <input
+          id="groceryAmount"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="0"
+        >
+
+      </div>
+
+      <div class="field">
+
+        <label for="groceryMode">
+          Amount type
+        </label>
+
+        <select id="groceryMode">
+
+          <option value="total">
+            Total for planning period
+          </option>
+
+          <option value="percheck">
+            Amount per paycheck
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="helper">
+
+        Example: $200 total or
+        $100 from each paycheck.
+
+      </div>
+
+    </div>
+
+
+    <div class="necessity-row">
+
+      <div class="field">
+
+        <label for="gasAmount">
+          Gas / Transportation
+        </label>
+
+        <input
+          id="gasAmount"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="0"
+        >
+
+      </div>
+
+      <div class="field">
+
+        <label for="gasMode">
+          Amount type
+        </label>
+
+        <select id="gasMode">
+
+          <option value="total">
+            Total for planning period
+          </option>
+
+          <option value="percheck">
+            Amount per paycheck
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="helper">
+
+        Fuel, rides, transportation,
+        parking, and similar costs.
+
+      </div>
+
+    </div>
+
+
+    <div class="necessity-row">
+
+      <div class="field">
+
+        <label for="otherAmount">
+          Other necessities
+        </label>
+
+        <input
+          id="otherAmount"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="0"
+        >
+
+      </div>
+
+      <div class="field">
+
+        <label for="otherMode">
+          Amount type
+        </label>
+
+        <select id="otherMode">
+
+          <option value="total">
+            Total for planning period
+          </option>
+
+          <option value="percheck">
+            Amount per paycheck
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="helper">
+
+        Medicine, household supplies,
+        school expenses, and more.
+
+      </div>
+
+    </div>
+
+
+    <button
+      id="optimizeButton"
+      class="btn btn-primary btn-wide"
+      type="button"
+    >
+      OPTIMIZE MY MONEY
+    </button>
+
+  </section>
+
+
+  <!-- ========================= -->
+  <!-- RESULTS -->
+  <!-- ========================= -->
+
+  <section
+    id="plannerResults"
+    class="card results"
+  >
+
+    <h2>
+      Your Recommended Plan
+    </h2>
+
+
+    <div id="plannerStatus"></div>
+
+
+    <div class="result-summary">
+
+      <div class="summary-tile">
+
+        <span>
+          Total Money Available
+        </span>
+
+        <strong id="totalMoneyResult">
+          $0.00
+        </strong>
+
+      </div>
+
+
+      <div class="summary-tile">
+
+        <span>
+          Bills & Needs
+        </span>
+
+        <strong id="totalExpensesResult">
+          $0.00
+        </strong>
+
+      </div>
+
+
+      <div class="summary-tile">
+
+        <span>
+          Protected Cushion
+        </span>
+
+        <strong id="cushionResult">
+          $0.00
+        </strong>
+
+      </div>
+
+
+      <div class="summary-tile safe">
+
+        <span>
+          Safe Money Remaining
+        </span>
+
+        <strong id="safeRemainingResult">
+          $0.00
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <div id="weekResults"></div>
+
+
+    <div class="results-actions no-print">
+
+      <button
+        id="downloadButton"
+        class="btn btn-primary"
+        type="button"
+      >
+        Download My Plan
+      </button>
+
+      <button
+        id="printButton"
+        class="btn btn-secondary"
+        type="button"
+      >
+        Print / Save as PDF
+      </button>
+
+      <button
+        id="resetPlanner"
+        class="btn btn-danger"
+        type="button"
+      >
+        Start New Plan
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <div class="footer-note">
+
+    Stretch My Check is a budgeting
+    planning tool and does not provide
+    financial advice.
+
+  </div>
+
+</div>
+
+
+<script>
+
+  let paycheckCounter = 0;
+
+  let billCounter = 0;
+
+  let latestPlannerData = null;
+
+
+  /* ========================= */
+  /* HELPERS */
+  /* ========================= */
+
+  function money(value) {
+
+    const number =
+      parseFloat(value);
+
+    return Number.isFinite(number)
+      ? number
+      : 0;
+
+  }
+
+
+  function formatMoney(value) {
+
+    return new Intl.NumberFormat(
+      "en-US",
+      {
+        style: "currency",
+        currency: "USD"
+      }
+    ).format(
+      Number.isFinite(value)
+        ? value
+        : 0
+    );
+
+  }
+
+
+  function parseDate(value) {
+
+    if (!value) {
+      return null;
+    }
+
+    const parts =
+      value
+        .split("-")
+        .map(Number);
+
+    return new Date(
+      parts[0],
+      parts[1] - 1,
+      parts[2]
+    );
+
+  }
+
+
+  function dateText(date) {
+
+    if (!date) {
+      return "";
+    }
+
+    return date.toLocaleDateString(
+      "en-US",
+      {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      }
+    );
+
+  }
+
+
+  function escapeHTML(text) {
+
+    return String(text)
+
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+
+      .replace(
+        /</g,
+        "&lt;"
+      )
+
+      .replace(
+        />/g,
+        "&gt;"
+      )
+
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+
+      .replace(
+        /'/g,
+        "&#039;"
+      );
+
+  }
+
+
+  /* ========================= */
+  /* PAYCHECKS */
+  /* ========================= */
+
+  function addPaycheck(
+    name = "",
+    date = "",
+    amount = ""
+  ) {
+
+    paycheckCounter++;
+
+
+    const card =
+      document.createElement(
+        "div"
+      );
+
+
+    card.className =
+      "row-card paycheck-entry";
+
+
+    card.innerHTML = `
+
+      <div class="paycheck-row">
+
+        <div class="field">
+
+          <label>
+            Paycheck name
+          </label>
+
+          <input
+            class="paycheck-name"
+            type="text"
+            placeholder="Example: Week 1"
+            value="${escapeHTML(name)}"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Pay date
+          </label>
+
+          <input
+            class="paycheck-date"
+            type="date"
+            value="${date}"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Amount
+          </label>
+
+          <input
+            class="paycheck-amount"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="1100"
+            value="${amount}"
+          >
+
+        </div>
+
+
+        <button
+          class="btn btn-danger remove-paycheck"
+          type="button"
+        >
+          Remove
+        </button>
+
+      </div>
+
+    `;
+
+
+    card
+      .querySelector(
+        ".remove-paycheck"
+      )
+      .addEventListener(
+        "click",
+        () => {
+
+          card.remove();
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        "paychecksContainer"
+      )
+      .appendChild(card);
+
+  }
+
+
+  document
+    .getElementById(
+      "addPaycheck"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        addPaycheck();
+
+      }
+    );
+
+
+  /* ========================= */
+  /* BILLS */
+  /* ========================= */
+
+  function addBill() {
+
+    billCounter++;
+
+
+    const card =
+      document.createElement(
+        "div"
+      );
+
+
+    card.className =
+      "row-card bill-entry";
+
+
+    card.innerHTML = `
+
+      <div class="row-top">
+
+        <div class="row-title">
+
+          Bill
+
+        </div>
+
+
+        <button
+          class="btn btn-danger remove-bill"
+          type="button"
+        >
+          Remove
+        </button>
+
+      </div>
+
+
+      <div class="bill-grid">
+
+        <div class="field">
+
+          <label>
+            Bill name
+          </label>
+
+          <input
+            class="bill-name"
+            type="text"
+            placeholder="Example: Car payment"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Amount
+          </label>
+
+          <input
+            class="bill-amount"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="300"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Bill type
+          </label>
+
+          <select class="bill-type">
+
+            <option value="fixed">
+              Fixed date
+            </option>
+
+            <option value="flexible">
+              Flexible
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Priority
+          </label>
+
+          <select class="bill-priority">
+
+            <option value="essential">
+              Essential
+            </option>
+
+            <option value="important">
+              Important
+            </option>
+
+            <option value="lower">
+              Lower Priority
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+
+      <div class="bill-details fixed-options">
+
+        <div class="field">
+
+          <label>
+            Due date
+          </label>
+
+          <input
+            class="bill-due-date"
+            type="date"
+          >
+
+        </div>
+
+      </div>
+
+
+      <div class="bill-details flex-options">
+
+        <div class="field">
+
+          <label>
+            When can this bill be paid?
+          </label>
+
+          <select class="flex-rule">
+
+            <option value="any">
+              Any paycheck this period
+            </option>
+
+            <option value="bydate">
+              Before a certain date
+            </option>
+
+            <option value="range">
+              Between two dates
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="single-date">
+
+          <div class="field">
+
+            <label>
+              Must be paid by
+            </label>
+
+            <input
+              class="flex-by-date"
+              type="date"
+            >
+
+          </div>
+
+        </div>
+
+
+        <div class="date-range">
+
+          <div class="field">
+
+            <label>
+              Earliest payment date
+            </label>
+
+            <input
+              class="flex-start-date"
+              type="date"
+            >
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Latest payment date
+            </label>
+
+            <input
+              class="flex-end-date"
+              type="date"
+            >
+
+          </div>
+
+        </div>
+
+      </div>
+
+    `;
+
+
+    const typeSelect =
+      card.querySelector(
+        ".bill-type"
+      );
+
+
+    const fixedOptions =
+      card.querySelector(
+        ".fixed-options"
+      );
+
+
+    const flexOptions =
+      card.querySelector(
+        ".flex-options"
+      );
+
+
+    const flexRule =
+      card.querySelector(
+        ".flex-rule"
+      );
+
+
+    const singleDate =
+      card.querySelector(
+        ".single-date"
+      );
+
+
+    const dateRange =
+      card.querySelector(
+        ".date-range"
+      );
+
+
+    function updateBillType() {
+
+      if (
+        typeSelect.value ===
+        "flexible"
+      ) {
+
+        fixedOptions.style.display =
+          "none";
+
+        flexOptions.classList.add(
+          "show"
+        );
+
+      }
+
+      else {
+
+        fixedOptions.style.display =
+          "block";
+
+        flexOptions.classList.remove(
+          "show"
+        );
+
+      }
+
+    }
+
+
+    function updateFlexRule() {
+
+      singleDate.classList.remove(
+        "show"
+      );
+
+      dateRange.classList.remove(
+        "show"
+      );
+
+
+      if (
+        flexRule.value ===
+        "bydate"
+      ) {
+
+        singleDate.classList.add(
+          "show"
+        );
+
+      }
+
+
+      if (
+        flexRule.value ===
+        "range"
+      ) {
+
+        dateRange.classList.add(
+          "show"
+        );
+
+      }
+
+    }
+
+
+    typeSelect.addEventListener(
+      "change",
+      updateBillType
+    );
+
+
+    flexRule.addEventListener(
+      "change",
+      updateFlexRule
+    );
+
+
+    card
+      .querySelector(
+        ".remove-bill"
+      )
+      .addEventListener(
+        "click",
+        () => {
+
+          card.remove();
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        "billsContainer"
+      )
+      .appendChild(card);
+
+
+    updateBillType();
+
+    updateFlexRule();
+
+  }
+
+
+  document
+    .getElementById(
+      "addBill"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        addBill();
+
+      }
+    );
+
+
+  /* ========================= */
+  /* COLLECT DATA */
+  /* ========================= */
+
+  function collectPaychecks() {
+
+    return [
+
+      ...document.querySelectorAll(
+        ".paycheck-entry"
+      )
+
+    ]
+
+      .map(
+        (
+          entry,
+          index
+        ) => {
+
+          const name =
+
+            entry
+              .querySelector(
+                ".paycheck-name"
+              )
+              .value
+              .trim()
+
+            ||
+
+            `Paycheck ${index + 1}`;
+
+
+          const dateValue =
+
+            entry
+              .querySelector(
+                ".paycheck-date"
+              )
+              .value;
+
+
+          return {
+
+            name,
+
+            date:
+              parseDate(
+                dateValue
+              ),
+
+            dateValue,
+
+            amount:
+              money(
+                entry
+                  .querySelector(
+                    ".paycheck-amount"
+                  )
+                  .value
+              ),
+
+            bills: [],
+
+            necessities: 0,
+
+            netChange: 0,
+
+            runningBalance: 0,
+
+            safeCapacity: 0,
+
+            safeToSpend: 0,
+
+            reservedForFuture: 0
+
+          };
+
+        }
+      )
+
+      .filter(
+        paycheck =>
+          paycheck.date
+      )
+
+      .sort(
+        (
+          a,
+          b
+        ) =>
+          a.date -
+          b.date
+      );
+
+  }
+
+
+  function collectBills() {
+
+    return [
+
+      ...document.querySelectorAll(
+        ".bill-entry"
+      )
+
+    ]
+
+      .map(
+        (
+          entry,
+          index
+        ) => {
+
+          const name =
+
+            entry
+              .querySelector(
+                ".bill-name"
+              )
+              .value
+              .trim()
+
+            ||
+
+            `Bill ${index + 1}`;
+
+
+          return {
+
+            name,
+
+            amount:
+              money(
+                entry
+                  .querySelector(
+                    ".bill-amount"
+                  )
+                  .value
+              ),
+
+            type:
+              entry
+                .querySelector(
+                  ".bill-type"
+                )
+                .value,
+
+            priority:
+              entry
+                .querySelector(
+                  ".bill-priority"
+                )
+                .value,
+
+            dueDate:
+              parseDate(
+                entry
+                  .querySelector(
+                    ".bill-due-date"
+                  )
+                  .value
+              ),
+
+            flexRule:
+              entry
+                .querySelector(
+                  ".flex-rule"
+                )
+                .value,
+
+            byDate:
+              parseDate(
+                entry
+                  .querySelector(
+                    ".flex-by-date"
+                  )
+                  .value
+              ),
+
+            startDate:
+              parseDate(
+                entry
+                  .querySelector(
+                    ".flex-start-date"
+                  )
+                  .value
+              ),
+
+            endDate:
+              parseDate(
+                entry
+                  .querySelector(
+                    ".flex-end-date"
+                  )
+                  .value
+              )
+
+          };
+
+        }
+      )
+
+      .filter(
+        bill =>
+          bill.amount > 0
+      );
+
+  }
+
+
+  /* ========================= */
+  /* PRIORITY */
+  /* ========================= */
+
+  function priorityWeight(
+    priority
+  ) {
+
+    if (
+      priority ===
+      "essential"
+    ) {
+
+      return 3;
+
+    }
+
+
+    if (
+      priority ===
+      "important"
+    ) {
+
+      return 2;
+
+    }
+
+
+    return 1;
+
+  }
+
+
+  /* ========================= */
+  /* NECESSITIES */
+  /* ========================= */
+
+  function getNecessityAmount(
+    amountId,
+    modeId,
+    paycheckCount
+  ) {
+
+    const amount =
+
+      money(
+        document
+          .getElementById(
+            amountId
+          )
+          .value
+      );
+
+
+    const mode =
+
+      document
+        .getElementById(
+          modeId
+        )
+        .value;
+
+
+    if (
+      mode ===
+      "percheck"
+    ) {
+
+      return {
+
+        total:
+          amount *
+          paycheckCount,
+
+        perCheck:
+          amount
+
+      };
+
+    }
+
+
+    return {
+
+      total:
+        amount,
+
+      perCheck:
+        paycheckCount > 0
+
+          ? amount /
+            paycheckCount
+
+          : 0
+
+    };
+
+  }
+
+
+  /* ========================= */
+  /* FIXED BILL PLACEMENT */
+  /* ========================= */
+
+  function fixedPaycheckIndex(
+    paychecks,
+    bill
+  ) {
+
+    if (
+      !bill.dueDate
+    ) {
+
+      return -1;
+
+    }
+
+
+    let candidate =
+      -1;
+
+
+    paychecks.forEach(
+      (
+        paycheck,
+        index
+      ) => {
+
+        if (
+          paycheck.date <=
+          bill.dueDate
+        ) {
+
+          candidate =
+            index;
+
+        }
+
+      }
+    );
+
+
+    return candidate;
+
+  }
+
+
+  /* ========================= */
+  /* FLEXIBLE BILL DATES */
+  /* ========================= */
+
+  function eligibleFlexibleIndexes(
+    paychecks,
+    bill
+  ) {
+
+    const eligible =
+      [];
+
+
+    paychecks.forEach(
+      (
+        paycheck,
+        index
+      ) => {
+
+        if (
+          bill.flexRule ===
+          "any"
+        ) {
+
+          eligible.push(
+            index
+          );
+
+          return;
+
+        }
+
+
+        if (
+          bill.flexRule ===
+          "bydate"
+        ) {
+
+          if (
+
+            !bill.byDate
+
+            ||
+
+            paycheck.date <=
+            bill.byDate
+
+          ) {
+
+            eligible.push(
+              index
+            );
+
+          }
+
+          return;
+
+        }
+
+
+        if (
+          bill.flexRule ===
+          "range"
+        ) {
+
+          const afterStart =
+
+            !bill.startDate
+
+            ||
+
+            paycheck.date >=
+            bill.startDate;
+
+
+          const beforeEnd =
+
+            !bill.endDate
+
+            ||
+
+            paycheck.date <=
+            bill.endDate;
+
+
+          if (
+            afterStart &&
+            beforeEnd
+          ) {
+
+            eligible.push(
+              index
+            );
+
+          }
+
+        }
+
+      }
+    );
+
+
+    return eligible;
+
+  }
+
+
+  function clonePaychecks(
+    paychecks
+  ) {
+
+    return paychecks.map(
+      paycheck => ({
+
+        ...paycheck,
+
+        bills: [
+          ...paycheck.bills
+        ]
+
+      })
+    );
+
+  }
+
+
+  /* ========================= */
+  /* RUNNING BALANCE */
+  /* ========================= */
+
+  function calculateRunningBalances(
+    paychecks,
+    startingBalance
+  ) {
+
+    let running =
+      startingBalance;
+
+
+    let lowest =
+      startingBalance;
+
+
+    paychecks.forEach(
+      paycheck => {
+
+        const billTotal =
+
+          paycheck
+            .bills
+            .reduce(
+              (
+                sum,
+                bill
+              ) =>
+
+                sum +
+                bill.amount,
+
+              0
+            );
+
+
+        paycheck.netChange =
+
+          paycheck.amount
+
+          -
+
+          billTotal
+
+          -
+
+          paycheck.necessities;
+
+
+        running +=
+          paycheck.netChange;
+
+
+        paycheck.runningBalance =
+          running;
+
+
+        lowest =
+
+          Math.min(
+            lowest,
+            running
+          );
+
+      }
+    );
+
+
+    return {
+
+      finalBalance:
+        running,
+
+      lowestBalance:
+        lowest
+
+    };
+
+  }
+
+
+  /* ========================= */
+  /* OPTIMIZER */
+  /* ========================= */
+
+  function belowCushionCount(
+    paychecks,
+    cushion
+  ) {
+
+    return paychecks.filter(
+      paycheck =>
+
+        paycheck.runningBalance <
+        cushion
+
+    ).length;
+
+  }
+
+
+  function paycheckSpread(
+    paychecks
+  ) {
+
+    if (
+      !paychecks.length
+    ) {
+
+      return 0;
+
+    }
+
+
+    const values =
+
+      paychecks.map(
+        paycheck =>
+          paycheck.netChange
+      );
+
+
+    return (
+
+      Math.max(
+        ...values
+      )
+
+      -
+
+      Math.min(
+        ...values
+      )
+
+    );
+
+  }
+
+
+  function optimizerScore(
+    paychecks,
+    startingBalance,
+    cushion
+  ) {
+
+    calculateRunningBalances(
+      paychecks,
+      startingBalance
+    );
+
+
+    return {
+
+      belowCount:
+        belowCushionCount(
+          paychecks,
+          cushion
+        ),
+
+      lowest:
+        Math.min(
+          ...paychecks.map(
+            paycheck =>
+              paycheck.runningBalance
+          )
+        ),
+
+      spread:
+        paycheckSpread(
+          paychecks
+        )
+
+    };
+
+  }
+
+
+  function chooseBestFlexiblePaycheck(
+    paychecks,
+    bill,
+    startingBalance,
+    cushion
+  ) {
+
+    const eligible =
+
+      eligibleFlexibleIndexes(
+        paychecks,
+        bill
+      );
+
+
+    if (
+      !eligible.length
+    ) {
+
+      return -1;
+
+    }
+
+
+    let bestIndex =
+      eligible[0];
+
+
+    let bestScore =
+      null;
+
+
+    eligible.forEach(
+      index => {
+
+        const simulation =
+
+          clonePaychecks(
+            paychecks
+          );
+
+
+        simulation[
+          index
+        ].bills.push(
+          bill
+        );
+
+
+        const score =
+
+          optimizerScore(
+            simulation,
+            startingBalance,
+            cushion
+          );
+
+
+        if (
+          !bestScore
+        ) {
+
+          bestIndex =
+            index;
+
+          bestScore =
+            score;
+
+          return;
+
+        }
+
+
+        if (
+          score.belowCount <
+          bestScore.belowCount
+        ) {
+
+          bestIndex =
+            index;
+
+          bestScore =
+            score;
+
+          return;
+
+        }
+
+
+        if (
+
+          score.belowCount ===
+          bestScore.belowCount
+
+          &&
+
+          score.lowest >
+          bestScore.lowest
+
+        ) {
+
+          bestIndex =
+            index;
+
+          bestScore =
+            score;
+
+          return;
+
+        }
+
+
+        if (
+
+          score.belowCount ===
+          bestScore.belowCount
+
+          &&
+
+          score.lowest ===
+          bestScore.lowest
+
+          &&
+
+          score.spread <
+          bestScore.spread
+
+        ) {
+
+          bestIndex =
+            index;
+
+          bestScore =
+            score;
+
+        }
+
+      }
+    );
+
+
+    return bestIndex;
+
+  }
+
+
+  /* ========================= */
+  /* SAFE TO SPEND */
+  /* ========================= */
+
+  function calculateSafeToSpend(
+    paychecks,
+    cushion
+  ) {
+
+    let previousSafeCapacity =
+      0;
+
+
+    for (
+      let i = 0;
+      i < paychecks.length;
+      i++
+    ) {
+
+      /*
+        Find the lowest projected
+        running balance from this point
+        forward.
+      */
+
+      let futureMinimum =
+        Infinity;
+
+
+      for (
+        let j = i;
+        j < paychecks.length;
+        j++
+      ) {
+
+        futureMinimum =
+
+          Math.min(
+            futureMinimum,
+
+            paychecks[
+              j
+            ].runningBalance
+          );
+
+      }
+
+
+      /*
+        This is the total amount that
+        could have been spent by this
+        point without any future period
+        dropping below the cushion.
+      */
+
+      const safeCapacity =
+
+        Math.max(
+          0,
+
+          futureMinimum -
+          cushion
+        );
+
+
+      /*
+        Only show money that becomes
+        newly safe during THIS pay period.
+
+        This prevents the same money
+        from being counted twice.
+      */
+
+      const safeThisPeriod =
+
+        Math.max(
+          0,
+
+          safeCapacity -
+          previousSafeCapacity
+        );
+
+
+      /*
+        Anything currently sitting above
+        the cushion that cannot safely be
+        spent yet is money that must stay
+        reserved for upcoming obligations.
+
+        Example:
+
+        Current balance      $800
+        Protected cushion    $100
+        Safe capacity        $200
+
+        Reserved             $500
+      */
+
+      const reservedForFuture =
+
+        Math.max(
+          0,
+
+          paychecks[
+            i
+          ].runningBalance
+
+          -
+
+          cushion
+
+          -
+
+          safeCapacity
+        );
+
+
+      paychecks[
+        i
+      ].safeCapacity =
+        safeCapacity;
+
+
+      paychecks[
+        i
+      ].safeToSpend =
+        safeThisPeriod;
+
+
+      paychecks[
+        i
+      ].reservedForFuture =
+        reservedForFuture;
+
+
+      previousSafeCapacity =
+        safeCapacity;
+
+    }
+
+  }
+
+
+  /* ========================= */
+  /* OPTIMIZE PLAN */
+  /* ========================= */
+
+  document
+    .getElementById(
+      "optimizeButton"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        const paychecks =
+          collectPaychecks();
+
+
+        const bills =
+          collectBills();
+
+
+        if (
+          !paychecks.length
+        ) {
+
+          alert(
+            "Add at least one paycheck with a valid date."
+          );
+
+          return;
+
+        }
+
+
+        if (
+          !bills.length
+        ) {
+
+          alert(
+            "Add at least one bill."
+          );
+
+          return;
+
+        }
+
+
+        const startingBalance =
+
+          money(
+            document
+              .getElementById(
+                "startingBalance"
+              )
+              .value
+          );
+
+
+        const cushion =
+
+          money(
+            document
+              .getElementById(
+                "protectedCushion"
+              )
+              .value
+          );
+
+
+        const groceries =
+
+          getNecessityAmount(
+            "groceryAmount",
+            "groceryMode",
+            paychecks.length
+          );
+
+
+        const gas =
+
+          getNecessityAmount(
+            "gasAmount",
+            "gasMode",
+            paychecks.length
+          );
+
+
+        const other =
+
+          getNecessityAmount(
+            "otherAmount",
+            "otherMode",
+            paychecks.length
+          );
+
+
+        const totalNecessities =
+
+          groceries.total
+
+          +
+
+          gas.total
+
+          +
+
+          other.total;
+
+
+        const perCheckNecessities =
+
+          groceries.perCheck
+
+          +
+
+          gas.perCheck
+
+          +
+
+          other.perCheck;
+
+
+        paychecks.forEach(
+          paycheck => {
+
+            paycheck.necessities =
+              perCheckNecessities;
+
+          }
+        );
+
+
+        const warnings =
+          [];
+
+
+        /* ========================= */
+        /* FIXED BILLS */
+        /* ========================= */
+
+        const fixedBills =
+
+          bills
+
+            .filter(
+              bill =>
+                bill.type ===
+                "fixed"
+            )
+
+            .sort(
+              (
+                a,
+                b
+              ) => {
+
+                const aDate =
+
+                  a.dueDate
+
+                    ? a.dueDate
+                        .getTime()
+
+                    : Infinity;
+
+
+                const bDate =
+
+                  b.dueDate
+
+                    ? b.dueDate
+                        .getTime()
+
+                    : Infinity;
+
+
+                if (
+                  aDate !==
+                  bDate
+                ) {
+
+                  return (
+                    aDate -
+                    bDate
+                  );
+
+                }
+
+
+                return (
+
+                  priorityWeight(
+                    b.priority
+                  )
+
+                  -
+
+                  priorityWeight(
+                    a.priority
+                  )
+
+                );
+
+              }
+            );
+
+
+        fixedBills.forEach(
+          bill => {
+
+            if (
+              !bill.dueDate
+            ) {
+
+              paychecks[
+                0
+              ].bills.push(
+                bill
+              );
+
+
+              warnings.push(
+
+                `${bill.name} is fixed but does not have a due date.`
+
+              );
+
+
+              return;
+
+            }
+
+
+            const index =
+
+              fixedPaycheckIndex(
+                paychecks,
+                bill
+              );
+
+
+            if (
+              index ===
+              -1
+            ) {
+
+              paychecks[
+                0
+              ].bills.push(
+                bill
+              );
+
+
+              warnings.push(
+
+                `${bill.name} is due before your first paycheck. Make sure your starting money can cover it on time.`
+
+              );
+
+            }
+
+            else {
+
+              paychecks[
+                index
+              ].bills.push(
+                bill
+              );
+
+            }
+
+          }
+        );
+
+
+        /* ========================= */
+        /* FLEXIBLE BILLS */
+        /* ========================= */
+
+        const flexibleBills =
+
+          bills
+
+            .filter(
+              bill =>
+                bill.type ===
+                "flexible"
+            )
+
+            .sort(
+              (
+                a,
+                b
+              ) => {
+
+                const priorityDifference =
+
+                  priorityWeight(
+                    b.priority
+                  )
+
+                  -
+
+                  priorityWeight(
+                    a.priority
+                  );
+
+
+                if (
+                  priorityDifference !==
+                  0
+                ) {
+
+                  return (
+                    priorityDifference
+                  );
+
+                }
+
+
+                return (
+                  b.amount -
+                  a.amount
+                );
+
+              }
+            );
+
+
+        let unplacedTotal =
+          0;
+
+
+        flexibleBills.forEach(
+          bill => {
+
+            const index =
+
+              chooseBestFlexiblePaycheck(
+                paychecks,
+                bill,
+                startingBalance,
+                cushion
+              );
+
+
+            if (
+              index ===
+              -1
+            ) {
+
+              unplacedTotal +=
+                bill.amount;
+
+
+              warnings.push(
+
+                `${bill.name} could not be placed within the payment dates you selected.`
+
+              );
+
+
+              return;
+
+            }
+
+
+            paychecks[
+              index
+            ].bills.push(
+              bill
+            );
+
+          }
+        );
+
+
+        /* ========================= */
+        /* FINAL BALANCES */
+        /* ========================= */
+
+        const balanceResult =
+
+          calculateRunningBalances(
+            paychecks,
+            startingBalance
+          );
+
+
+        calculateSafeToSpend(
+          paychecks,
+          cushion
+        );
+
+
+        renderPlannerResults(
+          {
+
+            paychecks,
+
+            bills,
+
+            startingBalance,
+
+            cushion,
+
+            totalNecessities,
+
+            warnings,
+
+            unplacedTotal,
+
+            balanceResult
+
+          }
+        );
+
+      }
+    );
+
+
+  /* ========================= */
+  /* RESULTS */
+  /* ========================= */
+
+  function renderPlannerResults(
+    data
+  ) {
+
+    const {
+      paychecks,
+      bills,
+      startingBalance,
+      cushion,
+      totalNecessities,
+      warnings,
+      unplacedTotal,
+      balanceResult
+    } = data;
+
+
+    const paycheckIncome =
+
+      paychecks.reduce(
+        (
+          total,
+          paycheck
+        ) =>
+
+          total +
+          paycheck.amount,
+
+        0
+      );
+
+
+    const totalMoneyAvailable =
+
+      startingBalance +
+      paycheckIncome;
+
+
+    const totalBillAmount =
+
+      bills.reduce(
+        (
+          total,
+          bill
+        ) =>
+
+          total +
+          bill.amount,
+
+        0
+      );
+
+
+    const totalExpenses =
+
+      totalBillAmount +
+      totalNecessities;
+
+
+    const safeRemaining =
+
+      Math.max(
+        0,
+
+        balanceResult
+          .finalBalance
+
+        -
+
+        cushion
+      );
+
+
+    document
+      .getElementById(
+        "totalMoneyResult"
+      )
+      .textContent =
+
+        formatMoney(
+          totalMoneyAvailable
+        );
+
+
+    document
+      .getElementById(
+        "totalExpensesResult"
+      )
+      .textContent =
+
+        formatMoney(
+          totalExpenses
+        );
+
+
+    document
+      .getElementById(
+        "cushionResult"
+      )
+      .textContent =
+
+        formatMoney(
+          cushion
+        );
+
+
+    document
+      .getElementById(
+        "safeRemainingResult"
+      )
+      .textContent =
+
+        formatMoney(
+          safeRemaining
+        );
+
+
+    const status =
+
+      document.getElementById(
+        "plannerStatus"
+      );
+
+
+    const belowZero =
+
+      paychecks.filter(
+        paycheck =>
+
+          paycheck.runningBalance <
+          0
+
+      );
+
+
+    const belowCushion =
+
+      paychecks.filter(
+        paycheck =>
+
+          paycheck.runningBalance <
+          cushion
+
+      );
+
+
+    if (
+      unplacedTotal > 0
+    ) {
+
+      status.className =
+        "status bad";
+
+
+      status.innerHTML = `
+
+        <strong>
+          Some bills could not be scheduled.
+        </strong>
+
+        Your selected payment dates prevented
+        ${formatMoney(unplacedTotal)}
+        of flexible bills from being placed.
+
+      `;
+
+    }
+
+
+    else if (
+      balanceResult
+        .finalBalance <
+      0
+    ) {
+
+      status.className =
+        "status bad";
+
+
+      status.innerHTML = `
+
+        <strong>
+          Your plan is short
+          ${formatMoney(
+            Math.abs(
+              balanceResult
+                .finalBalance
+            )
+          )}.
+        </strong>
+
+        Your bills and necessities cost more
+        than the money available during this
+        planning period.
+
+      `;
+
+    }
+
+
+    else if (
+      belowZero.length
+    ) {
+
+      status.className =
+        "status bad";
+
+
+      status.innerHTML = `
+
+        <strong>
+          You end the plan with money left,
+          but your balance drops below $0
+          before then.
+        </strong>
+
+        Review the bill placement or dates
+        below.
+
+      `;
+
+    }
+
+
+    else if (
+      belowCushion.length
+    ) {
+
+      status.className =
+        "status warning";
+
+
+      status.innerHTML = `
+
+        <strong>
+          Your bills can be covered, but
+          the plan dips into your protected
+          cushion.
+        </strong>
+
+        Lowest projected balance:
+        ${formatMoney(
+          balanceResult
+            .lowestBalance
+        )}.
+
+      `;
+
+    }
+
+
+    else {
+
+      status.className =
+        "status good";
+
+
+      status.innerHTML = `
+
+        <strong>
+          Your plan works without going
+          below your protected cushion.
+        </strong>
+
+        We've separated money that is safe
+        to spend from money that needs to
+        stay available for upcoming bills.
+
+      `;
+
+    }
+
+
+    if (
+      warnings.length
+    ) {
+
+      status.innerHTML += `
+
+        <br><br>
+
+        <strong>
+          Please review:
+        </strong>
+
+        <br>
+
+        ${
+          warnings
+            .map(
+              warning =>
+                escapeHTML(
+                  warning
+                )
+            )
+            .join(
+              "<br>"
+            )
+        }
+
+      `;
+
+    }
+
+
+    const weekResults =
+
+      document.getElementById(
+        "weekResults"
+      );
+
+
+    weekResults.innerHTML =
+      "";
+
+
+    paychecks.forEach(
+      paycheck => {
+
+        const billTotal =
+
+          paycheck
+            .bills
+            .reduce(
+              (
+                total,
+                bill
+              ) =>
+
+                total +
+                bill.amount,
+
+              0
+            );
+
+
+        let billHTML =
+          "";
+
+
+        if (
+          !paycheck
+            .bills
+            .length
+        ) {
+
+          billHTML = `
+
+            <div class="bill-item">
+
+              <div>
+                No bills assigned
+                to this paycheck.
+              </div>
+
+              <strong>
+                $0.00
+              </strong>
+
+            </div>
+
+          `;
+
+        }
+
+        else {
+
+          paycheck
+            .bills
+            .forEach(
+              bill => {
+
+                const typeText =
+
+                  bill.type ===
+                  "fixed"
+
+                    ? "Fixed"
+
+                    : "Flexible";
+
+
+                let timing =
+                  "";
+
+
+                if (
+
+                  bill.type ===
+                  "fixed"
+
+                  &&
+
+                  bill.dueDate
+
+                ) {
+
+                  timing =
+
+                    ` • Due ${dateText(
+                      bill.dueDate
+                    )}`;
+
+                }
+
+
+                if (
+                  bill.type ===
+                  "flexible"
+                ) {
+
+                  timing =
+                    " • Smart placement";
+
+                }
+
+
+                const priorityText =
+
+                  bill.priority ===
+                  "essential"
+
+                    ? "Essential"
+
+                    :
+
+                  bill.priority ===
+                  "important"
+
+                    ? "Important"
+
+                    : "Lower Priority";
+
+
+                billHTML += `
+
+                  <div class="bill-item">
+
+                    <div>
+
+                      <strong>
+                        ${escapeHTML(
+                          bill.name
+                        )}
+                      </strong>
+
+                      <div class="bill-meta">
+
+                        ${typeText}
+                        ${timing}
+                        •
+                        ${priorityText}
+
+                      </div>
+
+                    </div>
+
+                    <strong>
+
+                      ${formatMoney(
+                        bill.amount
+                      )}
+
+                    </strong>
+
+                  </div>
+
+                `;
+
+              }
+            );
+
+        }
+
+
+        const card =
+
+          document.createElement(
+            "div"
+          );
+
+
+        card.className =
+
+          paycheck.runningBalance <
+          0
+
+            ? "week-card negative"
+
+            : "week-card";
+
+
+        card.innerHTML = `
+
+          <div class="week-heading">
+
+            <div>
+
+              <h3>
+
+                ${escapeHTML(
+                  paycheck.name
+                )}
+
+              </h3>
+
+              <div class="week-date">
+
+                ${dateText(
+                  paycheck.date
+                )}
+
+              </div>
+
+            </div>
+
+
+            <div>
+
+              <div class="week-date">
+
+                Projected running balance
+
+              </div>
+
+              <div class="running-balance">
+
+                ${formatMoney(
+                  paycheck
+                    .runningBalance
+                )}
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div class="result-summary">
+
+            <div class="summary-tile">
+
+              <span>
+                Paycheck
+              </span>
+
+              <strong>
+
+                ${formatMoney(
+                  paycheck.amount
+                )}
+
+              </strong>
+
+            </div>
+
+
+            <div class="summary-tile">
+
+              <span>
+                Bills Assigned
+              </span>
+
+              <strong>
+
+                ${formatMoney(
+                  billTotal
+                )}
+
+              </strong>
+
+            </div>
+
+
+            <div class="summary-tile">
+
+              <span>
+                Living Expenses
+              </span>
+
+              <strong>
+
+                ${formatMoney(
+                  paycheck
+                    .necessities
+                )}
+
+              </strong>
+
+            </div>
+
+
+            <div class="summary-tile">
+
+              <span>
+                Net Change
+              </span>
+
+              <strong>
+
+                ${formatMoney(
+                  paycheck
+                    .netChange
+                )}
+
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <div class="bill-list">
+
+            ${billHTML}
+
+          </div>
+
+
+          <div class="money-breakdown">
+
+            <div class="reserve-box">
+
+              <span>
+                Reserved for Future Bills
+              </span>
+
+              <strong>
+
+                ${formatMoney(
+                  paycheck
+                    .reservedForFuture
+                )}
+
+              </strong>
+
+            </div>
+
+
+            <div class="cushion-box">
+
+              <span>
+                Protected Cushion
+              </span>
+
+              <strong>
+
+                ${formatMoney(
+                  cushion
+                )}
+
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <div class="safe-spend-box">
+
+            <div class="safe-spend-label">
+
+              SAFE TO SPEND THIS PAY PERIOD
+
+            </div>
+
+            <div class="safe-spend-number">
+
+              ${formatMoney(
+                paycheck
+                  .safeToSpend
+              )}
+
+            </div>
+
+            <div class="safe-spend-note">
+
+              This is the money that becomes
+              safely available during this
+              pay period after protecting
+              upcoming obligations and your
+              ${formatMoney(cushion)}
+              cushion.
+
+            </div>
+
+          </div>
+
+        `;
+
+
+        weekResults
+          .appendChild(
+            card
+          );
+
+      }
+    );
+
+
+    latestPlannerData = {
+
+      ...data,
+
+      totalMoneyAvailable,
+
+      totalExpenses,
+
+      safeRemaining
+
+    };
+
+
+    const results =
+
+      document.getElementById(
+        "plannerResults"
+      );
+
+
+    results.classList.add(
+      "show"
+    );
+
+
+    results.scrollIntoView(
+      {
+        behavior: "smooth",
+        block: "start"
+      }
+    );
+
+  }
+
+
+  /* ========================= */
+  /* DOWNLOAD */
+  /* ========================= */
+
+  document
+    .getElementById(
+      "downloadButton"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        if (
+          !latestPlannerData
+        ) {
+
+          alert(
+            "Create a plan first."
+          );
+
+          return;
+
+        }
+
+
+        const data =
+          latestPlannerData;
+
+
+        let text =
+          "";
+
+
+        text +=
+          "STRETCH MY CHECK\n";
+
+
+        text +=
+          "Recommended Money Plan\n";
+
+
+        text +=
+          "============================\n\n";
+
+
+        text +=
+
+          `Starting Money: ${formatMoney(
+            data.startingBalance
+          )}\n`;
+
+
+        text +=
+
+          `Protected Cushion: ${formatMoney(
+            data.cushion
+          )}\n`;
+
+
+        text +=
+
+          `Total Money Available: ${formatMoney(
+            data.totalMoneyAvailable
+          )}\n`;
+
+
+        text +=
+
+          `Bills & Needs: ${formatMoney(
+            data.totalExpenses
+          )}\n`;
+
+
+        text +=
+
+          `Final Account Balance: ${formatMoney(
+            data.balanceResult
+              .finalBalance
+          )}\n`;
+
+
+        text +=
+
+          `Safe Money Remaining: ${formatMoney(
+            data.safeRemaining
+          )}\n\n`;
+
+
+        data
+          .paychecks
+          .forEach(
+            paycheck => {
+
+              text +=
+
+                `${paycheck.name}\n`;
+
+
+              text +=
+
+                `Pay Date: ${dateText(
+                  paycheck.date
+                )}\n`;
+
+
+              text +=
+
+                `Paycheck: ${formatMoney(
+                  paycheck.amount
+                )}\n`;
+
+
+              text +=
+
+                `Living Expenses: ${formatMoney(
+                  paycheck.necessities
+                )}\n`;
+
+
+              text +=
+                "Bills:\n";
+
+
+              if (
+                !paycheck
+                  .bills
+                  .length
+              ) {
+
+                text +=
+                  "  None\n";
+
+              }
+
+              else {
+
+                paycheck
+                  .bills
+                  .forEach(
+                    bill => {
+
+                      text +=
+
+                        `  - ${bill.name}: ${formatMoney(
+                          bill.amount
+                        )}\n`;
+
+                    }
+                  );
+
+              }
+
+
+              text +=
+
+                `Net Change: ${formatMoney(
+                  paycheck.netChange
+                )}\n`;
+
+
+              text +=
+
+                `Running Balance: ${formatMoney(
+                  paycheck.runningBalance
+                )}\n`;
+
+
+              text +=
+
+                `Reserved for Future Bills: ${formatMoney(
+                  paycheck.reservedForFuture
+                )}\n`;
+
+
+              text +=
+
+                `Protected Cushion: ${formatMoney(
+                  data.cushion
+                )}\n`;
+
+
+              text +=
+
+                `Safe to Spend This Pay Period: ${formatMoney(
+                  paycheck.safeToSpend
+                )}\n`;
+
+
+              text +=
+                "----------------------------\n\n";
+
+            }
+          );
+
+
+        text +=
+          "Generated with Stretch My Check.";
+
+
+        const blob =
+
+          new Blob(
+            [text],
+            {
+              type:
+                "text/plain"
+            }
+          );
+
+
+        const url =
+
+          URL.createObjectURL(
+            blob
+          );
+
+
+        const link =
+
+          document.createElement(
+            "a"
+          );
+
+
+        link.href =
+          url;
+
+
+        link.download =
+          "Stretch-My-Check-Plan.txt";
+
+
+        document.body.appendChild(
+          link
+        );
+
+
+        link.click();
+
+
+        link.remove();
+
+
+        URL.revokeObjectURL(
+          url
+        );
+
+      }
+    );
+
+
+  /* ========================= */
+  /* PRINT */
+  /* ========================= */
+
+  document
+    .getElementById(
+      "printButton"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        window.print();
+
+      }
+    );
+
+
+  /* ========================= */
+  /* RESET */
+  /* ========================= */
+
+  document
+    .getElementById(
+      "resetPlanner"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        if (
+
+          !confirm(
+            "Start a new plan? This will clear everything currently entered."
+          )
+
+        ) {
+
+          return;
+
+        }
+
+
+        document
+          .getElementById(
+            "paychecksContainer"
+          )
+          .innerHTML =
+            "";
+
+
+        document
+          .getElementById(
+            "billsContainer"
+          )
+          .innerHTML =
+            "";
+
+
+        document
+          .getElementById(
+            "startingBalance"
+          )
+          .value =
+            "";
+
+
+        document
+          .getElementById(
+            "protectedCushion"
+          )
+          .value =
+            "";
+
+
+        document
+          .getElementById(
+            "groceryAmount"
+          )
+          .value =
+            "";
+
+
+        document
+          .getElementById(
+            "gasAmount"
+          )
+          .value =
+            "";
+
+
+        document
+          .getElementById(
+            "otherAmount"
+          )
+          .value =
+            "";
+
+
+        document
+          .getElementById(
+            "groceryMode"
+          )
+          .value =
+            "total";
+
+
+        document
+          .getElementById(
+            "gasMode"
+          )
+          .value =
+            "total";
+
+
+        document
+          .getElementById(
+            "otherMode"
+          )
+          .value =
+            "total";
+
+
+        document
+          .getElementById(
+            "plannerResults"
+          )
+          .classList.remove(
+            "show"
+          );
+
+
+        latestPlannerData =
+          null;
+
+
+        addPaycheck();
+
+        addPaycheck();
+
+        addPaycheck();
+
+        addPaycheck();
+
+
+        addBill();
+
+        addBill();
+
+
+        window.scrollTo(
+          {
+            top: 0,
+            behavior: "smooth"
+          }
+        );
+
+      }
+    );
+
+
+  /* ========================= */
+  /* DEFAULT STARTING ROWS */
+  /* ========================= */
+
+  addPaycheck();
+
+  addPaycheck();
+
+  addPaycheck();
+
+  addPaycheck();
+
+
+  addBill();
+
+  addBill();
+
+</script>
+
+</body>
+</html>
