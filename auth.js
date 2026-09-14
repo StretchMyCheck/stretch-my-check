@@ -1,977 +1,1161 @@
-const authRedirectUrl =
-  "https://stretchmycheck.github.io/stretch-my-check/";
-
-let currentUser = null;
-
-/* =========================
-   ADD AUTH STYLES
-========================= */
-
-const authStyle = document.createElement("style");
-
-authStyle.textContent = `
-  .auth-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 24, 32, 0.72);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    z-index: 9999;
-  }
-
-  .auth-overlay.show {
-    display: flex;
-  }
-
-  .auth-modal {
-    width: 100%;
-    max-width: 430px;
-    background: white;
-    border-radius: 18px;
-    padding: 24px;
-    color: #17242c;
-    box-shadow: 0 18px 50px rgba(0,0,0,.25);
-  }
-
-  .auth-modal-header {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    align-items: center;
-    margin-bottom: 18px;
-  }
-
-  .auth-modal-header h2 {
-    margin: 0;
-    font-size: 24px;
-  }
-
-  .auth-close {
-    background: #edf2f4;
-    border: 0;
-    border-radius: 9px;
-    width: 42px;
-    height: 42px;
-    cursor: pointer;
-    font-size: 20px;
-  }
-
-  .auth-field {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    margin-bottom: 14px;
-  }
-
-  .auth-field label {
-    font-weight: 700;
-    font-size: 14px;
-  }
-
-  .auth-field input {
-    width: 100%;
-    border: 1px solid #d6e0e5;
-    border-radius: 10px;
-    padding: 12px 13px;
-    min-height: 46px;
-    font-size: 16px;
-  }
-
-  .auth-submit {
-    width: 100%;
-    border: 0;
-    border-radius: 10px;
-    padding: 14px;
-    background: #247c8b;
-    color: white;
-    font-weight: 800;
-    cursor: pointer;
-    font-size: 16px;
-  }
-
-  .auth-switch {
-    width: 100%;
-    margin-top: 10px;
-    border: 0;
-    background: transparent;
-    color: #247c8b;
-    cursor: pointer;
-    font-weight: 700;
-  }
-
-  .auth-message {
-    display: none;
-    margin-bottom: 14px;
-    padding: 11px;
-    border-radius: 9px;
-    line-height: 1.4;
-    font-size: 14px;
-  }
-
-  .auth-message.show {
-    display: block;
-  }
-
-  .auth-message.good {
-    background: #e9f8ef;
-    border: 1px solid #a9ddbc;
-    color: #17663b;
-  }
-
-  .auth-message.bad {
-    background: #fff0f0;
-    border: 1px solid #efb4b4;
-    color: #9b2828;
-  }
-
-  .auth-user-email {
-    color: white;
-    font-size: 13px;
-    opacity: .9;
-    align-self: center;
-  }
-
-  .auth-active-button {
-    background: rgba(255,255,255,.13);
-    color: white;
-    border: 1px solid rgba(255,255,255,.28);
-    border-radius: 10px;
-    padding: 11px 14px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-`;
-
-document.head.appendChild(authStyle);
-
-
-/* =========================
-   CREATE AUTH MODAL
-========================= */
-
-const authOverlay =
-  document.createElement("div");
-
-authOverlay.className =
-  "auth-overlay";
-
-authOverlay.innerHTML = `
-  <div class="auth-modal">
-
-    <div class="auth-modal-header">
-      <h2 id="authTitle">
-        Create Account
-      </h2>
-
-      <button
-        id="authClose"
-        class="auth-close"
-        type="button"
-        aria-label="Close"
-      >
-        ×
-      </button>
-    </div>
-
-    <div
-      id="authMessage"
-      class="auth-message"
-    ></div>
-
-    <form id="authForm">
-
-      <div class="auth-field">
-        <label for="authEmail">
-          Email
-        </label>
-
-        <input
-          id="authEmail"
-          type="email"
-          autocomplete="email"
-          required
-        >
-      </div>
-
-      <div class="auth-field">
-        <label for="authPassword">
-          Password
-        </label>
-
-        <input
-          id="authPassword"
-          type="password"
-          minlength="8"
-          autocomplete="current-password"
-          required
-        >
-      </div>
-
-      <button
-        id="authSubmit"
-        class="auth-submit"
-        type="submit"
-      >
-        Create Account
-      </button>
-
-    </form>
-
-    <button
-      id="authSwitch"
-      class="auth-switch"
-      type="button"
-    >
-      Already have an account? Sign in
-    </button>
-
-  </div>
-`;
-
-document.body.appendChild(
-  authOverlay
-);
-
-
-/* =========================
-   AUTH STATE
-========================= */
-
-let authMode =
-  "signup";
-
-
-const authTitle =
-  document.getElementById(
-    "authTitle"
-  );
-
-const authMessage =
-  document.getElementById(
-    "authMessage"
-  );
-
-const authEmail =
-  document.getElementById(
-    "authEmail"
-  );
-
-const authPassword =
-  document.getElementById(
-    "authPassword"
-  );
-
-const authSubmit =
-  document.getElementById(
-    "authSubmit"
-  );
-
-const authSwitch =
-  document.getElementById(
-    "authSwitch"
-  );
-
-const authForm =
-  document.getElementById(
-    "authForm"
-  );
-
-
-function showAuthMessage(
-  message,
-  type
-) {
-
-  authMessage.textContent =
-    message;
-
-  authMessage.className =
-    `auth-message show ${type}`;
-
-}
-
-
-function clearAuthMessage() {
-
-  authMessage.textContent =
-    "";
-
-  authMessage.className =
-    "auth-message";
-
-}
-
-
-function updateAuthMode() {
-
-  clearAuthMessage();
-
-  authPassword.value =
-    "";
-
-
-  if (
-    authMode ===
-    "signup"
-  ) {
-
-    authTitle.textContent =
-      "Create Account";
-
-    authSubmit.textContent =
-      "Create Account";
-
-    authSwitch.textContent =
-      "Already have an account? Sign in";
-
-    authPassword.autocomplete =
-      "new-password";
-
-  }
-
-  else {
-
-    authTitle.textContent =
-      "Sign In";
-
-    authSubmit.textContent =
-      "Sign In";
-
-    authSwitch.textContent =
-      "Need an account? Create one";
-
-    authPassword.autocomplete =
-      "current-password";
-
-  }
-
-}
-
-
-function openAuth(
-  mode
-) {
-
-  authMode =
-    mode;
-
-  updateAuthMode();
-
-  authOverlay.classList.add(
-    "show"
-  );
-
-  setTimeout(
-    () => {
-      authEmail.focus();
-    },
-    50
-  );
-
-}
-
-
-function closeAuth() {
-
-  authOverlay.classList.remove(
-    "show"
-  );
-
-  clearAuthMessage();
-
-  authPassword.value =
-    "";
-
-}
-
-
-/* =========================
-   FIND EXISTING HEADER BUTTONS
-========================= */
-
-function getHeaderButtons() {
-
-  return [
-    ...document.querySelectorAll(
-      ".account-button"
-    )
-  ];
-
-}
-
-
-function configureHeaderButtons() {
-
-  const buttons =
-    getHeaderButtons();
-
-
-  if (
-    buttons.length < 2
-  ) {
-
-    console.warn(
-      "Stretch My Check auth buttons were not found."
+(() => {
+  const supabaseClient = window.supabaseClient;
+
+  if (!supabaseClient) {
+    console.error(
+      "Supabase client is not available. Load supabase-config.js before auth.js."
     );
-
-    return;
-
-  }
-
-
-  const createButton =
-    buttons[0];
-
-  const signInButton =
-    buttons[1];
-
-
-  createButton.disabled =
-    false;
-
-  signInButton.disabled =
-    false;
-
-
-  createButton.textContent =
-    "Create Account";
-
-  signInButton.textContent =
-    "Sign In";
-
-
-  createButton.addEventListener(
-    "click",
-    () => {
-
-      openAuth(
-        "signup"
-      );
-
-    }
-  );
-
-
-  signInButton.addEventListener(
-    "click",
-    () => {
-
-      openAuth(
-        "signin"
-      );
-
-    }
-  );
-
-}
-
-
-/* =========================
-   LOGGED-IN HEADER
-========================= */
-
-function showLoggedInHeader(
-  user
-) {
-
-  const container =
-    document.querySelector(
-      ".account-buttons"
-    );
-
-
-  if (!container) {
     return;
   }
 
+  const SITE_URL =
+    "https://stretchmycheck.github.io/stretch-my-check/";
 
-  container.innerHTML =
-    "";
+  const accountArea =
+    document.querySelector(".account-buttons");
 
+  if (!accountArea) {
+    console.error("Could not find .account-buttons in index.html.");
+    return;
+  }
 
-  const email =
-    document.createElement(
-      "span"
-    );
+  /* =========================================================
+     STYLES
+  ========================================================= */
 
-  email.className =
-    "auth-user-email";
+  const style = document.createElement("style");
 
-  email.textContent =
-    user.email;
+  style.textContent = `
+    .auth-header-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
 
+    .auth-email-small {
+      font-size: 12px;
+      opacity: .9;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-  const signOut =
-    document.createElement(
-      "button"
-    );
+    .auth-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 250px;
+      background: white;
+      color: #17242c;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 14px 38px rgba(0,0,0,.22);
+      z-index: 10020;
+      display: none;
+      border: 1px solid #d6e0e5;
+    }
 
-  signOut.className =
-    "auth-active-button";
+    .auth-menu.show {
+      display: block;
+    }
 
-  signOut.type =
-    "button";
+    .auth-menu-email {
+      font-size: 12px;
+      color: #667681;
+      padding: 8px 9px 10px;
+      border-bottom: 1px solid #edf1f3;
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
 
-  signOut.textContent =
-    "Sign Out";
+    .auth-menu button {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #17242c;
+      text-align: left;
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
 
+    .auth-menu button:hover {
+      background: #f2f6f8;
+    }
 
-  signOut.addEventListener(
-    "click",
-    async () => {
+    .auth-menu button.auth-danger {
+      color: #a12424;
+    }
 
-      const {
-        error
-      } =
-        await window
-          .supabaseClient
-          .auth
-          .signOut();
+    .auth-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,24,32,.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 10050;
+    }
 
+    .auth-modal-overlay.show {
+      display: flex;
+    }
 
-      if (error) {
+    .auth-modal {
+      width: 100%;
+      max-width: 460px;
+      background: #fff;
+      color: #17242c;
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.28);
+    }
 
-        alert(
-          error.message
-        );
+    .auth-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
 
-        return;
+    .auth-modal-header h2 {
+      margin: 0;
+      font-size: 23px;
+    }
 
+    .auth-close {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 9px;
+      background: #edf2f4;
+      cursor: pointer;
+      font-size: 20px;
+      color: #17242c;
+    }
+
+    .auth-field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 13px;
+    }
+
+    .auth-field label {
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .auth-field input {
+      width: 100%;
+      border: 1px solid #d6e0e5;
+      border-radius: 10px;
+      padding: 12px 13px;
+      min-height: 45px;
+      color: #17242c;
+      background: #fff;
+    }
+
+    .auth-main-button {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 15px;
+      min-height: 46px;
+      cursor: pointer;
+      background: #247c8b;
+      color: white;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .auth-main-button:disabled {
+      opacity: .65;
+      cursor: not-allowed;
+    }
+
+    .auth-link-button {
+      border: 0;
+      background: transparent;
+      color: #247c8b;
+      font-weight: 750;
+      cursor: pointer;
+      padding: 8px 0 0;
+    }
+
+    .auth-secondary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .auth-message {
+      display: none;
+      margin-top: 14px;
+      padding: 11px 12px;
+      border-radius: 10px;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .auth-message.show {
+      display: block;
+    }
+
+    .auth-message.good {
+      background: #e9f8ef;
+      border: 1px solid #a9ddbc;
+      color: #17663b;
+    }
+
+    .auth-message.bad {
+      background: #fff0f0;
+      border: 1px solid #efb4b4;
+      color: #9b2828;
+    }
+
+    .auth-message.info {
+      background: #eef6f8;
+      border: 1px solid #bdd8df;
+      color: #294d5f;
+    }
+
+    .auth-helper {
+      color: #667681;
+      font-size: 12px;
+      line-height: 1.45;
+      margin-top: -4px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 700px) {
+      .auth-header-wrap {
+        width: 100%;
+        justify-content: flex-start;
       }
 
+      .auth-menu {
+        left: 0;
+        right: auto;
+      }
 
-      window.location.reload();
-
+      .auth-email-small {
+        max-width: 180px;
+      }
     }
-  );
 
-
-  container.appendChild(
-    email
-  );
-
-  container.appendChild(
-    signOut
-  );
-
-}
-
-
-/* =========================
-   SIGNED-OUT HEADER
-========================= */
-
-function showSignedOutHeader() {
-
-  const container =
-    document.querySelector(
-      ".account-buttons"
-    );
-
-
-  if (!container) {
-    return;
-  }
-
-
-  container.innerHTML = `
-
-    <button
-      id="liveCreateAccount"
-      class="auth-active-button"
-      type="button"
-    >
-      Create Account
-    </button>
-
-    <button
-      id="liveSignIn"
-      class="auth-active-button"
-      type="button"
-    >
-      Sign In
-    </button>
-
+    @media print {
+      .auth-modal-overlay,
+      .auth-menu {
+        display: none !important;
+      }
+    }
   `;
 
+  document.head.appendChild(style);
 
-  document
-    .getElementById(
-      "liveCreateAccount"
-    )
-    .addEventListener(
-      "click",
-      () => {
+  /* =========================================================
+     MODAL
+  ========================================================= */
 
-        openAuth(
-          "signup"
-        );
+  const overlay = document.createElement("div");
+  overlay.className = "auth-modal-overlay";
 
+  overlay.innerHTML = `
+    <div class="auth-modal">
+      <div class="auth-modal-header">
+        <h2 id="authModalTitle">Account</h2>
+
+        <button
+          id="authCloseButton"
+          class="auth-close"
+          type="button"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      <div id="authModalBody"></div>
+
+      <div
+        id="authMessage"
+        class="auth-message"
+      ></div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const modalTitle =
+    document.getElementById("authModalTitle");
+
+  const modalBody =
+    document.getElementById("authModalBody");
+
+  const authMessage =
+    document.getElementById("authMessage");
+
+  const authCloseButton =
+    document.getElementById("authCloseButton");
+
+  function openModal(title, html) {
+    modalTitle.textContent = title;
+    modalBody.innerHTML = html;
+    clearAuthMessage();
+    overlay.classList.add("show");
+  }
+
+  function closeModal() {
+    overlay.classList.remove("show");
+    clearAuthMessage();
+  }
+
+  function showAuthMessage(message, type = "info") {
+    authMessage.textContent = message;
+    authMessage.className =
+      `auth-message show ${type}`;
+  }
+
+  function clearAuthMessage() {
+    authMessage.textContent = "";
+    authMessage.className = "auth-message";
+  }
+
+  authCloseButton.addEventListener(
+    "click",
+    closeModal
+  );
+
+  overlay.addEventListener(
+    "click",
+    event => {
+      if (event.target === overlay) {
+        closeModal();
       }
+    }
+  );
+
+  document.addEventListener(
+    "keydown",
+    event => {
+      if (
+        event.key === "Escape" &&
+        overlay.classList.contains("show")
+      ) {
+        closeModal();
+      }
+    }
+  );
+
+  /* =========================================================
+     SIGN-UP MODAL
+  ========================================================= */
+
+  function showSignUpModal() {
+    openModal(
+      "Create Account",
+      `
+        <div class="auth-field">
+          <label for="authSignupEmail">Email</label>
+          <input
+            id="authSignupEmail"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+          >
+        </div>
+
+        <div class="auth-field">
+          <label for="authSignupPassword">Password</label>
+          <input
+            id="authSignupPassword"
+            type="password"
+            autocomplete="new-password"
+            placeholder="At least 6 characters"
+          >
+        </div>
+
+        <div class="auth-field">
+          <label for="authSignupConfirmPassword">
+            Confirm password
+          </label>
+          <input
+            id="authSignupConfirmPassword"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Enter it again"
+          >
+        </div>
+
+        <button
+          id="authSignupSubmit"
+          class="auth-main-button"
+          type="button"
+        >
+          Create Account
+        </button>
+
+        <div class="auth-secondary-row">
+          <span class="auth-helper">
+            Already have an account?
+          </span>
+
+          <button
+            id="authSwitchToSignin"
+            class="auth-link-button"
+            type="button"
+          >
+            Sign In
+          </button>
+        </div>
+      `
     );
 
+    document
+      .getElementById("authSwitchToSignin")
+      .addEventListener("click", showSignInModal);
 
-  document
-    .getElementById(
-      "liveSignIn"
-    )
-    .addEventListener(
-      "click",
-      () => {
+    document
+      .getElementById("authSignupSubmit")
+      .addEventListener("click", createAccount);
+  }
 
-        openAuth(
-          "signin"
-        );
-
-      }
-    );
-
-}
-
-
-/* =========================
-   CREATE ACCOUNT / SIGN IN
-========================= */
-
-authForm.addEventListener(
-  "submit",
-  async event => {
-
-    event.preventDefault();
-
+  async function createAccount() {
     clearAuthMessage();
 
-
     const email =
-      authEmail
+      document
+        .getElementById("authSignupEmail")
         .value
         .trim();
 
-
     const password =
-      authPassword
+      document
+        .getElementById("authSignupPassword")
         .value;
 
+    const confirmPassword =
+      document
+        .getElementById("authSignupConfirmPassword")
+        .value;
 
-    if (
-      !email
-      ||
-      !password
-    ) {
+    if (!email) {
+      showAuthMessage(
+        "Enter your email address.",
+        "bad"
+      );
+      return;
+    }
 
+    if (password.length < 6) {
+      showAuthMessage(
+        "Your password must be at least 6 characters.",
+        "bad"
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showAuthMessage(
+        "The passwords do not match.",
+        "bad"
+      );
+      return;
+    }
+
+    const button =
+      document.getElementById(
+        "authSignupSubmit"
+      );
+
+    button.disabled = true;
+    button.textContent = "Creating Account...";
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: SITE_URL
+        }
+      });
+
+    button.disabled = false;
+    button.textContent = "Create Account";
+
+    if (error) {
+      showAuthMessage(
+        error.message ||
+          "Could not create your account.",
+        "bad"
+      );
+      return;
+    }
+
+    if (data?.session) {
+      showAuthMessage(
+        "Your account was created and you are signed in.",
+        "good"
+      );
+
+      setTimeout(
+        closeModal,
+        900
+      );
+
+      return;
+    }
+
+    showAuthMessage(
+      "Account created! Check your email and click the confirmation link before signing in.",
+      "good"
+    );
+  }
+
+  /* =========================================================
+     SIGN-IN MODAL
+  ========================================================= */
+
+  function showSignInModal() {
+    openModal(
+      "Sign In",
+      `
+        <div class="auth-field">
+          <label for="authSigninEmail">Email</label>
+          <input
+            id="authSigninEmail"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+          >
+        </div>
+
+        <div class="auth-field">
+          <label for="authSigninPassword">Password</label>
+          <input
+            id="authSigninPassword"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Your password"
+          >
+        </div>
+
+        <button
+          id="authSigninSubmit"
+          class="auth-main-button"
+          type="button"
+        >
+          Sign In
+        </button>
+
+        <div class="auth-secondary-row">
+          <button
+            id="authForgotPassword"
+            class="auth-link-button"
+            type="button"
+          >
+            Forgot Password?
+          </button>
+
+          <button
+            id="authSwitchToSignup"
+            class="auth-link-button"
+            type="button"
+          >
+            Create Account
+          </button>
+        </div>
+      `
+    );
+
+    document
+      .getElementById("authForgotPassword")
+      .addEventListener(
+        "click",
+        showForgotPasswordModal
+      );
+
+    document
+      .getElementById("authSwitchToSignup")
+      .addEventListener(
+        "click",
+        showSignUpModal
+      );
+
+    document
+      .getElementById("authSigninSubmit")
+      .addEventListener(
+        "click",
+        signIn
+      );
+  }
+
+  async function signIn() {
+    clearAuthMessage();
+
+    const email =
+      document
+        .getElementById("authSigninEmail")
+        .value
+        .trim();
+
+    const password =
+      document
+        .getElementById("authSigninPassword")
+        .value;
+
+    if (!email || !password) {
       showAuthMessage(
         "Enter your email and password.",
         "bad"
       );
-
       return;
-
     }
 
-
-    if (
-      password.length < 8
-    ) {
-
-      showAuthMessage(
-        "Your password must be at least 8 characters.",
-        "bad"
+    const button =
+      document.getElementById(
+        "authSigninSubmit"
       );
 
-      return;
+    button.disabled = true;
+    button.textContent = "Signing In...";
 
-    }
+    const {
+      error
+    } =
+      await supabaseClient.auth
+        .signInWithPassword({
+          email,
+          password
+        });
 
+    button.disabled = false;
+    button.textContent = "Sign In";
 
-    authSubmit.disabled =
-      true;
-
-
-    authSubmit.textContent =
-      authMode === "signup"
-        ? "Creating Account..."
-        : "Signing In...";
-
-
-    try {
-
-      if (
-        authMode ===
-        "signup"
-      ) {
-
-        const {
-          data,
-          error
-        } =
-          await window
-            .supabaseClient
-            .auth
-            .signUp(
-              {
-                email,
-                password,
-
-                options: {
-                  emailRedirectTo:
-                    authRedirectUrl
-                }
-              }
-            );
-
-
-        if (error) {
-
-          showAuthMessage(
-            error.message,
-            "bad"
-          );
-
-          return;
-
-        }
-
-
-        if (
-          data.session
-        ) {
-
-          showAuthMessage(
-            "Your account was created and you are signed in.",
-            "good"
-          );
-
-        }
-
-        else {
-
-          showAuthMessage(
-            "Account created! Check your email and click the confirmation link before signing in.",
-            "good"
-          );
-
-        }
-
-      }
-
-      else {
-
-        const {
-          data,
-          error
-        } =
-          await window
-            .supabaseClient
-            .auth
-            .signInWithPassword(
-              {
-                email,
-                password
-              }
-            );
-
-
-        if (error) {
-
-          showAuthMessage(
-            error.message,
-            "bad"
-          );
-
-          return;
-
-        }
-
-
-        if (
-          data.user
-        ) {
-
-          currentUser =
-            data.user;
-
-          closeAuth();
-
-          showLoggedInHeader(
-            data.user
-          );
-
-        }
-
-      }
-
-    }
-
-    catch (error) {
-
+    if (error) {
       showAuthMessage(
         error.message ||
-        "Something went wrong. Please try again.",
+          "Could not sign in.",
         "bad"
       );
-
+      return;
     }
 
-    finally {
+    showAuthMessage(
+      "Signed in successfully.",
+      "good"
+    );
 
-      authSubmit.disabled =
-        false;
+    setTimeout(
+      closeModal,
+      650
+    );
+  }
 
-      authSubmit.textContent =
-        authMode === "signup"
-          ? "Create Account"
-          : "Sign In";
+  /* =========================================================
+     FORGOT PASSWORD
+  ========================================================= */
 
+  function showForgotPasswordModal() {
+    openModal(
+      "Reset Password",
+      `
+        <p class="auth-helper">
+          Enter the email address for your Stretch My Check account.
+          We'll send you a secure password-reset link.
+        </p>
+
+        <div class="auth-field">
+          <label for="authResetEmail">Email</label>
+          <input
+            id="authResetEmail"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+          >
+        </div>
+
+        <button
+          id="authResetSubmit"
+          class="auth-main-button"
+          type="button"
+        >
+          Send Reset Link
+        </button>
+
+        <button
+          id="authBackToSignin"
+          class="auth-link-button"
+          type="button"
+        >
+          Back to Sign In
+        </button>
+      `
+    );
+
+    document
+      .getElementById("authBackToSignin")
+      .addEventListener(
+        "click",
+        showSignInModal
+      );
+
+    document
+      .getElementById("authResetSubmit")
+      .addEventListener(
+        "click",
+        sendResetLink
+      );
+  }
+
+  async function sendResetLink() {
+    clearAuthMessage();
+
+    const email =
+      document
+        .getElementById("authResetEmail")
+        .value
+        .trim();
+
+    if (!email) {
+      showAuthMessage(
+        "Enter your email address.",
+        "bad"
+      );
+      return;
     }
 
+    const button =
+      document.getElementById(
+        "authResetSubmit"
+      );
+
+    button.disabled = true;
+    button.textContent = "Sending...";
+
+    const {
+      error
+    } =
+      await supabaseClient.auth
+        .resetPasswordForEmail(
+          email,
+          {
+            redirectTo: SITE_URL
+          }
+        );
+
+    button.disabled = false;
+    button.textContent = "Send Reset Link";
+
+    if (error) {
+      showAuthMessage(
+        error.message ||
+          "Could not send the reset email.",
+        "bad"
+      );
+      return;
+    }
+
+    showAuthMessage(
+      "Password reset email sent. Open the link in that email to choose a new password.",
+      "good"
+    );
   }
-);
 
+  /* =========================================================
+     SET / CHANGE PASSWORD
+  ========================================================= */
 
-/* =========================
-   MODAL CONTROLS
-========================= */
+  function showChangePasswordModal(
+    isRecovery = false
+  ) {
+    openModal(
+      isRecovery
+        ? "Choose a New Password"
+        : "Change Password",
+      `
+        <div class="auth-field">
+          <label for="authNewPassword">
+            New password
+          </label>
 
-document
-  .getElementById(
-    "authClose"
-  )
-  .addEventListener(
-    "click",
-    closeAuth
-  );
+          <input
+            id="authNewPassword"
+            type="password"
+            autocomplete="new-password"
+            placeholder="At least 6 characters"
+          >
+        </div>
 
+        <div class="auth-field">
+          <label for="authConfirmNewPassword">
+            Confirm new password
+          </label>
 
-authSwitch.addEventListener(
-  "click",
-  () => {
+          <input
+            id="authConfirmNewPassword"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Enter it again"
+          >
+        </div>
 
-    authMode =
-      authMode === "signup"
-        ? "signin"
-        : "signup";
+        <button
+          id="authUpdatePasswordSubmit"
+          class="auth-main-button"
+          type="button"
+        >
+          ${
+            isRecovery
+              ? "Save New Password"
+              : "Update Password"
+          }
+        </button>
+      `
+    );
 
-    updateAuthMode();
-
+    document
+      .getElementById(
+        "authUpdatePasswordSubmit"
+      )
+      .addEventListener(
+        "click",
+        updatePassword
+      );
   }
-);
 
+  async function updatePassword() {
+    clearAuthMessage();
 
-authOverlay.addEventListener(
-  "click",
-  event => {
+    const password =
+      document
+        .getElementById(
+          "authNewPassword"
+        )
+        .value;
+
+    const confirmPassword =
+      document
+        .getElementById(
+          "authConfirmNewPassword"
+        )
+        .value;
+
+    if (password.length < 6) {
+      showAuthMessage(
+        "Your new password must be at least 6 characters.",
+        "bad"
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showAuthMessage(
+        "The passwords do not match.",
+        "bad"
+      );
+      return;
+    }
+
+    const button =
+      document.getElementById(
+        "authUpdatePasswordSubmit"
+      );
+
+    button.disabled = true;
+    button.textContent = "Saving...";
+
+    const {
+      error
+    } =
+      await supabaseClient.auth.updateUser({
+        password
+      });
+
+    button.disabled = false;
+    button.textContent = "Update Password";
+
+    if (error) {
+      showAuthMessage(
+        error.message ||
+          "Could not update your password.",
+        "bad"
+      );
+      return;
+    }
+
+    showAuthMessage(
+      "Your password was updated successfully.",
+      "good"
+    );
 
     if (
-      event.target ===
-      authOverlay
+      window.history &&
+      window.location.hash
     ) {
-
-      closeAuth();
-
+      window.history.replaceState(
+        null,
+        document.title,
+        window.location.pathname
+      );
     }
 
-  }
-);
-
-
-/* =========================
-   LOAD CURRENT SESSION
-========================= */
-
-async function initializeAuth() {
-
-  if (
-    !window.supabaseClient
-  ) {
-
-    console.error(
-      "Supabase client was not loaded."
+    setTimeout(
+      closeModal,
+      900
     );
-
-    return;
-
   }
 
+  /* =========================================================
+     HEADER ACCOUNT AREA
+  ========================================================= */
 
-  const {
-    data,
-    error
-  } =
-    await window
-      .supabaseClient
-      .auth
-      .getSession();
+  function renderSignedOut() {
+    accountArea.innerHTML = `
+      <div class="auth-header-wrap">
+        <button
+          id="authCreateAccountButton"
+          class="account-button"
+          type="button"
+        >
+          Create Account
+        </button>
 
+        <button
+          id="authSignInButton"
+          class="account-button"
+          type="button"
+        >
+          Sign In
+        </button>
+      </div>
+    `;
 
-  if (error) {
+    document
+      .getElementById(
+        "authCreateAccountButton"
+      )
+      .addEventListener(
+        "click",
+        showSignUpModal
+      );
 
-    console.error(
-      error
-    );
-
+    document
+      .getElementById(
+        "authSignInButton"
+      )
+      .addEventListener(
+        "click",
+        showSignInModal
+      );
   }
 
+  function renderSignedIn(user) {
+    const email =
+      user?.email || "Signed in";
 
-  currentUser =
-    data?.session?.user ||
-    null;
+    accountArea.innerHTML = `
+      <div class="auth-header-wrap">
+        <span class="auth-email-small"></span>
 
+        <button
+          id="authAccountMenuButton"
+          class="account-button"
+          type="button"
+          aria-expanded="false"
+        >
+          Account ▾
+        </button>
 
-  if (
-    currentUser
-  ) {
+        <div
+          id="authAccountMenu"
+          class="auth-menu"
+        >
+          <div
+            id="authAccountMenuEmail"
+            class="auth-menu-email"
+          ></div>
 
-    showLoggedInHeader(
-      currentUser
-    );
+          <button
+            id="authChangePasswordButton"
+            type="button"
+          >
+            Change Password
+          </button>
 
-  }
+          <button
+            id="authSignOutButton"
+            class="auth-danger"
+            type="button"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    `;
 
-  else {
+    accountArea
+      .querySelector(".auth-email-small")
+      .textContent = email;
 
-    showSignedOutHeader();
+    document
+      .getElementById(
+        "authAccountMenuEmail"
+      )
+      .textContent = email;
 
-  }
+    const menu =
+      document.getElementById(
+        "authAccountMenu"
+      );
 
+    const menuButton =
+      document.getElementById(
+        "authAccountMenuButton"
+      );
 
-  window
-    .supabaseClient
-    .auth
-    .onAuthStateChange(
-      (
-        event,
-        session
-      ) => {
+    menuButton.addEventListener(
+      "click",
+      event => {
+        event.stopPropagation();
 
-        currentUser =
-          session?.user ||
-          null;
+        const isOpen =
+          menu.classList.toggle("show");
 
-
-        if (
-          currentUser
-        ) {
-
-          showLoggedInHeader(
-            currentUser
-          );
-
-        }
-
-        else {
-
-          showSignedOutHeader();
-
-        }
-
+        menuButton.setAttribute(
+          "aria-expanded",
+          String(isOpen)
+        );
       }
     );
 
-}
+    document
+      .getElementById(
+        "authChangePasswordButton"
+      )
+      .addEventListener(
+        "click",
+        () => {
+          menu.classList.remove("show");
+          showChangePasswordModal(false);
+        }
+      );
 
+    document
+      .getElementById(
+        "authSignOutButton"
+      )
+      .addEventListener(
+        "click",
+        async () => {
+          menu.classList.remove("show");
 
-configureHeaderButtons();
+          const {
+            error
+          } =
+            await supabaseClient.auth.signOut();
 
-initializeAuth();
+          if (error) {
+            window.alert(
+              error.message ||
+                "Could not sign out."
+            );
+          }
+        }
+      );
+  }
+
+  document.addEventListener(
+    "click",
+    event => {
+      const menu =
+        document.getElementById(
+          "authAccountMenu"
+        );
+
+      const menuButton =
+        document.getElementById(
+          "authAccountMenuButton"
+        );
+
+      if (
+        menu &&
+        menuButton &&
+        !menu.contains(event.target) &&
+        !menuButton.contains(event.target)
+      ) {
+        menu.classList.remove("show");
+        menuButton.setAttribute(
+          "aria-expanded",
+          "false"
+        );
+      }
+    }
+  );
+
+  /* =========================================================
+     INITIAL SESSION
+  ========================================================= */
+
+  async function refreshHeader() {
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.getSession();
+
+    if (error) {
+      console.error(error);
+      renderSignedOut();
+      return;
+    }
+
+    if (data?.session?.user) {
+      renderSignedIn(
+        data.session.user
+      );
+    } else {
+      renderSignedOut();
+    }
+  }
+
+  /* =========================================================
+     AUTH EVENTS
+  ========================================================= */
+
+  supabaseClient.auth.onAuthStateChange(
+    (event, session) => {
+      if (session?.user) {
+        renderSignedIn(session.user);
+      } else {
+        renderSignedOut();
+      }
+
+      if (event === "PASSWORD_RECOVERY") {
+        setTimeout(
+          () => {
+            showChangePasswordModal(true);
+          },
+          150
+        );
+      }
+    }
+  );
+
+  refreshHeader();
+
+})();
