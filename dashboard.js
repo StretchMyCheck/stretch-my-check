@@ -105,8 +105,7 @@
      STYLES
      ========================================================= */
 
-  const style =
-    document.createElement("style");
+  const style = document.createElement("style");
 
   style.textContent = `
     .money-dashboard {
@@ -148,8 +147,7 @@
     .money-dashboard-subtitle {
       margin: 7px 0 0;
       max-width: 650px;
-      color:
-        rgba(255,255,255,.82);
+      color: rgba(255,255,255,.82);
       line-height: 1.5;
       font-size: 14px;
     }
@@ -160,32 +158,25 @@
       padding: 9px 13px;
       font-size: 13px;
       font-weight: 850;
-      background:
-        rgba(255,255,255,.14);
-      border:
-        1px solid
-        rgba(255,255,255,.22);
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.22);
       white-space: nowrap;
     }
 
     .money-weather.comfortable {
-      background:
-        rgba(46, 204, 113, .18);
+      background: rgba(46, 204, 113, .18);
     }
 
     .money-weather.tight {
-      background:
-        rgba(255, 193, 7, .20);
+      background: rgba(255, 193, 7, .20);
     }
 
     .money-weather.risk {
-      background:
-        rgba(255, 133, 27, .20);
+      background: rgba(255, 133, 27, .20);
     }
 
     .money-weather.shortfall {
-      background:
-        rgba(231, 76, 60, .22);
+      background: rgba(231, 76, 60, .22);
     }
 
     .dashboard-primary {
@@ -201,18 +192,14 @@
     .payday-next-card {
       border-radius: 18px;
       padding: 21px;
-      background:
-        rgba(255,255,255,.11);
-      border:
-        1px solid
-        rgba(255,255,255,.18);
+      background: rgba(255,255,255,.11);
+      border: 1px solid rgba(255,255,255,.18);
     }
 
     .dashboard-label {
       display: block;
       margin-bottom: 6px;
-      color:
-        rgba(255,255,255,.76);
+      color: rgba(255,255,255,.76);
       font-size: 13px;
       font-weight: 700;
     }
@@ -228,8 +215,7 @@
 
     .dashboard-small-copy {
       margin: 7px 0 0;
-      color:
-        rgba(255,255,255,.78);
+      color: rgba(255,255,255,.78);
       line-height: 1.45;
       font-size: 13px;
     }
@@ -244,8 +230,7 @@
     .next-payday-date {
       margin-top: 4px;
       font-size: 14px;
-      color:
-        rgba(255,255,255,.84);
+      color: rgba(255,255,255,.84);
     }
 
     .dashboard-stats {
@@ -259,17 +244,13 @@
       min-width: 0;
       border-radius: 15px;
       padding: 15px;
-      background:
-        rgba(255,255,255,.09);
-      border:
-        1px solid
-        rgba(255,255,255,.14);
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.14);
     }
 
     .dashboard-stat span {
       display: block;
-      color:
-        rgba(255,255,255,.72);
+      color: rgba(255,255,255,.72);
       font-size: 12px;
       line-height: 1.3;
       margin-bottom: 5px;
@@ -286,10 +267,8 @@
       margin-top: 17px;
       border-radius: 15px;
       padding: 15px 17px;
-      background:
-        rgba(4, 20, 26, .16);
-      color:
-        rgba(255,255,255,.88);
+      background: rgba(4, 20, 26, .16);
+      color: rgba(255,255,255,.88);
       line-height: 1.55;
       font-size: 14px;
     }
@@ -340,9 +319,7 @@
     .tool-field input,
     .tool-field select {
       width: 100%;
-      border:
-        1px solid
-        #d6e0e5;
+      border: 1px solid #d6e0e5;
       border-radius: 10px;
       padding: 12px 13px;
       min-height: 45px;
@@ -364,11 +341,6 @@
     .tool-button.secondary {
       background: #e9eff2;
       color: #17242c;
-    }
-
-    .tool-button.danger {
-      background: #f8e5e5;
-      color: #a12424;
     }
 
     .tool-result {
@@ -408,10 +380,6 @@
       color: #17242c;
     }
 
-    .tool-result strong {
-      font-size: 15px;
-    }
-
     .smart-replan-options {
       display: grid;
       grid-template-columns:
@@ -421,9 +389,7 @@
     }
 
     .replan-choice {
-      border:
-        1px solid
-        #d6e0e5;
+      border: 1px solid #d6e0e5;
       background: #f7f9fa;
       color: #17242c;
       border-radius: 12px;
@@ -432,10 +398,6 @@
       cursor: pointer;
       min-height: 70px;
       line-height: 1.3;
-    }
-
-    .replan-choice:hover {
-      border-color: #247c8b;
     }
 
     .replan-choice.active {
@@ -463,11 +425,8 @@
     .replan-preview-tile {
       border-radius: 10px;
       padding: 12px;
-      background:
-        rgba(255,255,255,.65);
-      border:
-        1px solid
-        rgba(0,0,0,.07);
+      background: rgba(255,255,255,.65);
+      border: 1px solid rgba(0,0,0,.07);
     }
 
     .replan-preview-tile span {
@@ -549,17 +508,14 @@
      DASHBOARD HTML
      ========================================================= */
 
-  const dashboard =
-    document.createElement("section");
+  const dashboard = document.createElement("section");
 
-  dashboard.className =
-    "money-dashboard no-print";
+  dashboard.className = "money-dashboard no-print";
 
   dashboard.innerHTML = `
     <div class="money-dashboard-inner">
 
       <div class="money-dashboard-header">
-
         <div>
           <h2 class="money-dashboard-title">
             Make It to Payday
@@ -572,20 +528,14 @@
           </p>
         </div>
 
-        <div
-          id="moneyWeather"
-          class="money-weather"
-        >
+        <div id="moneyWeather" class="money-weather">
           ⏳ Add your money
         </div>
-
       </div>
-
 
       <div class="dashboard-primary">
 
         <div class="payday-main-card">
-
           <span class="dashboard-label">
             SAFE TO SPEND UNTIL PAYDAY
           </span>
@@ -604,12 +554,9 @@
             Add your money, paychecks,
             and bills below to get started.
           </p>
-
         </div>
 
-
         <div class="payday-next-card">
-
           <span class="dashboard-label">
             NEXT PAYDAY
           </span>
@@ -627,11 +574,9 @@
           >
             Add a paycheck date
           </div>
-
         </div>
 
       </div>
-
 
       <div class="dashboard-stats">
 
@@ -665,7 +610,6 @@
 
       </div>
 
-
       <div
         id="dashboardExplanation"
         class="dashboard-explanation"
@@ -674,9 +618,6 @@
         will appear here as you fill out
         the planner.
       </div>
-
-
-      <!-- CAN I AFFORD THIS -->
 
       <div class="dashboard-tool-card">
 
@@ -693,7 +634,6 @@
         <div class="tool-grid">
 
           <div class="tool-field">
-
             <label for="affordName">
               What are you buying?
             </label>
@@ -703,12 +643,9 @@
               type="text"
               placeholder="Example: Birthday party"
             >
-
           </div>
 
-
           <div class="tool-field">
-
             <label for="affordAmount">
               Cost
             </label>
@@ -720,9 +657,7 @@
               step="0.01"
               placeholder="Example: 175"
             >
-
           </div>
-
 
           <button
             id="affordButton"
@@ -734,16 +669,12 @@
 
         </div>
 
-
         <div
           id="affordResult"
           class="tool-result"
         ></div>
 
       </div>
-
-
-      <!-- SMART REPLAN -->
 
       <div class="dashboard-tool-card">
 
@@ -756,7 +687,6 @@
           affect your money before changing your
           actual plan.
         </p>
-
 
         <div class="smart-replan-options">
 
@@ -794,11 +724,7 @@
 
         </div>
 
-
-        <div
-          id="replanForm"
-          class="replan-form"
-        >
+        <div id="replanForm" class="replan-form">
 
           <div class="tool-grid">
 
@@ -807,18 +733,14 @@
               class="tool-field"
               style="display:none;"
             >
-
               <label for="replanPaycheck">
                 Which paycheck?
               </label>
 
               <select id="replanPaycheck"></select>
-
             </div>
 
-
             <div class="tool-field">
-
               <label
                 id="replanAmountLabel"
                 for="replanAmount"
@@ -833,9 +755,7 @@
                 step="0.01"
                 placeholder="0.00"
               >
-
             </div>
-
 
             <button
               id="replanPreviewButton"
@@ -846,7 +766,6 @@
             </button>
 
           </div>
-
 
           <div
             id="replanResult"
@@ -860,16 +779,10 @@
     </div>
   `;
 
-
   const intro =
-    document.querySelector(
-      ".intro-card"
-    );
+    document.querySelector(".intro-card");
 
-  if (
-    intro &&
-    intro.parentNode
-  ) {
+  if (intro && intro.parentNode) {
     intro.insertAdjacentElement(
       "afterend",
       dashboard
@@ -881,7 +794,7 @@
   }
 
   /* =========================================================
-     CURRENT PLAN DATA
+     PLAN DATA
      ========================================================= */
 
   function getPaychecks() {
@@ -890,38 +803,33 @@
         ".paycheck-entry"
       )
     ]
-      .map(
-        (entry, index) => {
+      .map((entry, index) => {
+        const dateValue =
+          entry.querySelector(
+            ".paycheck-date"
+          )?.value || "";
 
-          const dateValue =
-            entry.querySelector(
-              ".paycheck-date"
-            )?.value || "";
+        const name =
+          entry.querySelector(
+            ".paycheck-name"
+          )?.value.trim()
+          ||
+          `Paycheck ${index + 1}`;
 
-          const name =
-            entry.querySelector(
-              ".paycheck-name"
-            )?.value.trim()
-            ||
-            `Paycheck ${index + 1}`;
-
-          return {
-            entry,
-            name,
-            dateValue,
-            date:
-              parseLocalDate(
-                dateValue
-              ),
-            amount:
-              money(
-                entry.querySelector(
-                  ".paycheck-amount"
-                )?.value
-              )
-          };
-        }
-      )
+        return {
+          entry,
+          name,
+          dateValue,
+          date:
+            parseLocalDate(dateValue),
+          amount:
+            money(
+              entry.querySelector(
+                ".paycheck-amount"
+              )?.value
+            )
+        };
+      })
       .filter(
         paycheck =>
           paycheck.date
@@ -932,7 +840,6 @@
       );
   }
 
-
   function getNextPaycheck(
     paychecks,
     today
@@ -941,12 +848,9 @@
       paychecks.find(
         paycheck =>
           paycheck.date >= today
-      )
-      ||
-      null
+      ) || null
     );
   }
-
 
   function getBillsBeforePayday(
     today,
@@ -962,7 +866,6 @@
       )
     ].reduce(
       (total, entry) => {
-
         const type =
           entry.querySelector(
             ".bill-type"
@@ -1008,7 +911,6 @@
     );
   }
 
-
   function necessityForOnePeriod(
     amountId,
     modeId,
@@ -1032,21 +934,15 @@
       return 0;
     }
 
-    if (
-      mode === "percheck"
-    ) {
+    if (mode === "percheck") {
       return amount;
     }
 
     return (
       amount /
-      Math.max(
-        paycheckCount,
-        1
-      )
+      Math.max(paycheckCount, 1)
     );
   }
-
 
   function getLivingMoneyNeeded(
     paycheckCount
@@ -1071,7 +967,6 @@
       )
     );
   }
-
 
   function getDashboardState(
     overrides = {}
@@ -1199,25 +1094,21 @@
       };
     }
 
-    if (
-      safeToSpend < 0
-    ) {
+    if (safeToSpend < 0) {
       return {
         className:
           "shortfall",
         text:
-          "🔴 Shortfall Expected"
+          "🔴 Tight Before Payday"
       };
     }
 
-    if (
-      safeToSpend === 0
-    ) {
+    if (safeToSpend === 0) {
       return {
         className:
           "risk",
         text:
-          "🟠 At Risk"
+          "🟠 No Extra Room"
       };
     }
 
@@ -1230,9 +1121,7 @@
     const daily =
       safeToSpend / days;
 
-    if (
-      daily < 10
-    ) {
+    if (daily < 10) {
       return {
         className:
           "risk",
@@ -1241,9 +1130,7 @@
       };
     }
 
-    if (
-      daily < 25
-    ) {
+    if (daily < 25) {
       return {
         className:
           "tight",
@@ -1280,30 +1167,25 @@
       dailySafe
     } = state;
 
-
     document.getElementById(
       "dashboardSafeToSpend"
     ).textContent =
       currency(displayedSafe);
-
 
     document.getElementById(
       "dashboardCurrentMoney"
     ).textContent =
       currency(startingBalance);
 
-
     document.getElementById(
       "dashboardBillsBeforePayday"
     ).textContent =
       currency(billsBeforePayday);
 
-
     document.getElementById(
       "dashboardCushion"
     ).textContent =
       currency(cushion);
-
 
     document.getElementById(
       "dashboardDailySafe"
@@ -1311,7 +1193,6 @@
       nextPaycheck
         ? currency(dailySafe)
         : "—";
-
 
     document.getElementById(
       "dashboardNextPaycheck"
@@ -1322,18 +1203,15 @@
           )
         : "—";
 
-
     document.getElementById(
       "dashboardNextPaycheckDate"
     ).textContent =
       nextPaycheck
         ? (
             daysUntilPayday === 0
-
               ? `${formatDate(
                   nextPaycheck.date
                 )} • Payday is today`
-
               : `${formatDate(
                   nextPaycheck.date
                 )} • ${daysUntilPayday} day${
@@ -1344,69 +1222,50 @@
           )
         : "Add a future paycheck date";
 
-
     const forecast =
       getForecast(
         safeToSpend,
         daysUntilPayday,
-        Boolean(
-          nextPaycheck
-        )
+        Boolean(nextPaycheck)
       );
-
 
     const weather =
       document.getElementById(
         "moneyWeather"
       );
 
-
     weather.className =
       "money-weather";
 
-
-    if (
-      forecast.className
-    ) {
+    if (forecast.className) {
       weather.classList.add(
         forecast.className
       );
     }
 
-
     weather.textContent =
       forecast.text;
-
 
     const safeMessage =
       document.getElementById(
         "dashboardSafeMessage"
       );
 
-
-    if (
-      !nextPaycheck
-    ) {
+    if (!nextPaycheck) {
       safeMessage.textContent =
         "Add your next paycheck date so Stretch My Check can calculate how far your current money needs to last.";
     }
 
-    else if (
-      safeToSpend < 0
-    ) {
+    else if (safeToSpend < 0) {
       safeMessage.textContent =
         `You're ${currency(
-          Math.abs(
-            safeToSpend
-          )
-        )} short of covering the money that needs to stay protected before payday.`;
+          Math.abs(safeToSpend)
+        )} short of fully protecting your planned needs and cushion before payday. Your upcoming paycheck may still make your overall plan workable.`;
     }
 
-    else if (
-      displayedSafe === 0
-    ) {
+    else if (displayedSafe === 0) {
       safeMessage.textContent =
-        "Your current money is already needed for bills, necessities, or your protected cushion.";
+        "Your current money is fully assigned to bills, necessities, or your protected cushion. There is no extra spending room before payday.";
     }
 
     else {
@@ -1416,12 +1275,10 @@
         )} per day and still protect the money we've reserved.`;
     }
 
-
     const explanation =
       document.getElementById(
         "dashboardExplanation"
       );
-
 
     if (
       startingBalance <= 0
@@ -1436,10 +1293,7 @@
       return;
     }
 
-
-    if (
-      !nextPaycheck
-    ) {
+    if (!nextPaycheck) {
       explanation.innerHTML = `
         You currently have
         <strong>${currency(
@@ -1455,69 +1309,89 @@
       return;
     }
 
+    const totalProtectedBeforePayday =
+      billsBeforePayday
+      +
+      livingMoney
+      +
+      cushion;
 
-    const parts =
-      [];
+    if (safeToSpend < 0) {
+      explanation.innerHTML = `
+        Before
+        <strong>${formatDate(
+          nextPaycheck.date
+        )}</strong>,
+        you have
+        <strong>${currency(
+          startingBalance
+        )}</strong>
+        available now, but Stretch My Check is trying to protect
+        <strong>${currency(
+          totalProtectedBeforePayday
+        )}</strong>
+        for bills, living expenses, and your cushion.
 
+        <br><br>
 
-    if (
-      billsBeforePayday > 0
-    ) {
-      parts.push(
-        `<strong>${currency(
-          billsBeforePayday
-        )}</strong> for bills due before payday`
-      );
+        That leaves a
+        <strong>${currency(
+          Math.abs(safeToSpend)
+        )}</strong>
+        gap before payday.
+      `;
+    } else {
+      const parts = [];
+
+      if (billsBeforePayday > 0) {
+        parts.push(
+          `<strong>${currency(
+            billsBeforePayday
+          )}</strong> for bills due before payday`
+        );
+      }
+
+      if (livingMoney > 0) {
+        parts.push(
+          `<strong>${currency(
+            livingMoney
+          )}</strong> for groceries, gas, and other everyday needs`
+        );
+      }
+
+      if (cushion > 0) {
+        parts.push(
+          `<strong>${currency(
+            cushion
+          )}</strong> protected as your cushion`
+        );
+      }
+
+      explanation.innerHTML =
+        parts.length
+          ? `
+            Before
+            <strong>${formatDate(
+              nextPaycheck.date
+            )}</strong>,
+            Stretch My Check is keeping
+            ${parts.join(", ")}.
+            That leaves
+            <strong>${currency(
+              displayedSafe
+            )}</strong>
+            available to spend safely.
+          `
+          : `
+            Nothing is currently reserved before
+            <strong>${formatDate(
+              nextPaycheck.date
+            )}</strong>.
+            Based on the information entered,
+            your current money is not assigned
+            to bills, necessities, or your cushion.
+          `;
     }
-
-
-    if (
-      livingMoney > 0
-    ) {
-      parts.push(
-        `<strong>${currency(
-          livingMoney
-        )}</strong> for groceries, gas, and other everyday needs`
-      );
-    }
-
-
-    if (
-      cushion > 0
-    ) {
-      parts.push(
-        `<strong>${currency(
-          cushion
-        )}</strong> protected as your cushion`
-      );
-    }
-
-
-    explanation.innerHTML =
-      parts.length
-        ? `
-          Before
-          <strong>${formatDate(
-            nextPaycheck.date
-          )}</strong>,
-          Stretch My Check is keeping
-          ${parts.join(", ")}.
-          That leaves
-          <strong>${currency(
-            displayedSafe
-          )}</strong>
-          available to spend safely.
-        `
-        : `
-          Nothing is currently reserved before
-          <strong>${formatDate(
-            nextPaycheck.date
-          )}</strong>.
-          Based on the information entered,
-          your current money is not assigned
-          to bills, necessities, or your cushion.
-        `;
-
 
     refreshReplanPaychecks();
   }
@@ -1532,18 +1406,15 @@
         "affordResult"
       );
 
-
     const rawName =
       document.getElementById(
         "affordName"
       ).value.trim();
 
-
     const name =
       rawName
         ? escapeHTML(rawName)
         : "this purchase";
-
 
     const amount =
       money(
@@ -1552,14 +1423,10 @@
         ).value
       );
 
-
     result.className =
       "tool-result";
 
-
-    if (
-      amount <= 0
-    ) {
+    if (amount <= 0) {
       result.classList.add(
         "show",
         "bad"
@@ -1569,7 +1436,7 @@
         <strong>
           Enter a purchase amount first.
         </strong>
-        <br>
+        <br><br>
         Add the cost so Stretch My Check
         can compare it to your current plan.
       `;
@@ -1577,14 +1444,10 @@
       return;
     }
 
-
     const state =
       getDashboardState();
 
-
-    if (
-      !state.nextPaycheck
-    ) {
+    if (!state.nextPaycheck) {
       result.classList.add(
         "show",
         "bad"
@@ -1594,7 +1457,7 @@
         <strong>
           Add your next payday first.
         </strong>
-        <br>
+        <br><br>
         Stretch My Check needs to know how long
         your current money has to last.
       `;
@@ -1602,19 +1465,16 @@
       return;
     }
 
-
     const remainingSafe =
       state.safeToSpend
       -
       amount;
-
 
     const days =
       Math.max(
         state.daysUntilPayday,
         1
       );
-
 
     const newDaily =
       Math.max(
@@ -1624,10 +1484,7 @@
       /
       days;
 
-
-    if (
-      remainingSafe < 0
-    ) {
+    if (remainingSafe < 0) {
       result.classList.add(
         "show",
         "bad"
@@ -1647,9 +1504,7 @@
 
         That is
         <strong>${currency(
-          Math.abs(
-            remainingSafe
-          )
+          Math.abs(remainingSafe)
         )}</strong>
         more than your current safe-to-spend amount.
 
@@ -1662,7 +1517,6 @@
 
       return;
     }
-
 
     if (
       remainingSafe === 0
@@ -1702,10 +1556,7 @@
       return;
     }
 
-
-    if (
-      newDaily < 25
-    ) {
+    if (newDaily < 25) {
       result.classList.add(
         "show",
         "tight"
@@ -1739,7 +1590,6 @@
       return;
     }
 
-
     result.classList.add(
       "show",
       "good"
@@ -1771,7 +1621,6 @@
     `;
   }
 
-
   document
     .getElementById(
       "affordButton"
@@ -1781,7 +1630,6 @@
       checkAffordability
     );
 
-
   document
     .getElementById(
       "affordAmount"
@@ -1789,13 +1637,9 @@
     .addEventListener(
       "keydown",
       event => {
-
-        if (
-          event.key === "Enter"
-        ) {
+        if (event.key === "Enter") {
           checkAffordability();
         }
-
       }
     );
 
@@ -1803,12 +1647,8 @@
      SMART REPLAN
      ========================================================= */
 
-  let activeReplanType =
-    null;
-
-  let pendingReplan =
-    null;
-
+  let activeReplanType = null;
+  let pendingReplan = null;
 
   const replanChoices =
     [
@@ -1817,42 +1657,35 @@
       )
     ];
 
-
   const replanForm =
     document.getElementById(
       "replanForm"
     );
-
 
   const replanPaycheckField =
     document.getElementById(
       "replanPaycheckField"
     );
 
-
   const replanPaycheck =
     document.getElementById(
       "replanPaycheck"
     );
-
 
   const replanAmount =
     document.getElementById(
       "replanAmount"
     );
 
-
   const replanAmountLabel =
     document.getElementById(
       "replanAmountLabel"
     );
 
-
   const replanResult =
     document.getElementById(
       "replanResult"
     );
-
 
   function refreshReplanPaychecks() {
     const currentValue =
@@ -1861,26 +1694,17 @@
     const paychecks =
       getPaychecks();
 
-
-    replanPaycheck.innerHTML =
-      "";
-
+    replanPaycheck.innerHTML = "";
 
     paychecks.forEach(
-      (
-        paycheck,
-        index
-      ) => {
-
+      (paycheck, index) => {
         const option =
           document.createElement(
             "option"
           );
 
-
         option.value =
           String(index);
-
 
         option.textContent =
           `${paycheck.name} — ${formatDate(
@@ -1889,14 +1713,11 @@
             paycheck.amount
           )}`;
 
-
         replanPaycheck.appendChild(
           option
         );
-
       }
     );
-
 
     if (
       [
@@ -1912,15 +1733,9 @@
     }
   }
 
-
-  function setReplanType(
-    type
-  ) {
-    activeReplanType =
-      type;
-
-    pendingReplan =
-      null;
+  function setReplanType(type) {
+    activeReplanType = type;
+    pendingReplan = null;
 
     replanChoices.forEach(
       button => {
@@ -1938,19 +1753,14 @@
     replanResult.className =
       "tool-result";
 
-    replanResult.innerHTML =
-      "";
+    replanResult.innerHTML = "";
 
-    replanAmount.value =
-      "";
+    replanAmount.value = "";
 
     replanPaycheckField.style.display =
       "none";
 
-
-    if (
-      type === "paycheck"
-    ) {
+    if (type === "paycheck") {
       replanPaycheckField.style.display =
         "flex";
 
@@ -1958,52 +1768,36 @@
         "New paycheck amount";
     }
 
-
-    if (
-      type === "bill"
-    ) {
+    if (type === "bill") {
       replanAmountLabel.textContent =
         "Unexpected bill amount";
     }
 
-
-    if (
-      type === "spent"
-    ) {
+    if (type === "spent") {
       replanAmountLabel.textContent =
         "Extra amount already spent";
     }
 
-
-    if (
-      type === "extra"
-    ) {
+    if (type === "extra") {
       replanAmountLabel.textContent =
         "Extra money received";
     }
 
-
     refreshReplanPaychecks();
   }
 
-
   replanChoices.forEach(
     button => {
-
       button.addEventListener(
         "click",
         () => {
-
           setReplanType(
             button.dataset.replanType
           );
-
         }
       );
-
     }
   );
-
 
   function showReplanPreview() {
     const amount =
@@ -2011,14 +1805,10 @@
         replanAmount.value
       );
 
-
     replanResult.className =
       "tool-result";
 
-
-    if (
-      !activeReplanType
-    ) {
+    if (!activeReplanType) {
       replanResult.classList.add(
         "show",
         "bad"
@@ -2033,10 +1823,7 @@
       return;
     }
 
-
-    if (
-      amount <= 0
-    ) {
+    if (amount <= 0) {
       replanResult.classList.add(
         "show",
         "bad"
@@ -2051,14 +1838,10 @@
       return;
     }
 
-
     const current =
       getDashboardState();
 
-
-    if (
-      !current.nextPaycheck
-    ) {
+    if (!current.nextPaycheck) {
       replanResult.classList.add(
         "show",
         "bad"
@@ -2068,7 +1851,7 @@
         <strong>
           Add your next payday first.
         </strong>
-        <br>
+        <br><br>
         Smart Replan needs your current payday
         information to preview the change.
       `;
@@ -2076,20 +1859,11 @@
       return;
     }
 
+    let preview = null;
+    let description = "";
+    let applyText = "";
 
-    let preview =
-      null;
-
-    let description =
-      "";
-
-    let applyText =
-      "";
-
-
-    if (
-      activeReplanType === "spent"
-    ) {
+    if (activeReplanType === "spent") {
       preview =
         getDashboardState({
           startingBalance:
@@ -2114,10 +1888,7 @@
         "APPLY SPENDING";
     }
 
-
-    if (
-      activeReplanType === "extra"
-    ) {
+    if (activeReplanType === "extra") {
       preview =
         getDashboardState({
           startingBalance:
@@ -2139,10 +1910,7 @@
         "ADD EXTRA MONEY";
     }
 
-
-    if (
-      activeReplanType === "bill"
-    ) {
+    if (activeReplanType === "bill") {
       preview =
         getDashboardState({
           extraBill:
@@ -2158,10 +1926,7 @@
         "ADD BILL";
     }
 
-
-    if (
-      activeReplanType === "paycheck"
-    ) {
+    if (activeReplanType === "paycheck") {
       const paychecks =
         getPaychecks();
 
@@ -2171,10 +1936,7 @@
           10
         );
 
-
-      if (
-        !paychecks[index]
-      ) {
+      if (!paychecks[index]) {
         replanResult.classList.add(
           "show",
           "bad"
@@ -2189,58 +1951,21 @@
         return;
       }
 
-
       const selected =
         paychecks[index];
 
-
       const difference =
-        amount -
+        amount
+        -
         selected.amount;
-
-
-      preview = {
-        ...current
-      };
-
-
-      description =
-        `${escapeHTML(
-          selected.name
-        )} would change from ${currency(
-          selected.amount
-        )} to ${currency(
-          amount
-        )}.`;
-
-      applyText =
-        "UPDATE PAYCHECK";
-
 
       pendingReplan = {
         type:
           "paycheck",
-
         entry:
           selected.entry,
-
         amount
       };
-
-
-      const directionText =
-        difference === 0
-          ? "There is no change to this paycheck."
-          : difference > 0
-            ? `That gives you ${currency(
-                difference
-              )} more income in that pay period.`
-            : `That reduces that paycheck by ${currency(
-                Math.abs(
-                  difference
-                )
-              )}.`;
-
 
       replanResult.classList.add(
         "show",
@@ -2249,7 +1974,6 @@
           : "tight"
       );
 
-
       replanResult.innerHTML = `
         <strong>
           Smart Replan Preview
@@ -2257,18 +1981,33 @@
 
         <br><br>
 
-        ${description}
+        ${escapeHTML(
+          selected.name
+        )}
+        would change from
+        <strong>${currency(
+          selected.amount
+        )}</strong>
+        to
+        <strong>${currency(
+          amount
+        )}</strong>.
 
         <br><br>
 
-        ${directionText}
-
-        <br><br>
-
-        When you apply it, Stretch My Check
-        will update that paycheck and you can
-        run <strong>OPTIMIZE MY MONEY</strong>
-        again to rebuild the full plan.
+        ${
+          difference === 0
+            ? "There is no change to this paycheck."
+            : difference > 0
+              ? `That gives you <strong>${currency(
+                  difference
+                )}</strong> more income in that pay period.`
+              : `That reduces that paycheck by <strong>${currency(
+                  Math.abs(
+                    difference
+                  )
+                )}</strong>.`
+        }
 
         <div class="replan-actions">
 
@@ -2277,7 +2016,7 @@
             class="tool-button"
             type="button"
           >
-            ${applyText}
+            UPDATE PAYCHECK
           </button>
 
           <button
@@ -2291,25 +2030,14 @@
         </div>
       `;
 
-
       wireReplanActionButtons();
 
       return;
     }
 
-
-    if (
-      !preview
-    ) {
+    if (!preview) {
       return;
     }
-
-
-    const changeInSafe =
-      preview.safeToSpend
-      -
-      current.safeToSpend;
-
 
     pendingReplan = {
       type:
@@ -2317,6 +2045,77 @@
       amount
     };
 
+    let warningText = "";
+
+    if (preview.safeToSpend < 0) {
+      const currentSafe =
+        Math.max(
+          current.safeToSpend,
+          0
+        );
+
+      const overage =
+        Math.abs(
+          preview.safeToSpend
+        );
+
+      if (
+        activeReplanType === "spent"
+        &&
+        currentSafe > 0
+      ) {
+        warningText = `
+          This uses all
+          <strong>${currency(
+            currentSafe
+          )}</strong>
+          of your safe spending money and puts you
+          <strong>${currency(
+            overage
+          )}</strong>
+          into money that was being protected for bills,
+          necessities, or your cushion.
+        `;
+      } else {
+        warningText = `
+          This change creates a
+          <strong>${currency(
+            overage
+          )}</strong>
+          gap before payday.
+        `;
+      }
+    } else {
+      const changeInSafe =
+        preview.safeToSpend
+        -
+        current.safeToSpend;
+
+      if (changeInSafe < 0) {
+        warningText = `
+          This change reduces your safe money by
+          <strong>${currency(
+            Math.abs(
+              changeInSafe
+            )
+          )}</strong>.
+        `;
+      }
+
+      else if (changeInSafe > 0) {
+        warningText = `
+          This change increases your safe money by
+          <strong>${currency(
+            changeInSafe
+          )}</strong>.
+        `;
+      }
+
+      else {
+        warningText =
+          "Your current safe-to-spend amount would stay the same.";
+      }
+    }
 
     const previewClass =
       preview.safeToSpend < 0
@@ -2325,12 +2124,10 @@
           ? "tight"
           : "good";
 
-
     replanResult.classList.add(
       "show",
       previewClass
     );
-
 
     replanResult.innerHTML = `
       <strong>
@@ -2344,7 +2141,6 @@
       <div class="replan-preview-summary">
 
         <div class="replan-preview-tile">
-
           <span>
             Safe Before
           </span>
@@ -2354,11 +2150,9 @@
               current.displayedSafe
             )}
           </strong>
-
         </div>
 
         <div class="replan-preview-tile">
-
           <span>
             Safe After
           </span>
@@ -2368,11 +2162,9 @@
               preview.displayedSafe
             )}
           </strong>
-
         </div>
 
         <div class="replan-preview-tile">
-
           <span>
             Daily After
           </span>
@@ -2382,30 +2174,13 @@
               preview.dailySafe
             )}
           </strong>
-
         </div>
 
       </div>
 
       <br>
 
-      ${
-        changeInSafe < 0
-
-          ? `This change reduces your safe money by <strong>${currency(
-              Math.abs(
-                changeInSafe
-              )
-            )}</strong>.`
-
-          : changeInSafe > 0
-
-            ? `This change increases your safe money by <strong>${currency(
-                changeInSafe
-              )}</strong>.`
-
-            : "Your current safe-to-spend amount would stay the same."
-      }
+      ${warningText}
 
       <div class="replan-actions">
 
@@ -2428,10 +2203,8 @@
       </div>
     `;
 
-
     wireReplanActionButtons();
   }
-
 
   function wireReplanActionButtons() {
     document
@@ -2443,7 +2216,6 @@
         applyReplan
       );
 
-
     document
       .getElementById(
         "cancelReplanButton"
@@ -2454,18 +2226,44 @@
       );
   }
 
+  function runOptimizerIfAvailable() {
+    const optimizeButton =
+      document.getElementById(
+        "optimizeButton"
+      );
+
+    if (optimizeButton) {
+      optimizeButton.click();
+    }
+  }
+
+  function resetReplanForm() {
+    activeReplanType = null;
+    pendingReplan = null;
+
+    replanChoices.forEach(
+      button => {
+        button.classList.remove(
+          "active"
+        );
+      }
+    );
+
+    replanAmount.value = "";
+    replanForm.classList.remove(
+      "show"
+    );
+  }
 
   function applyReplan() {
-    if (
-      !pendingReplan
-    ) {
+    if (!pendingReplan) {
       return;
     }
 
+    const appliedType =
+      pendingReplan.type;
 
-    if (
-      pendingReplan.type === "spent"
-    ) {
+    if (appliedType === "spent") {
       const current =
         money(
           document.getElementById(
@@ -2478,15 +2276,13 @@
       ).value =
         Math.max(
           0,
-          current -
+          current
+          -
           pendingReplan.amount
         ).toFixed(2);
     }
 
-
-    if (
-      pendingReplan.type === "extra"
-    ) {
+    if (appliedType === "extra") {
       const current =
         money(
           document.getElementById(
@@ -2498,35 +2294,26 @@
         "startingBalance"
       ).value =
         (
-          current +
+          current
+          +
           pendingReplan.amount
         ).toFixed(2);
     }
 
-
-    if (
-      pendingReplan.type === "paycheck"
-    ) {
+    if (appliedType === "paycheck") {
       const input =
         pendingReplan.entry
           ?.querySelector(
             ".paycheck-amount"
           );
 
-      if (
-        input
-      ) {
+      if (input) {
         input.value =
-          pendingReplan.amount.toFixed(
-            2
-          );
+          pendingReplan.amount.toFixed(2);
       }
     }
 
-
-    if (
-      pendingReplan.type === "bill"
-    ) {
+    if (appliedType === "bill") {
       if (
         typeof window.addBill ===
         "function"
@@ -2546,10 +2333,7 @@
           bills.length - 1
         ];
 
-
-      if (
-        newestBill
-      ) {
+      if (newestBill) {
         const nameInput =
           newestBill.querySelector(
             ".bill-name"
@@ -2570,28 +2354,17 @@
             ".bill-priority"
           );
 
-
-        if (
-          nameInput
-        ) {
+        if (nameInput) {
           nameInput.value =
             "Unexpected Bill";
         }
 
-
-        if (
-          amountInput
-        ) {
+        if (amountInput) {
           amountInput.value =
-            pendingReplan.amount.toFixed(
-              2
-            );
+            pendingReplan.amount.toFixed(2);
         }
 
-
-        if (
-          typeInput
-        ) {
+        if (typeInput) {
           typeInput.value =
             "fixed";
 
@@ -2605,54 +2378,56 @@
           );
         }
 
-
-        if (
-          priorityInput
-        ) {
+        if (priorityInput) {
           priorityInput.value =
             "essential";
         }
       }
     }
 
-
     replanResult.className =
       "tool-result show good";
-
 
     replanResult.innerHTML = `
       <strong>
         Change applied.
       </strong>
 
-      <br>
+      <br><br>
 
-      Your planner has been updated.
-
-      ${
-        pendingReplan.type === "bill"
-
-          ? " Add the bill's due date below, then run OPTIMIZE MY MONEY again."
-
-          : " Run OPTIMIZE MY MONEY again to rebuild your recommended plan."
-      }
+      Stretch My Check is rebuilding
+      your recommended plan automatically.
     `;
 
-
-    pendingReplan =
-      null;
-
-
     window.setTimeout(
-      updateDashboard,
-      50
+      () => {
+        runOptimizerIfAvailable();
+        updateDashboard();
+
+        replanResult.innerHTML = `
+          <strong>
+            Plan updated.
+          </strong>
+
+          <br><br>
+
+          Your planner and recommendation
+          have been recalculated using the new information.
+        `;
+
+        window.setTimeout(
+          () => {
+            resetReplanForm();
+          },
+          1500
+        );
+      },
+      100
     );
   }
 
-
   function cancelReplanPreview() {
-    pendingReplan =
-      null;
+    pendingReplan = null;
 
     replanResult.className =
       "tool-result show neutral";
@@ -2661,11 +2436,12 @@
       <strong>
         Preview canceled.
       </strong>
-      <br>
+
+      <br><br>
+
       Your plan was not changed.
     `;
   }
-
 
   document
     .getElementById(
@@ -2676,28 +2452,20 @@
       showReplanPreview
     );
 
-
-  replanAmount
-    .addEventListener(
-      "keydown",
-      event => {
-
-        if (
-          event.key === "Enter"
-        ) {
-          showReplanPreview();
-        }
-
+  replanAmount.addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "Enter") {
+        showReplanPreview();
       }
-    );
+    }
+  );
 
   /* =========================================================
      LIVE UPDATES
      ========================================================= */
 
-  function handlePlannerChange(
-    event
-  ) {
+  function handlePlannerChange(event) {
     if (
       event.target.closest(
         ".money-dashboard"
@@ -2715,33 +2483,27 @@
     }
   }
 
-
   document.addEventListener(
     "input",
     handlePlannerChange
   );
-
 
   document.addEventListener(
     "change",
     handlePlannerChange
   );
 
-
   document.addEventListener(
     "click",
     event => {
-
       const target =
         event.target;
-
 
       if (
         !(target instanceof Element)
       ) {
         return;
       }
-
 
       if (
         target.closest(
@@ -2750,7 +2512,6 @@
       ) {
         return;
       }
-
 
       if (
         target.closest(
@@ -2785,7 +2546,6 @@
           100
         );
       }
-
     }
   );
 
@@ -2793,29 +2553,21 @@
      SAFE MUTATION OBSERVERS
      ========================================================= */
 
-  function watchPlannerContainer(
-    id
-  ) {
+  function watchPlannerContainer(id) {
     const container =
-      document.getElementById(
-        id
-      );
+      document.getElementById(id);
 
-    if (
-      !container
-    ) {
+    if (!container) {
       return;
     }
 
     const observer =
       new MutationObserver(
         () => {
-
           window.setTimeout(
             updateDashboard,
             25
           );
-
         }
       );
 
@@ -2828,11 +2580,9 @@
     );
   }
 
-
   watchPlannerContainer(
     "paychecksContainer"
   );
-
 
   watchPlannerContainer(
     "billsContainer"
@@ -2844,9 +2594,10 @@
 
   window.StretchMyCheckDashboard = {
     refresh:
-      updateDashboard
+      updateDashboard,
+    getSnapshot:
+      getDashboardState
   };
-
 
   window.setTimeout(
     updateDashboard,
