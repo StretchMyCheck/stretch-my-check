@@ -846,7 +846,7 @@
   }
 
   /* =========================================================
-     SAVINGS PACE
+     SAVINGS HISTORY
   ========================================================= */
 
   function transactionsForGoal(
@@ -946,6 +946,10 @@
         0
       );
   }
+
+  /* =========================================================
+     SAVINGS PACE
+  ========================================================= */
 
   function savingsPace(
     goal
@@ -1236,6 +1240,187 @@
       message
     };
   }
+
+  /* =========================================================
+     CATCH-UP PLAN
+  ========================================================= */
+
+  function catchUpPlan(
+    goal
+  ) {
+    const plan =
+      goalPlan(
+        goal
+      );
+
+    const pace =
+      savingsPace(
+        goal
+      );
+
+    const target =
+      money(
+        goal.target_amount
+      );
+
+    const saved =
+      money(
+        goal.saved_amount
+      );
+
+    const remaining =
+      Math.max(
+        target -
+          saved,
+        0
+      );
+
+    if (
+      remaining <=
+      0.004
+    ) {
+      return {
+        show:
+          true,
+
+        cls:
+          "complete",
+
+        title:
+          "Goal fully funded",
+
+        amount:
+          0,
+
+        message:
+          "You reached this goal. No catch-up amount is needed."
+      };
+    }
+
+    if (
+      pace.status !==
+        "Behind Pace"
+    ) {
+      return {
+        show:
+          false,
+
+        cls:
+          "neutral",
+
+        title:
+          "",
+
+        amount:
+          0,
+
+        message:
+          ""
+      };
+    }
+
+    /*
+      If historical pace says the user is behind,
+      but the paycheck plan can still fund the
+      entire remaining goal, explain that the two
+      statuses are not conflicting.
+    */
+
+    if (
+      plan.status ===
+        "On Track" &&
+      plan.shortfall <
+        0.01
+    ) {
+      const firstRow =
+        plan.rows.find(
+          row =>
+            row.contribution >
+            0
+        );
+
+      const nextAmount =
+        firstRow
+          ? firstRow.contribution
+          : 0;
+
+      const planned =
+        plan.totalPlanned;
+
+      return {
+        show:
+          true,
+
+        cls:
+          "recoverable",
+
+        title:
+          "You can catch up",
+
+        amount:
+          nextAmount,
+
+        planned,
+
+        message:
+          nextAmount > 0
+            ? `Your savings history is behind pace, but your current budget has enough safe room to recover. Save ${currency(
+                nextAmount
+              )} from your next paycheck to stay on the catch-up path.`
+            : "Your savings history is behind pace, but your current paycheck plan shows enough safe room to recover."
+      };
+    }
+
+    /*
+      If there is not enough safe room to fully
+      close the gap, show the remaining amount
+      the current plan cannot cover.
+    */
+
+    if (
+      plan.shortfall >
+      0.01
+    ) {
+      return {
+        show:
+          true,
+
+        cls:
+          "attention",
+
+        title:
+          "Catch-up gap",
+
+        amount:
+          plan.shortfall,
+
+        planned:
+          plan.totalPlanned,
+
+        message:
+          `${currency(
+            plan.shortfall
+          )} is still not covered by your current safe-spending room. Consider extending the goal date, lowering the target, or freeing up more money in your plan.`
+      };
+    }
+
+    return {
+      show:
+        false,
+
+      cls:
+        "neutral",
+
+      title:
+        "",
+
+      amount:
+        0,
+
+      message:
+        ""
+    };
+  }
     /* =========================================================
      STYLES
   ========================================================= */
@@ -1246,9 +1431,13 @@
     );
 
   style.id =
-    "smcGoalsStylesV4";
+    "smcGoalsStylesV5";
 
   style.textContent = `
+
+    /* =====================================================
+       GOALS PAGE SPACING FIX
+    ===================================================== */
 
     #smcGoalsPage {
       --g-border:
@@ -1259,6 +1448,15 @@
 
       --g-teal:
         #45e1c0;
+
+      padding-bottom:
+        48px !important;
+    }
+
+    #smcGoalsPage
+    .smc-page-heading {
+      margin-bottom:
+        26px !important;
     }
 
     .smc-goals-shell {
@@ -1266,7 +1464,15 @@
         grid;
 
       gap:
-        18px;
+        28px !important;
+    }
+
+    #smcGoalsApp {
+      display:
+        grid;
+
+      gap:
+        28px;
     }
 
     .smc-goals-summary {
@@ -1280,7 +1486,10 @@
         );
 
       gap:
-        14px;
+        16px !important;
+
+      margin-bottom:
+        0 !important;
     }
 
     .smc-goal-summary-card,
@@ -1349,6 +1558,10 @@
         9px;
     }
 
+    /* =====================================================
+       MY GOALS TOOLBAR
+    ===================================================== */
+
     .smc-goals-toolbar {
       display:
         flex;
@@ -1360,13 +1573,16 @@
         center;
 
       gap:
-        16px;
+        18px;
 
       flex-wrap:
         wrap;
 
       padding:
-        20px;
+        22px;
+
+      margin:
+        0 !important;
     }
 
     .smc-goals-toolbar h2 {
@@ -1382,7 +1598,7 @@
 
     .smc-goals-toolbar p {
       margin:
-        5px 0 0;
+        6px 0 0;
 
       color:
         var(--g-muted);
@@ -1422,6 +1638,10 @@
         pointer;
     }
 
+    /* =====================================================
+       MAIN GOALS WORKSPACE
+    ===================================================== */
+
     .smc-goals-workspace {
       display:
         grid;
@@ -1431,10 +1651,13 @@
         minmax(0,1fr);
 
       gap:
-        15px;
+        24px !important;
 
       align-items:
         start;
+
+      margin-top:
+        0 !important;
     }
 
     .smc-goal-grid {
@@ -1445,15 +1668,18 @@
         1fr;
 
       gap:
-        15px;
+        22px !important;
     }
 
     .smc-goal-card {
       padding:
-        20px;
+        21px;
 
       cursor:
         pointer;
+
+      margin:
+        0 !important;
     }
 
     .smc-goal-card.selected {
@@ -1472,7 +1698,8 @@
     .smc-goal-plan-top,
     .smc-goal-plan-row,
     .smc-goal-activity-row,
-    .smc-goal-pace-head {
+    .smc-goal-pace-head,
+    .smc-goal-catchup-head {
       display:
         flex;
 
@@ -1513,7 +1740,8 @@
     .smc-goal-type,
     .smc-goal-status,
     .smc-plan-chip,
-    .smc-goal-pace-chip {
+    .smc-goal-pace-chip,
+    .smc-goal-catchup-chip {
       display:
         inline-flex;
 
@@ -1549,7 +1777,7 @@
 
     .smc-goal-name {
       margin:
-        17px 0 4px;
+        18px 0 5px;
 
       color:
         #fff;
@@ -1571,7 +1799,7 @@
 
     .smc-goal-money-row {
       margin-top:
-        19px;
+        20px;
 
       align-items:
         flex-end;
@@ -1604,7 +1832,7 @@
         10px;
 
       margin-top:
-        15px;
+        16px;
 
       border-radius:
         999px;
@@ -1633,7 +1861,7 @@
 
     .smc-goal-progress-line {
       margin-top:
-        8px;
+        9px;
 
       color:
         #8da3ae;
@@ -1648,10 +1876,10 @@
 
     .smc-goal-guidance {
       margin-top:
-        15px;
+        18px;
 
       padding:
-        13px;
+        14px;
 
       border-radius:
         13px;
@@ -1662,6 +1890,12 @@
       border:
         1px solid
         rgba(132,175,192,.13);
+    }
+
+    .smc-goal-guidance +
+    .smc-goal-guidance {
+      margin-top:
+        14px;
     }
 
     .smc-goal-guidance-title {
@@ -1687,7 +1921,9 @@
     .smc-goal-status.complete,
     .smc-plan-chip.good,
     .smc-goal-pace-chip.track,
-    .smc-goal-pace-chip.complete {
+    .smc-goal-pace-chip.complete,
+    .smc-goal-catchup-chip.recoverable,
+    .smc-goal-catchup-chip.complete {
       color:
         #73e6c9;
 
@@ -1701,7 +1937,8 @@
 
     .smc-goal-status.attention,
     .smc-plan-chip.warn,
-    .smc-goal-pace-chip.attention {
+    .smc-goal-pace-chip.attention,
+    .smc-goal-catchup-chip.attention {
       color:
         #ffb071;
 
@@ -1714,7 +1951,8 @@
     }
 
     .smc-goal-status.neutral,
-    .smc-goal-pace-chip.neutral {
+    .smc-goal-pace-chip.neutral,
+    .smc-goal-catchup-chip.neutral {
       color:
         #a6bbc4;
 
@@ -1737,12 +1975,12 @@
         820;
 
       margin-top:
-        7px;
+        8px;
     }
 
     .smc-goal-guidance-detail {
       margin-top:
-        5px;
+        6px;
 
       color:
         #809aa6;
@@ -1751,11 +1989,11 @@
         10px;
 
       line-height:
-        1.45;
+        1.5;
     }
 
     /* =====================================================
-       BUTTONS
+       GOAL BUTTONS
     ===================================================== */
 
     .smc-goal-actions {
@@ -1766,10 +2004,10 @@
         1fr 1fr 1fr;
 
       gap:
-        8px;
+        9px;
 
       margin-top:
-        17px;
+        20px;
     }
 
     .smc-goal-action {
@@ -1819,12 +2057,12 @@
     }
 
     /* =====================================================
-       RIGHT-SIDE PLAN
+       RIGHT SIDE PLAN PANEL
     ===================================================== */
 
     .smc-goal-plan-panel {
       padding:
-        22px;
+        24px;
 
       min-height:
         500px;
@@ -1834,6 +2072,9 @@
 
       top:
         18px;
+
+      margin:
+        0 !important;
     }
 
     .smc-goal-plan-top {
@@ -1845,6 +2086,9 @@
         rgba(132,175,192,.12);
 
       padding-bottom:
+        20px;
+
+      margin-bottom:
         18px;
     }
 
@@ -1876,7 +2120,7 @@
         850;
 
       margin:
-        5px 0;
+        6px 0;
     }
 
     .smc-goal-plan-sub {
@@ -1898,10 +2142,10 @@
         );
 
       gap:
-        10px;
+        12px;
 
       margin:
-        18px 0;
+        22px 0 24px;
     }
 
     .smc-goal-plan-stat {
@@ -1916,7 +2160,7 @@
         12px;
 
       padding:
-        13px;
+        14px;
     }
 
     .smc-goal-plan-stat small {
@@ -1941,7 +2185,7 @@
         #fff;
 
       margin-top:
-        5px;
+        6px;
 
       font-size:
         15px;
@@ -1952,7 +2196,7 @@
         grid;
 
       gap:
-        9px;
+        12px;
     }
 
     .smc-goal-plan-row {
@@ -1960,7 +2204,7 @@
         center;
 
       padding:
-        13px;
+        14px;
 
       border-radius:
         12px;
@@ -1992,7 +2236,7 @@
         10px;
 
       margin-top:
-        3px;
+        4px;
     }
 
     .smc-plan-amount {
@@ -2019,23 +2263,23 @@
         9px;
 
       margin-top:
-        3px;
+        4px;
     }
 
     .smc-plan-chip {
       padding:
-        4px 8px;
+        5px 9px;
 
-      margin-top:
-        14px;
+      margin:
+        0 0 20px;
     }
 
     .smc-goal-plan-note {
       margin-top:
-        14px;
+        16px;
 
       padding:
-        12px;
+        13px;
 
       border-radius:
         11px;
@@ -2054,7 +2298,109 @@
         10px;
 
       line-height:
-        1.5;
+        1.55;
+    }
+
+    /* =====================================================
+       CATCH-UP PLAN
+    ===================================================== */
+
+    .smc-goal-catchup {
+      margin-top:
+        26px;
+
+      padding:
+        16px;
+
+      border-radius:
+        14px;
+
+      background:
+        rgba(69,225,192,.055);
+
+      border:
+        1px solid
+        rgba(69,225,192,.16);
+    }
+
+    .smc-goal-catchup.attention {
+      background:
+        rgba(157,93,38,.08);
+
+      border-color:
+        rgba(255,176,113,.18);
+    }
+
+    .smc-goal-catchup-head {
+      align-items:
+        center;
+
+      margin-bottom:
+        12px;
+    }
+
+    .smc-goal-catchup-title {
+      color:
+        #fff;
+
+      font-size:
+        14px;
+
+      font-weight:
+        850;
+    }
+
+    .smc-goal-catchup-chip {
+      padding:
+        5px 8px;
+    }
+
+    .smc-goal-catchup-amount {
+      color:
+        #45e1c0;
+
+      font-size:
+        22px;
+
+      font-weight:
+        850;
+
+      margin:
+        6px 0;
+    }
+
+    .smc-goal-catchup.attention
+    .smc-goal-catchup-amount {
+      color:
+        #ffb071;
+    }
+
+    .smc-goal-catchup-label {
+      color:
+        #7f98a4;
+
+      font-size:
+        10px;
+
+      text-transform:
+        uppercase;
+
+      margin-bottom:
+        4px;
+    }
+
+    .smc-goal-catchup-message {
+      color:
+        #93aab4;
+
+      font-size:
+        10px;
+
+      line-height:
+        1.55;
+
+      margin-top:
+        10px;
     }
 
     /* =====================================================
@@ -2063,10 +2409,10 @@
 
     .smc-goal-pace {
       margin-top:
-        22px;
+        28px;
 
       padding-top:
-        18px;
+        22px;
 
       border-top:
         1px solid
@@ -2078,7 +2424,7 @@
         center;
 
       margin-bottom:
-        12px;
+        15px;
     }
 
     .smc-goal-pace-title {
@@ -2108,12 +2454,12 @@
         );
 
       gap:
-        9px;
+        12px;
     }
 
     .smc-goal-pace-stat {
       padding:
-        13px;
+        14px;
 
       border-radius:
         12px;
@@ -2145,7 +2491,7 @@
         block;
 
       margin-top:
-        5px;
+        6px;
 
       color:
         #fff;
@@ -2156,10 +2502,10 @@
 
     .smc-goal-pace-message {
       margin-top:
-        10px;
+        12px;
 
       padding:
-        12px;
+        13px;
 
       border-radius:
         11px;
@@ -2178,7 +2524,7 @@
         10px;
 
       line-height:
-        1.5;
+        1.55;
     }
 
     .smc-goal-pace-message.attention {
@@ -2198,10 +2544,10 @@
 
     .smc-goal-activity {
       margin-top:
-        22px;
+        28px;
 
       padding-top:
-        18px;
+        22px;
 
       border-top:
         1px solid
@@ -2222,7 +2568,7 @@
         12px;
 
       margin-bottom:
-        11px;
+        14px;
     }
 
     .smc-goal-activity-title {
@@ -2249,7 +2595,7 @@
         grid;
 
       gap:
-        8px;
+        11px;
     }
 
     .smc-goal-activity-row {
@@ -2257,7 +2603,7 @@
         center;
 
       padding:
-        12px;
+        13px;
 
       border-radius:
         12px;
@@ -2419,7 +2765,7 @@
     .smc-goal-empty,
     .smc-plan-empty {
       padding:
-        34px 22px;
+        36px 24px;
 
       text-align:
         center;
@@ -2444,7 +2790,7 @@
         #fff;
 
       margin:
-        8px 0;
+        9px 0;
     }
 
     .smc-plan-empty p {
@@ -2460,7 +2806,7 @@
 
     .smc-goal-signed-out {
       padding:
-        32px;
+        34px;
 
       text-align:
         center;
@@ -2790,6 +3136,12 @@
       max-width:1100px
     ) {
 
+      #smcGoalsApp,
+      .smc-goals-shell {
+        gap:
+          24px;
+      }
+
       .smc-goals-summary {
         grid-template-columns:
           repeat(
@@ -2801,6 +3153,9 @@
       .smc-goals-workspace {
         grid-template-columns:
           1fr;
+
+        gap:
+          24px !important;
       }
 
       .smc-goal-plan-panel {
@@ -2814,12 +3169,27 @@
             2,
             minmax(0,1fr)
           );
+
+        gap:
+          18px !important;
       }
     }
 
     @media(
       max-width:720px
     ) {
+
+      #smcGoalsPage
+      .smc-page-heading {
+        margin-bottom:
+          20px !important;
+      }
+
+      #smcGoalsApp,
+      .smc-goals-shell {
+        gap:
+          20px;
+      }
 
       .smc-goals-summary,
       .smc-goal-grid,
@@ -2828,6 +3198,26 @@
       .smc-goal-pace-grid {
         grid-template-columns:
           1fr;
+      }
+
+      .smc-goals-summary {
+        gap:
+          14px !important;
+      }
+
+      .smc-goals-workspace {
+        gap:
+          20px !important;
+      }
+
+      .smc-goal-grid {
+        gap:
+          18px !important;
+      }
+
+      .smc-goal-plan-panel {
+        padding:
+          19px;
       }
 
       .smc-goal-actions {
@@ -2991,7 +3381,7 @@
     }
   );
     /* =========================================================
-     PAGE BUILD
+     PAGE HELPERS
   ========================================================= */
 
   function page() {
@@ -2999,6 +3389,25 @@
       "smcGoalsPage"
     );
   }
+
+  function setText(
+    id,
+    value
+  ) {
+    const element =
+      document.getElementById(
+        id
+      );
+
+    if (element) {
+      element.textContent =
+        value;
+    }
+  }
+
+  /* =========================================================
+     BUILD GOALS PAGE
+  ========================================================= */
 
   function buildPage() {
     const goalsPage =
@@ -3012,6 +3421,7 @@
       <div class="smc-page-heading">
         <div>
           <h1>Goals</h1>
+
           <p>
             Build savings one step
             at a time.
@@ -3163,15 +3573,19 @@
           <div class="smc-goals-toolbar">
 
             <div>
+
               <h2>
                 My Goals
               </h2>
 
               <p>
-                Select a goal to see its
-                paycheck plan, savings pace,
+                Select a goal to see
+                its paycheck plan,
+                savings pace,
+                catch-up path,
                 and recent activity.
               </p>
+
             </div>
 
             <button
@@ -3212,21 +3626,6 @@
           showGoalForm();
 
     return true;
-  }
-
-  function setText(
-    id,
-    value
-  ) {
-    const element =
-      document.getElementById(
-        id
-      );
-
-    if (element) {
-      element.textContent =
-        value;
-    }
   }
 
   /* =========================================================
@@ -3372,7 +3771,7 @@
   }
 
   /* =========================================================
-     ACTIVITY HELPERS
+     ACTIVITY DISPLAY
   ========================================================= */
 
   function formatActivityDate(
@@ -3451,6 +3850,7 @@
           <div
             class="smc-goal-activity-head"
           >
+
             <div
               class="smc-goal-activity-title"
             >
@@ -3462,6 +3862,7 @@
             >
               No activity yet
             </div>
+
           </div>
 
           <div
@@ -3593,6 +3994,7 @@
         <div
           class="smc-goal-activity-head"
         >
+
           <div
             class="smc-goal-activity-title"
           >
@@ -3612,6 +4014,7 @@
                 : "entries"
             }
           </div>
+
         </div>
 
         <div
@@ -3745,6 +4148,110 @@
         >
           ${esc(
             pace.message
+          )}
+        </div>
+
+      </div>
+    `;
+  }
+
+  /* =========================================================
+     CATCH-UP DISPLAY
+  ========================================================= */
+
+  function renderCatchUp(
+    goal
+  ) {
+    const catchUp =
+      catchUpPlan(
+        goal
+      );
+
+    if (
+      !catchUp.show
+    ) {
+      return "";
+    }
+
+    const amountLabel =
+      catchUp.cls ===
+        "recoverable"
+        ? "Next catch-up amount"
+        : catchUp.cls ===
+            "attention"
+          ? "Uncovered amount"
+          : "Catch-up amount";
+
+    return `
+      <div
+        class="
+          smc-goal-catchup
+          ${
+            catchUp.cls ===
+            "attention"
+              ? "attention"
+              : ""
+          }
+        "
+      >
+
+        <div
+          class="smc-goal-catchup-head"
+        >
+
+          <div
+            class="smc-goal-catchup-title"
+          >
+            ${esc(
+              catchUp.title
+            )}
+          </div>
+
+          <div
+            class="
+              smc-goal-catchup-chip
+              ${catchUp.cls}
+            "
+          >
+            ${
+              catchUp.cls ===
+                "recoverable"
+                ? "Catch-Up Available"
+                : catchUp.cls ===
+                    "attention"
+                  ? "Needs Adjustment"
+                  : "Complete"
+            }
+          </div>
+
+        </div>
+
+        ${
+          catchUp.amount >
+          0.004
+            ? `
+              <div
+                class="smc-goal-catchup-label"
+              >
+                ${amountLabel}
+              </div>
+
+              <div
+                class="smc-goal-catchup-amount"
+              >
+                ${currency(
+                  catchUp.amount
+                )}
+              </div>
+            `
+            : ""
+        }
+
+        <div
+          class="smc-goal-catchup-message"
+        >
+          ${esc(
+            catchUp.message
           )}
         </div>
 
@@ -4042,7 +4549,7 @@
           color:#fff;
           font-weight:800;
           font-size:14px;
-          margin-bottom:10px;
+          margin-bottom:12px;
         "
       >
         Paycheck Plan
@@ -4080,6 +4587,10 @@
             : ""
         }
       </div>
+
+      ${renderCatchUp(
+        goal
+      )}
 
       ${renderSavingsPace(
         goal
@@ -4209,6 +4720,11 @@
 
             const pace =
               savingsPace(
+                goal
+              );
+
+            const catchUp =
+              catchUpPlan(
                 goal
               );
 
@@ -4374,6 +4890,7 @@
                   <div
                     class="smc-goal-guidance-head"
                   >
+
                     <div
                       class="smc-goal-guidance-title"
                     >
@@ -4390,6 +4907,7 @@
                         plan.status
                       )}
                     </div>
+
                   </div>
 
                   <div
@@ -4417,6 +4935,7 @@
                   <div
                     class="smc-goal-guidance-head"
                   >
+
                     <div
                       class="smc-goal-guidance-title"
                     >
@@ -4433,6 +4952,7 @@
                         pace.status
                       )}
                     </div>
+
                   </div>
 
                   <div
@@ -4456,7 +4976,11 @@
                     class="smc-goal-guidance-detail"
                   >
                     ${esc(
-                      pace.message
+                      catchUp.show &&
+                      catchUp.cls ===
+                        "recoverable"
+                        ? "You are behind your historical pace, but your current budget shows enough safe room to catch up."
+                        : pace.message
                     )}
                   </div>
 
@@ -4469,7 +4993,8 @@
                         style="
                           color:#8da3ae;
                           font-size:11px;
-                          margin-top:12px;
+                          margin-top:15px;
+                          line-height:1.5;
                         "
                       >
                         ${esc(
@@ -5106,7 +5631,7 @@
   }
 
   /* =========================================================
-     TRANSACTION RECORD HELPER
+     TRANSACTION HELPER
   ========================================================= */
 
   async function recordTransaction({
@@ -5370,11 +5895,6 @@
             transactionResponse.error
           );
 
-          /*
-            Restore the original saved
-            amount if history recording fails.
-          */
-
           await sb
             .from(
               "financial_goals"
@@ -5476,11 +5996,6 @@
         console.error(
           transactionResponse.error
         );
-
-        /*
-          Remove the new goal if its
-          starting history cannot be recorded.
-        */
 
         await sb
           .from(
@@ -5693,7 +6208,7 @@
   }
 
   /* =========================================================
-     APPLY MONEY CHANGE + HISTORY
+     APPLY MONEY CHANGE
   ========================================================= */
 
   async function applyMoneyChange() {
@@ -5977,17 +6492,25 @@
      REFRESH WHEN PLANNER CHANGES
   ========================================================= */
 
+  let refreshTimer =
+    null;
+
   function refreshSoon() {
-    window.setTimeout(
-      () => {
-        if (
-          goals.length
-        ) {
-          renderGoals();
-        }
-      },
-      120
+    clearTimeout(
+      refreshTimer
     );
+
+    refreshTimer =
+      window.setTimeout(
+        () => {
+          if (
+            goals.length
+          ) {
+            renderGoals();
+          }
+        },
+        150
+      );
   }
 
   window.addEventListener(
@@ -6008,23 +6531,101 @@
     }
   );
 
+  document.addEventListener(
+    "input",
+    event => {
+      if (
+        event.target.matches(
+          ".paycheck-date, .paycheck-amount, .paycheck-name"
+        )
+      ) {
+        refreshSoon();
+      }
+    }
+  );
+
+  document.addEventListener(
+    "click",
+    event => {
+      if (
+        event.target.closest(
+          "#optimizeButton"
+        )
+      ) {
+        window.setTimeout(
+          refreshSoon,
+          300
+        );
+      }
+    }
+  );
+
   /* =========================================================
      STARTUP
   ========================================================= */
 
+  let initialized =
+    false;
+
   function init() {
     if (
-      !buildPage()
+      initialized
     ) {
-      window.setTimeout(
-        init,
-        250
-      );
-
       return;
     }
 
+    if (
+      !buildPage()
+    ) {
+      return;
+    }
+
+    initialized =
+      true;
+
     loadGoals();
+  }
+
+  if (!init()) {
+    const observer =
+      new MutationObserver(
+        () => {
+          if (
+            !initialized &&
+            page()
+          ) {
+            init();
+          }
+
+          if (
+            initialized
+          ) {
+            observer.disconnect();
+          }
+        }
+      );
+
+    observer.observe(
+      document.body,
+      {
+        childList:
+          true,
+
+        subtree:
+          true
+      }
+    );
+
+    window.setTimeout(
+      () => {
+        if (
+          !initialized
+        ) {
+          init();
+        }
+      },
+      500
+    );
   }
 
   sb.auth
@@ -6033,6 +6634,7 @@
         window.setTimeout(
           () => {
             if (
+              initialized &&
               page()
             ) {
               loadGoals();
@@ -6051,10 +6653,5 @@
       () =>
         showGoalForm()
   };
-
-  window.setTimeout(
-    init,
-    350
-  );
 
 })();
