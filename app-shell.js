@@ -1932,6 +1932,401 @@
   document.head.appendChild(style);
 
   /* =========================================================
+     FINAL DARK OVERRIDES
+     Catches planner result cards that are created dynamically
+     after Optimize My Money runs.
+  ========================================================= */
+
+  const finalDarkStyle =
+    document.createElement("style");
+
+  finalDarkStyle.id =
+    "smcFinalDarkOverrides";
+
+  finalDarkStyle.textContent = `
+
+    /* ---------------------------------------------------------
+       OPTIMIZER / RECOMMENDED PLAN
+    --------------------------------------------------------- */
+
+    #smcAppShell #smcPlanPage #plannerResults,
+    #smcAppShell #smcPlanPage .results,
+    #smcAppShell #smcPlanPage .results.show {
+      background:
+        linear-gradient(
+          145deg,
+          #101f29,
+          #0b1820
+        ) !important;
+
+      color:
+        #f4f8fa !important;
+
+      border:
+        1px solid
+        rgba(132,175,192,.17) !important;
+
+      box-shadow:
+        none !important;
+    }
+
+    #smcAppShell #smcPlanPage #plannerResults > h2 {
+      color:
+        #f5fbfc !important;
+    }
+
+    /* Main Week 1 / Week 2 cards */
+
+    #smcAppShell #smcPlanPage .week-card {
+      background:
+        linear-gradient(
+          145deg,
+          #11232d,
+          #0c1922
+        ) !important;
+
+      color:
+        #f4f8fa !important;
+
+      border:
+        1px solid
+        rgba(122,170,184,.18) !important;
+
+      border-radius:
+        16px !important;
+
+      box-shadow:
+        0 12px 28px
+        rgba(0,0,0,.15) !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card.negative {
+      background:
+        linear-gradient(
+          145deg,
+          rgba(87,31,38,.42),
+          #0d1921
+        ) !important;
+
+      border-color:
+        rgba(255,116,121,.28) !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-heading {
+      border-bottom:
+        1px solid
+        rgba(132,175,192,.12) !important;
+
+      padding-bottom:
+        13px !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-heading h3 {
+      color:
+        #f5fbfc !important;
+
+      font-size:
+        20px !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-date {
+      color:
+        #91a9b4 !important;
+    }
+
+    #smcAppShell #smcPlanPage .running-balance {
+      color:
+        #f1fafb !important;
+    }
+
+    /* Result summary tiles */
+
+    #smcAppShell #smcPlanPage .result-summary .summary-tile,
+    #smcAppShell #smcPlanPage .week-card .summary-tile {
+      background:
+        #122630 !important;
+
+      color:
+        #f4f8fa !important;
+
+      border:
+        1px solid
+        rgba(132,175,192,.14) !important;
+
+      box-shadow:
+        none !important;
+    }
+
+    #smcAppShell #smcPlanPage .result-summary .summary-tile span,
+    #smcAppShell #smcPlanPage .week-card .summary-tile span {
+      color:
+        #8da5b0 !important;
+    }
+
+    #smcAppShell #smcPlanPage .result-summary .summary-tile strong,
+    #smcAppShell #smcPlanPage .week-card .summary-tile strong {
+      color:
+        #ffffff !important;
+    }
+
+    #smcAppShell #smcPlanPage .result-summary .summary-tile.safe {
+      background:
+        linear-gradient(
+          145deg,
+          rgba(19,72,67,.72),
+          #10252a
+        ) !important;
+
+      border-color:
+        rgba(69,225,192,.25) !important;
+    }
+
+    #smcAppShell #smcPlanPage .result-summary .summary-tile.safe strong {
+      color:
+        #45e1c0 !important;
+    }
+
+    /* Bill list inside results */
+
+    #smcAppShell #smcPlanPage .week-card .bill-list {
+      border-color:
+        rgba(132,175,192,.13) !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .bill-item {
+      background:
+        #112630 !important;
+
+      color:
+        #f2f8fa !important;
+
+      border:
+        1px solid
+        rgba(132,175,192,.13) !important;
+
+      border-radius:
+        10px !important;
+
+      padding:
+        11px 12px !important;
+
+      margin-bottom:
+        7px !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .bill-item strong {
+      color:
+        #ffffff !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .bill-meta {
+      color:
+        #83a0ad !important;
+    }
+
+    /* Reserve + cushion */
+
+    #smcAppShell #smcPlanPage .week-card .reserve-box,
+    #smcAppShell #smcPlanPage .week-card .cushion-box {
+      background:
+        #10232d !important;
+
+      color:
+        #f3f9fa !important;
+
+      border:
+        1px solid
+        rgba(132,175,192,.14) !important;
+
+      box-shadow:
+        none !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .reserve-box span,
+    #smcAppShell #smcPlanPage .week-card .cushion-box span {
+      color:
+        #859eaa !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .reserve-box strong,
+    #smcAppShell #smcPlanPage .week-card .cushion-box strong {
+      color:
+        #ffffff !important;
+    }
+
+    /* Safe to spend */
+
+    #smcAppShell #smcPlanPage .week-card .safe-spend-box {
+      background:
+        radial-gradient(
+          circle at 0% 0%,
+          rgba(69,225,192,.12),
+          transparent 48%
+        ),
+        linear-gradient(
+          145deg,
+          #10312f,
+          #10232b
+        ) !important;
+
+      border:
+        1px solid
+        rgba(69,225,192,.28) !important;
+
+      color:
+        #e8faf6 !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .safe-spend-label {
+      color:
+        #91dfcf !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .safe-spend-number {
+      color:
+        #45e1c0 !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .safe-spend-note {
+      color:
+        #8ca7b0 !important;
+    }
+
+    /* Status messages */
+
+    #smcAppShell #smcPlanPage .status {
+      color:
+        #dce9ed !important;
+
+      border-radius:
+        13px !important;
+    }
+
+    #smcAppShell #smcPlanPage .status.good {
+      background:
+        rgba(26,91,73,.23) !important;
+
+      border:
+        1px solid
+        rgba(92,231,177,.25) !important;
+    }
+
+    #smcAppShell #smcPlanPage .status.warning {
+      background:
+        rgba(126,79,27,.24) !important;
+
+      border:
+        1px solid
+        rgba(255,157,85,.28) !important;
+    }
+
+    #smcAppShell #smcPlanPage .status.bad {
+      background:
+        rgba(116,39,46,.25) !important;
+
+      border:
+        1px solid
+        rgba(255,116,121,.28) !important;
+    }
+
+    /* ---------------------------------------------------------
+       PLANNER ENTRY CARDS — EXTRA CATCH-ALL
+    --------------------------------------------------------- */
+
+    #smcAppShell #smcPlanPage .row-card,
+    #smcAppShell #smcPlanPage .paycheck-entry,
+    #smcAppShell #smcPlanPage .bill-entry,
+    #smcAppShell #smcPlanPage .necessity-row {
+      background:
+        #13242e !important;
+
+      color:
+        #f4f8fa !important;
+
+      border-color:
+        rgba(132,175,192,.16) !important;
+    }
+
+    /* ---------------------------------------------------------
+       MONEY TOOLS — NEVER ALLOW LARGE WHITE PANELS
+    --------------------------------------------------------- */
+
+    #smcAppShell #smcToolsPage section,
+    #smcAppShell #smcToolsPage article,
+    #smcAppShell #smcToolsPage .card,
+    #smcAppShell #smcToolsPage .tool-card,
+    #smcAppShell #smcToolsPage .dashboard-tool,
+    #smcAppShell #smcToolsPage .dashboard-tool-card,
+    #smcAppShell #smcToolsPage .afford-card,
+    #smcAppShell #smcToolsPage .replan-card {
+      background:
+        linear-gradient(
+          145deg,
+          #12242e,
+          #0f1f28
+        ) !important;
+
+      color:
+        #f4f8fa !important;
+
+      border:
+        1px solid
+        rgba(132,175,192,.17) !important;
+
+      box-shadow:
+        none !important;
+    }
+
+    /* ---------------------------------------------------------
+       ACCOUNT / SAVED PLANS
+    --------------------------------------------------------- */
+
+    #smcAppShell #smcAccountPage .saved-plans-card,
+    #smcAppShell #smcAccountPage .saved-plan-item {
+      background:
+        linear-gradient(
+          145deg,
+          #12242e,
+          #0e1d26
+        ) !important;
+
+      color:
+        #f4f8fa !important;
+
+      border:
+        1px solid
+        rgba(132,175,192,.17) !important;
+
+      box-shadow:
+        none !important;
+    }
+
+    #smcAppShell #smcAccountPage .saved-plan-meta {
+      color:
+        #8fa6b1 !important;
+    }
+
+    /* ---------------------------------------------------------
+       GENERIC LEGACY LIGHT BACKGROUNDS INSIDE APP PAGES
+       These selectors intentionally stay inside the new shell.
+    --------------------------------------------------------- */
+
+    #smcAppShell #smcPlanPage .card,
+    #smcAppShell #smcPlanPage .intro-card,
+    #smcAppShell #smcToolsPage .card,
+    #smcAppShell #smcAccountPage .card {
+      background-color:
+        #101f29 !important;
+    }
+
+  `;
+
+  document.head.appendChild(
+    finalDarkStyle
+  );
+
+
+  /* =========================================================
      SHELL
   ========================================================= */
 

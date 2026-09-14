@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="smc-loading">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,28 @@
   <title>Stretch My Check</title>
 
   <style>
+    /* =========================================================
+       APP STARTUP / NO OLD-LAYOUT FLASH
+    ========================================================= */
+
+    html.smc-loading {
+      background: #071016;
+    }
+
+    html.smc-loading body {
+      background: #071016 !important;
+    }
+
+    html.smc-loading body > .app {
+      visibility: hidden !important;
+    }
+
+    /*
+      If app-shell.js ever fails to load, the small fallback
+      script at the bottom of this file removes smc-loading
+      after a few seconds so the original planner is still usable.
+    */
+
     * {
       box-sizing: border-box;
     }
@@ -801,6 +823,137 @@
       }
     }
 
+    /* =========================================================
+       DARK APP-SHELL OVERRIDES FOR OPTIMIZER RESULTS
+       These cards are created dynamically after Optimize My Money.
+    ========================================================= */
+
+    #smcAppShell #smcPlanPage .week-card {
+      background:
+        linear-gradient(
+          145deg,
+          #11222c,
+          #0c1922
+        ) !important;
+
+      color: #f4f8fa !important;
+
+      border:
+        1px solid
+        rgba(132,175,192,.17) !important;
+
+      border-radius: 16px !important;
+
+      box-shadow:
+        0 12px 30px
+        rgba(0,0,0,.12) !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card.negative {
+      background:
+        linear-gradient(
+          145deg,
+          rgba(88,29,35,.32),
+          #0d1921
+        ) !important;
+
+      border-color:
+        rgba(255,116,121,.30) !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-heading {
+      border-bottom:
+        1px solid
+        rgba(132,175,192,.12) !important;
+
+      padding-bottom: 13px !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-heading h3 {
+      color: #f5fbfc !important;
+      font-size: 20px !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-date {
+      color: #8ea7b3 !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-heading > div:last-child {
+      color: #8fa6b1 !important;
+    }
+
+    #smcAppShell #smcPlanPage .running-balance {
+      color: #eef8fa !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .bill-list {
+      border-color:
+        rgba(132,175,192,.15) !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .bill-item {
+      background: #122630 !important;
+      color: #f0f7f9 !important;
+
+      border:
+        1px solid
+        rgba(132,175,192,.13) !important;
+
+      border-radius: 10px !important;
+      padding: 11px 12px !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .bill-meta {
+      color: #82a0ad !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .reserve-box,
+    #smcAppShell #smcPlanPage .week-card .cushion-box {
+      background: #10232d !important;
+      color: #f1f7f9 !important;
+
+      border:
+        1px solid
+        rgba(132,175,192,.14) !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .reserve-box span,
+    #smcAppShell #smcPlanPage .week-card .cushion-box span {
+      color: #829aa6 !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .safe-spend-box {
+      background:
+        radial-gradient(
+          circle at 0% 0%,
+          rgba(69,225,192,.13),
+          transparent 48%
+        ),
+        linear-gradient(
+          145deg,
+          #10312f,
+          #10232b
+        ) !important;
+
+      border:
+        1px solid
+        rgba(69,225,192,.28) !important;
+
+      color: #e8faf6 !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .safe-spend-label {
+      color: #8bdac9 !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .safe-spend-number {
+      color: #45e1c0 !important;
+    }
+
+    #smcAppShell #smcPlanPage .week-card .safe-spend-note {
+      color: #8ca7b0 !important;
+    }
+
     @media print {
 
       body {
@@ -832,6 +985,19 @@
 </head>
 
 <body>
+
+<script>
+  /*
+    Startup fallback: app-shell.js normally replaces the legacy
+    layout almost immediately. If it ever fails, reveal the
+    original planner after 3 seconds instead of leaving a blank page.
+  */
+  window.setTimeout(() => {
+    if (!document.getElementById("smcAppShell")) {
+      document.documentElement.classList.remove("smc-loading");
+    }
+  }, 3000);
+</script>
 
 <div class="app">
 
