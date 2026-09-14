@@ -3,37 +3,24 @@
 
   /* =========================================================
      STRETCH MY CHECK
-     APP SHELL / NAVIGATION / NEW DASHBOARD
+     DARK APP SHELL
   ========================================================= */
 
-  if (
-    document.getElementById(
-      "smcAppShell"
-    )
-  ) {
+  if (document.getElementById("smcAppShell")) {
     return;
   }
 
   const money = value => {
-    const number =
-      parseFloat(value);
-
-    return Number.isFinite(number)
-      ? number
-      : 0;
+    const number = parseFloat(value);
+    return Number.isFinite(number) ? number : 0;
   };
 
   const currency = value =>
-    new Intl.NumberFormat(
-      "en-US",
-      {
-        style: "currency",
-        currency: "USD"
-      }
-    ).format(
-      Number.isFinite(
-        Number(value)
-      )
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD"
+    }).format(
+      Number.isFinite(Number(value))
         ? Number(value)
         : 0
     );
@@ -46,10 +33,7 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
 
-  function icon(
-    name,
-    size = 22
-  ) {
+  function icon(name, size = 22) {
     const common = `
       width="${size}"
       height="${size}"
@@ -63,7 +47,6 @@
     `;
 
     const icons = {
-
       home: `
         <svg ${common}>
           <path d="M3 11.5 12 4l9 7.5"/>
@@ -74,13 +57,7 @@
 
       plan: `
         <svg ${common}>
-          <rect
-            x="5"
-            y="4"
-            width="14"
-            height="17"
-            rx="2"
-          />
+          <rect x="5" y="4" width="14" height="17" rx="2"/>
           <path d="M9 4.5V3h6v1.5"/>
           <path d="M8 9h8"/>
           <path d="M8 13h8"/>
@@ -90,13 +67,7 @@
 
       tools: `
         <svg ${common}>
-          <rect
-            x="4"
-            y="3"
-            width="16"
-            height="18"
-            rx="2"
-          />
+          <rect x="4" y="3" width="16" height="18" rx="2"/>
           <path d="M7 7h10"/>
           <path d="M8 11h1"/>
           <path d="M12 11h1"/>
@@ -111,16 +82,8 @@
 
       goals: `
         <svg ${common}>
-          <circle
-            cx="12"
-            cy="12"
-            r="8"
-          />
-          <circle
-            cx="12"
-            cy="12"
-            r="4"
-          />
+          <circle cx="12" cy="12" r="8"/>
+          <circle cx="12" cy="12" r="4"/>
           <path d="m14.8 9.2 5-5"/>
           <path d="M16.5 4.2h3.3v3.3"/>
         </svg>
@@ -128,44 +91,22 @@
 
       user: `
         <svg ${common}>
-          <circle
-            cx="12"
-            cy="8"
-            r="4"
-          />
-          <path
-            d="M4.5 21c.7-4.2 3.2-6.3 7.5-6.3S18.8 16.8 19.5 21"
-          />
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4.5 21c.7-4.2 3.2-6.3 7.5-6.3S18.8 16.8 19.5 21"/>
         </svg>
       `,
 
       wallet: `
         <svg ${common}>
-          <path
-            d="M4 7.5V6a2 2 0 0 1 2-2h11"
-          />
-          <rect
-            x="3"
-            y="6"
-            width="18"
-            height="14"
-            rx="3"
-          />
-          <path
-            d="M16 11h5v5h-5a2.5 2.5 0 1 1 0-5Z"
-          />
+          <path d="M4 7.5V6a2 2 0 0 1 2-2h11"/>
+          <rect x="3" y="6" width="18" height="14" rx="3"/>
+          <path d="M16 11h5v5h-5a2.5 2.5 0 1 1 0-5Z"/>
         </svg>
       `,
 
       calendar: `
         <svg ${common}>
-          <rect
-            x="3"
-            y="5"
-            width="18"
-            height="16"
-            rx="2"
-          />
+          <rect x="3" y="5" width="18" height="16" rx="2"/>
           <path d="M16 3v4"/>
           <path d="M8 3v4"/>
           <path d="M3 10h18"/>
@@ -183,14 +124,8 @@
 
       money: `
         <svg ${common}>
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-          />
-          <path
-            d="M15 8.5c-.8-.7-1.8-1-3-1-1.7 0-3 .8-3 2s1 1.8 3 2.2 3 1 3 2.4-1.3 2.4-3 2.4c-1.2 0-2.4-.4-3.2-1.1"
-          />
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M15 8.5c-.8-.7-1.8-1-3-1-1.7 0-3 .8-3 2s1 1.8 3 2.2 3 1 3 2.4-1.3 2.4-3 2.4c-1.2 0-2.4-.4-3.2-1.1"/>
           <path d="M12 5.5v13"/>
         </svg>
       `,
@@ -206,19 +141,9 @@
 
       cart: `
         <svg ${common}>
-          <circle
-            cx="9"
-            cy="20"
-            r="1"
-          />
-          <circle
-            cx="18"
-            cy="20"
-            r="1"
-          />
-          <path
-            d="M3 4h2l2.4 11h10.8l2-7H6"
-          />
+          <circle cx="9" cy="20" r="1"/>
+          <circle cx="18" cy="20" r="1"/>
+          <path d="M3 4h2l2.4 11h10.8l2-7H6"/>
         </svg>
       `,
 
@@ -230,9 +155,7 @@
 
       moon: `
         <svg ${common}>
-          <path
-            d="M20 15.5A8 8 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5Z"
-          />
+          <path d="M20 15.5A8 8 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5Z"/>
         </svg>
       `,
 
@@ -246,106 +169,64 @@
 
       search: `
         <svg ${common}>
-          <circle
-            cx="11"
-            cy="11"
-            r="7"
-          />
+          <circle cx="11" cy="11" r="7"/>
           <path d="m20 20-4-4"/>
         </svg>
       `
-
     };
 
     return icons[name] || "";
   }
 
   /* =========================================================
-     GLOBAL STYLES
+     STYLES
   ========================================================= */
 
-  const style =
-    document.createElement(
-      "style"
-    );
-
-  style.id =
-    "smcShellStyles";
+  const style = document.createElement("style");
+  style.id = "smcShellStyles";
 
   style.textContent = `
-
     :root {
-      --smc-bg:
-        #071016;
-
-      --smc-bg-soft:
-        #0a151d;
-
-      --smc-sidebar:
-        #09151c;
-
-      --smc-card:
-        #101c25;
-
-      --smc-card-2:
-        #14222d;
-
-      --smc-border:
-        rgba(132,175,192,.16);
-
-      --smc-text:
-        #f4f8fa;
-
-      --smc-muted:
-        #8fa2ae;
-
-      --smc-teal:
-        #45e1c0;
-
-      --smc-teal-dark:
-        #177f75;
-
-      --smc-blue:
-        #55c7ea;
-
-      --smc-purple:
-        #9b6dff;
-
-      --smc-orange:
-        #ff9d55;
-
-      --smc-red:
-        #ff6d72;
-
-      --smc-green:
-        #5ce7b1;
-
-      --smc-radius:
-        18px;
-
-      --smc-sidebar-width:
-        230px;
+      --smc-bg: #071016;
+      --smc-bg-soft: #0a151d;
+      --smc-sidebar: #09151c;
+      --smc-card: #101c25;
+      --smc-card-2: #14232d;
+      --smc-card-3: #0c1922;
+      --smc-input: #071923;
+      --smc-border: rgba(132,175,192,.17);
+      --smc-border-strong: rgba(83,205,190,.26);
+      --smc-text: #f4f8fa;
+      --smc-muted: #91a7b2;
+      --smc-muted-2: #6f8793;
+      --smc-teal: #45e1c0;
+      --smc-teal-dark: #177f75;
+      --smc-blue: #55c7ea;
+      --smc-purple: #9b6dff;
+      --smc-orange: #ff9d55;
+      --smc-red: #ff7479;
+      --smc-green: #5ce7b1;
+      --smc-radius: 18px;
+      --smc-sidebar-width: 230px;
     }
 
     html {
-      background:
-        var(--smc-bg);
+      background: var(--smc-bg);
+      color-scheme: dark;
     }
 
     body {
       margin: 0 !important;
+      min-height: 100vh;
       background:
         radial-gradient(
           circle at 55% -10%,
-          rgba(50,118,122,.13),
+          rgba(50,118,122,.12),
           transparent 32%
         ),
         var(--smc-bg) !important;
 
-      color:
-        var(--smc-text) !important;
-
-      min-height: 100vh;
+      color: var(--smc-text) !important;
 
       font-family:
         Inter,
@@ -357,42 +238,41 @@
         sans-serif;
     }
 
-    body.smc-shell-ready >
-    .app {
+    body.smc-shell-ready > .app {
       display: none !important;
     }
 
     #smcAppShell {
       min-height: 100vh;
+
       display: grid;
 
       grid-template-columns:
         var(--smc-sidebar-width)
         minmax(0,1fr);
 
-      background:
-        transparent;
+      background: transparent;
     }
+
+    /* =========================================================
+       SIDEBAR
+    ========================================================= */
 
     .smc-sidebar {
       position: fixed;
-      inset:
-        0 auto 0 0;
+      inset: 0 auto 0 0;
 
-      width:
-        var(--smc-sidebar-width);
+      width: var(--smc-sidebar-width);
 
-      box-sizing:
-        border-box;
+      box-sizing: border-box;
 
-      padding:
-        24px 15px 20px;
+      padding: 24px 15px 20px;
 
       background:
         linear-gradient(
           180deg,
-          rgba(9,23,30,.98),
-          rgba(6,15,21,.98)
+          rgba(9,23,30,.99),
+          rgba(6,15,21,.99)
         );
 
       border-right:
@@ -409,6 +289,7 @@
       display: flex;
       align-items: center;
       gap: 11px;
+
       padding:
         0 8px 24px;
     }
@@ -417,8 +298,7 @@
       width: 52px;
       height: 52px;
 
-      flex:
-        0 0 52px;
+      flex: 0 0 52px;
 
       display: grid;
       place-items: center;
@@ -432,8 +312,11 @@
       color:
         var(--smc-teal);
 
-      font-size: 27px;
-      font-weight: 850;
+      font-size:
+        27px;
+
+      font-weight:
+        850;
 
       box-shadow:
         0 0 22px
@@ -448,8 +331,7 @@
     }
 
     .smc-brand-tag {
-      color:
-        #71cabb;
+      color: #71cabb;
 
       margin-top: 6px;
 
@@ -466,56 +348,40 @@
     .smc-nav-button {
       appearance: none;
       border: 0;
+
       width: 100%;
 
       display: flex;
       align-items: center;
       gap: 14px;
 
-      padding:
-        12px 14px;
+      padding: 12px 14px;
 
-      border-radius:
-        14px;
+      border-radius: 14px;
 
-      background:
-        transparent;
+      background: transparent;
 
-      color:
-        #bdcbd2;
+      color: #bdcbd2;
 
-      font-size:
-        14px;
+      font-size: 14px;
+      font-weight: 650;
 
-      font-weight:
-        650;
+      text-align: left;
 
-      text-align:
-        left;
+      cursor: pointer;
 
-      cursor:
-        pointer;
-
-      transition:
-        .18s ease;
-    }
-
-    .smc-nav-button svg {
-      flex:
-        0 0 auto;
+      transition: .18s ease;
     }
 
     .smc-nav-button:hover {
       background:
         rgba(62,133,139,.12);
 
-      color:
-        white;
+      color: white;
     }
 
     .smc-nav-button.active {
-      color:
-        #dffdf7;
+      color: #dffdf7;
 
       background:
         linear-gradient(
@@ -530,32 +396,35 @@
     }
 
     .smc-nav-button.active svg {
-      color:
-        var(--smc-teal);
+      color: var(--smc-teal);
     }
 
     .smc-sidebar-bottom {
       margin-top: auto;
+
       display: grid;
       gap: 8px;
     }
 
     .smc-sidebar-small {
-      color:
-        #8fa2ae;
+      color: #8297a2;
 
       display: flex;
       align-items: center;
       gap: 12px;
 
-      padding:
-        10px 13px;
+      padding: 10px 13px;
 
       font-size: 13px;
     }
 
+    /* =========================================================
+       MAIN
+    ========================================================= */
+
     .smc-main {
       grid-column: 2;
+
       min-width: 0;
 
       padding:
@@ -567,33 +436,26 @@
 
       display: flex;
       align-items: center;
-      justify-content:
-        space-between;
+      justify-content: space-between;
 
       gap: 22px;
 
-      margin-bottom:
-        24px;
+      margin-bottom: 24px;
     }
 
     .smc-search {
-      width:
-        min(540px,50vw);
-
+      width: min(540px,50vw);
       height: 48px;
 
       display: flex;
       align-items: center;
       gap: 12px;
 
-      padding:
-        0 17px;
+      padding: 0 17px;
 
-      box-sizing:
-        border-box;
+      box-sizing: border-box;
 
-      border-radius:
-        16px;
+      border-radius: 16px;
 
       border:
         1px solid
@@ -608,40 +470,34 @@
 
     .smc-search input {
       width: 100%;
+
       border: 0 !important;
       outline: 0 !important;
-      box-shadow:
-        none !important;
+      box-shadow: none !important;
 
-      background:
-        transparent !important;
+      background: transparent !important;
 
-      color:
-        white !important;
+      color: white !important;
 
-      font-size:
-        14px !important;
+      font-size: 14px !important;
 
       padding: 0 !important;
     }
 
     .smc-search input::placeholder {
-      color:
-        #748995;
+      color: #748995;
     }
 
     .smc-user-header {
       min-width: 0;
     }
 
-    .smc-user-header
-    .account-buttons {
+    .smc-user-header .account-buttons {
       display: block;
       margin: 0;
     }
 
-    .smc-user-header
-    .account-button {
+    .smc-user-header .account-button {
       background:
         rgba(20,41,51,.9) !important;
 
@@ -656,11 +512,13 @@
         12px !important;
     }
 
-    .smc-user-header
-    .auth-user-name {
-      color:
-        white !important;
+    .smc-user-header .auth-user-name {
+      color: white !important;
     }
+
+    /* =========================================================
+       PAGE SYSTEM
+    ========================================================= */
 
     .smc-page {
       display: none;
@@ -668,6 +526,7 @@
 
     .smc-page.active {
       display: block;
+
       animation:
         smcFade .18s ease;
     }
@@ -675,27 +534,21 @@
     @keyframes smcFade {
       from {
         opacity: 0;
-        transform:
-          translateY(4px);
+        transform: translateY(4px);
       }
 
       to {
         opacity: 1;
-        transform:
-          translateY(0);
+        transform: translateY(0);
       }
     }
 
     .smc-page-heading {
-      margin-bottom:
-        22px;
+      margin-bottom: 22px;
 
       display: flex;
-      align-items:
-        flex-end;
-
-      justify-content:
-        space-between;
+      align-items: flex-end;
+      justify-content: space-between;
 
       gap: 20px;
     }
@@ -713,34 +566,30 @@
           37px
         );
 
-      line-height:
-        1.1;
+      line-height: 1.1;
     }
 
     .smc-page-heading p {
-      margin:
-        7px 0 0;
+      margin: 7px 0 0;
 
       color:
         var(--smc-muted);
 
-      font-size:
-        15px;
+      font-size: 15px;
     }
 
     .smc-date-block {
-      text-align:
-        right;
+      text-align: right;
 
-      color:
-        #a8bac3;
+      color: #a8bac3;
 
-      font-size:
-        13px;
-
-      line-height:
-        1.5;
+      font-size: 13px;
+      line-height: 1.5;
     }
+
+    /* =========================================================
+       HOME
+    ========================================================= */
 
     .smc-home-grid {
       display: grid;
@@ -751,8 +600,7 @@
           minmax(0,1fr)
         );
 
-      gap:
-        14px;
+      gap: 14px;
     }
 
     .smc-dashboard-card {
@@ -778,8 +626,7 @@
     }
 
     .smc-card-pad {
-      padding:
-        20px;
+      padding: 20px;
     }
 
     .smc-card-title {
@@ -787,25 +634,18 @@
       align-items: center;
       gap: 10px;
 
-      color:
-        #f1f7f8;
+      color: #f1f7f8;
 
-      font-size:
-        14px;
-
-      font-weight:
-        760;
+      font-size: 14px;
+      font-weight: 760;
     }
 
-    .smc-card-title
     .smc-icon-teal {
-      color:
-        var(--smc-teal);
+      color: var(--smc-teal);
     }
 
     .smc-available-card {
-      grid-column:
-        span 4;
+      grid-column: span 4;
 
       background:
         radial-gradient(
@@ -821,18 +661,15 @@
     }
 
     .smc-safe-card {
-      grid-column:
-        span 4;
+      grid-column: span 4;
     }
 
     .smc-payday-card {
-      grid-column:
-        span 4;
+      grid-column: span 4;
     }
 
     .smc-main-money {
-      margin:
-        30px 0 23px;
+      margin: 30px 0 23px;
 
       font-size:
         clamp(
@@ -841,50 +678,40 @@
           48px
         );
 
-      font-weight:
-        850;
-
-      letter-spacing:
-        -.035em;
+      font-weight: 850;
+      letter-spacing: -.035em;
     }
 
     .smc-detail-row {
       display: flex;
-      justify-content:
-        space-between;
+      justify-content: space-between;
 
       gap: 15px;
 
-      padding:
-        10px 0;
+      padding: 10px 0;
 
       border-top:
         1px solid
         rgba(255,255,255,.07);
 
-      color:
-        #b6c5cc;
+      color: #b6c5cc;
 
-      font-size:
-        13px;
+      font-size: 13px;
     }
 
     .smc-detail-row strong {
-      color:
-        white;
+      color: white;
     }
 
     .smc-safe-ring-wrap {
       display: grid;
       place-items: center;
 
-      padding:
-        12px 0 4px;
+      padding: 12px 0 4px;
     }
 
     .smc-safe-ring {
-      --progress:
-        25%;
+      --progress: 25%;
 
       width: 158px;
       height: 158px;
@@ -894,8 +721,7 @@
 
       position: relative;
 
-      border-radius:
-        50%;
+      border-radius: 50%;
 
       background:
         conic-gradient(
@@ -911,16 +737,12 @@
     .smc-safe-ring::before {
       content: "";
 
-      position:
-        absolute;
-
+      position: absolute;
       inset: 16px;
 
-      border-radius:
-        50%;
+      border-radius: 50%;
 
-      background:
-        #0d1922;
+      background: #0d1922;
     }
 
     .smc-safe-ring-content {
@@ -933,95 +755,66 @@
     .smc-safe-ring-amount {
       display: block;
 
-      font-size:
-        30px;
-
-      font-weight:
-        850;
+      font-size: 30px;
+      font-weight: 850;
     }
 
     .smc-safe-ring-label {
-      color:
-        #9cb0bb;
+      color: #9cb0bb;
 
-      font-size:
-        12px;
+      font-size: 12px;
     }
 
     .smc-daily-safe {
       text-align: center;
 
-      margin-top:
-        10px;
+      margin-top: 10px;
 
-      color:
-        white;
+      color: white;
 
-      font-size:
-        16px;
-
-      font-weight:
-        750;
+      font-size: 16px;
+      font-weight: 750;
     }
 
     .smc-safe-note {
-      margin-top:
-        6px;
+      margin-top: 6px;
 
-      text-align:
-        center;
+      text-align: center;
 
-      color:
-        #8297a3;
+      color: #8297a3;
 
-      font-size:
-        12px;
-
-      line-height:
-        1.45;
+      font-size: 12px;
+      line-height: 1.45;
     }
 
     .smc-payday-date {
-      margin-top:
-        24px;
+      margin-top: 24px;
 
-      color:
-        white;
+      color: white;
 
-      font-size:
-        19px;
-
-      font-weight:
-        750;
+      font-size: 19px;
+      font-weight: 750;
     }
 
     .smc-payday-amount {
-      margin:
-        12px 0 5px;
+      margin: 12px 0 5px;
 
-      font-size:
-        36px;
-
-      font-weight:
-        850;
+      font-size: 36px;
+      font-weight: 850;
     }
 
     .smc-payday-days {
-      color:
-        #c3ced3;
+      color: #c3ced3;
 
-      font-size:
-        16px;
+      font-size: 16px;
     }
 
     .smc-action-button {
       width: 100%;
 
-      margin-top:
-        24px;
+      margin-top: 24px;
 
-      min-height:
-        43px;
+      min-height: 43px;
 
       display: flex;
       align-items: center;
@@ -1032,8 +825,7 @@
         1px solid
         var(--smc-teal);
 
-      border-radius:
-        999px;
+      border-radius: 999px;
 
       background:
         linear-gradient(
@@ -1042,54 +834,41 @@
           rgba(41,149,139,.72)
         );
 
-      color:
-        white;
+      color: white;
 
-      font-weight:
-        760;
+      font-weight: 760;
 
-      cursor:
-        pointer;
+      cursor: pointer;
     }
 
     .smc-forecast-card {
-      grid-column:
-        span 8;
+      grid-column: span 8;
     }
 
     .smc-upcoming-card {
-      grid-column:
-        span 4;
+      grid-column: span 4;
     }
 
     .smc-forecast-header {
       display: flex;
-      align-items:
-        flex-start;
-
-      justify-content:
-        space-between;
+      align-items: flex-start;
+      justify-content: space-between;
 
       gap: 16px;
 
-      margin-bottom:
-        14px;
+      margin-bottom: 14px;
     }
 
     .smc-subtitle {
-      color:
-        #81949f;
+      color: #81949f;
 
-      font-size:
-        12px;
+      font-size: 12px;
 
-      margin-top:
-        5px;
+      margin-top: 5px;
     }
 
     .smc-chart-area {
-      min-height:
-        220px;
+      min-height: 220px;
 
       display: grid;
 
@@ -1097,19 +876,16 @@
         minmax(0,1fr)
         190px;
 
-      gap:
-        18px;
+      gap: 18px;
 
-      align-items:
-        center;
+      align-items: center;
     }
 
     #smcForecastSvg {
       width: 100%;
       height: 190px;
 
-      overflow:
-        visible;
+      overflow: visible;
     }
 
     .smc-chart-grid {
@@ -1125,14 +901,10 @@
       stroke:
         var(--smc-teal);
 
-      stroke-width:
-        3;
+      stroke-width: 3;
 
-      stroke-linecap:
-        round;
-
-      stroke-linejoin:
-        round;
+      stroke-linecap: round;
+      stroke-linejoin: round;
 
       filter:
         drop-shadow(
@@ -1142,21 +914,15 @@
     }
 
     .smc-chart-fill {
-      fill:
-        url(
-          #smcAreaGradient
-        );
+      fill: url(#smcAreaGradient);
     }
 
     .smc-chart-dot {
-      fill:
-        var(--smc-teal);
+      fill: var(--smc-teal);
 
-      stroke:
-        #cffff5;
+      stroke: #cffff5;
 
-      stroke-width:
-        1;
+      stroke-width: 1;
     }
 
     .smc-forecast-result {
@@ -1167,39 +933,31 @@
         1px solid
         rgba(71,150,155,.18);
 
-      border-radius:
-        15px;
+      border-radius: 15px;
 
-      padding:
-        18px;
+      padding: 18px;
 
-      text-align:
-        center;
+      text-align: center;
     }
 
     .smc-forecast-result span {
       display: block;
 
-      color:
-        #96a9b3;
+      color: #96a9b3;
 
-      font-size:
-        11px;
+      font-size: 11px;
 
-      margin-bottom:
-        8px;
+      margin-bottom: 8px;
     }
 
     .smc-forecast-result strong {
       display: block;
 
-      font-size:
-        27px;
+      font-size: 27px;
     }
 
     .smc-upcoming-list {
-      margin-top:
-        12px;
+      margin-top: 12px;
 
       display: grid;
     }
@@ -1212,14 +970,11 @@
         1fr
         auto;
 
-      gap:
-        10px;
+      gap: 10px;
 
-      align-items:
-        center;
+      align-items: center;
 
-      padding:
-        11px 0;
+      padding: 11px 0;
 
       border-top:
         1px solid
@@ -1227,94 +982,70 @@
     }
 
     .smc-upcoming-date {
-      color:
-        #a8bac3;
+      color: #a8bac3;
 
-      font-size:
-        10px;
+      font-size: 10px;
 
-      text-align:
-        center;
+      text-align: center;
 
-      text-transform:
-        uppercase;
+      text-transform: uppercase;
     }
 
     .smc-upcoming-date strong {
       display: block;
 
-      color:
-        white;
+      color: white;
 
-      font-size:
-        17px;
+      font-size: 17px;
     }
 
     .smc-upcoming-name {
-      font-size:
-        12px;
+      font-size: 12px;
 
-      color:
-        #d8e1e5;
+      color: #d8e1e5;
     }
 
     .smc-income {
-      color:
-        var(--smc-green);
+      color: var(--smc-green);
 
-      font-weight:
-        750;
+      font-weight: 750;
     }
 
     .smc-expense {
-      color:
-        var(--smc-red);
+      color: var(--smc-red);
 
-      font-weight:
-        750;
+      font-weight: 750;
     }
 
     .smc-small-stat {
-      grid-column:
-        span 4;
+      grid-column: span 4;
 
-      min-height:
-        140px;
+      min-height: 140px;
     }
 
     .smc-small-stat-number {
-      margin-top:
-        22px;
+      margin-top: 22px;
 
-      font-size:
-        27px;
-
-      font-weight:
-        820;
+      font-size: 27px;
+      font-weight: 820;
     }
 
     .smc-small-stat-note {
-      color:
-        #879ba6;
+      color: #879ba6;
 
-      margin-top:
-        4px;
+      margin-top: 4px;
 
-      font-size:
-        12px;
+      font-size: 12px;
     }
 
     .smc-status-card {
-      grid-column:
-        span 8;
+      grid-column: span 8;
 
-      padding:
-        17px 19px;
+      padding: 17px 19px;
 
       display: flex;
       align-items: center;
-      justify-content:
-        space-between;
+      justify-content: space-between;
 
       gap: 18px;
 
@@ -1331,8 +1062,7 @@
 
     .smc-status-left {
       display: flex;
-      align-items:
-        center;
+      align-items: center;
 
       gap: 14px;
     }
@@ -1344,56 +1074,40 @@
       display: grid;
       place-items: center;
 
-      border-radius:
-        50%;
+      border-radius: 50%;
 
-      flex:
-        0 0 auto;
+      flex: 0 0 auto;
 
       background:
         var(--smc-orange);
 
-      color:
-        #27170b;
+      color: #27170b;
 
-      font-weight:
-        900;
+      font-weight: 900;
 
-      font-size:
-        22px;
+      font-size: 22px;
     }
 
     .smc-status-title {
-      color:
-        var(--smc-orange);
+      color: var(--smc-orange);
 
-      font-size:
-        16px;
-
-      font-weight:
-        800;
+      font-size: 16px;
+      font-weight: 800;
     }
 
     .smc-status-text {
-      color:
-        #b7c1c6;
+      color: #b7c1c6;
 
-      margin-top:
-        4px;
+      margin-top: 4px;
 
-      font-size:
-        11px;
-
-      line-height:
-        1.45;
+      font-size: 11px;
+      line-height: 1.45;
     }
 
     .smc-progress-card {
-      grid-column:
-        span 4;
+      grid-column: span 4;
 
-      padding:
-        19px;
+      padding: 19px;
 
       background:
         radial-gradient(
@@ -1409,57 +1123,50 @@
     }
 
     .smc-progress-card h3 {
-      margin:
-        13px 0 8px;
+      margin: 13px 0 8px;
 
-      font-size:
-        18px;
+      font-size: 18px;
     }
 
     .smc-progress-card p {
       margin: 0;
 
-      color:
-        #9aadb7;
+      color: #9aadb7;
 
-      font-size:
-        13px;
-
-      line-height:
-        1.55;
+      font-size: 13px;
+      line-height: 1.55;
     }
+
+    /* =========================================================
+       LEGACY PLANNER DARK CONVERSION
+    ========================================================= */
 
     .smc-section-wrap {
       display: grid;
-      gap: 16px;
+      gap: 18px;
     }
 
-    .smc-section-wrap >
-    section,
-    .smc-section-wrap >
-    div {
-      max-width:
-        none !important;
-    }
+    #smcPlanPage .intro-card,
+    #smcPlanPage .card,
+    #smcPlanPage .saved-plans-card,
+    #smcPlanPage .planner-results,
+    #smcPlanPage .results,
+    #smcPlanPage section,
 
-    #smcPlanPage
-    .intro-card,
-    #smcPlanPage
-    .card,
-    #smcPlanPage
-    .saved-plans-card,
+    #smcToolsPage section,
+    #smcToolsPage article,
+    #smcToolsPage .card,
+    #smcToolsPage [class*="tool"],
+    #smcToolsPage [class*="afford"],
+    #smcToolsPage [class*="replan"],
 
-    #smcToolsPage
-    section,
-
-    #smcAccountPage
-    .saved-plans-card {
+    #smcAccountPage .saved-plans-card {
 
       background:
         linear-gradient(
           145deg,
-          rgba(17,31,40,.98),
-          rgba(12,23,31,.98)
+          var(--smc-card),
+          #0c1821
         ) !important;
 
       color:
@@ -1476,87 +1183,534 @@
         18px !important;
     }
 
-    #smcPlanPage
-    h1,
-    #smcPlanPage
-    h2,
-    #smcPlanPage
-    h3,
+    /* WHITE PAYCHECK/BILL ROWS */
 
-    #smcToolsPage
-    h1,
-    #smcToolsPage
-    h2,
-    #smcToolsPage
-    h3,
+    #smcPlanPage .row-card,
+    #smcPlanPage .paycheck-entry,
+    #smcPlanPage .bill-entry,
+    #smcPlanPage .necessity-row,
+    #smcPlanPage .bill-item,
+    #smcPlanPage .summary-tile,
+    #smcPlanPage .reserve-box,
+    #smcPlanPage .cushion-box,
+    #smcPlanPage .safe-spend-box,
+    #smcPlanPage .money-breakdown,
+    #smcPlanPage .result-card,
+    #smcPlanPage .paycheck-result,
+    #smcPlanPage .step,
 
-    #smcAccountPage
-    h1,
-    #smcAccountPage
-    h2,
-    #smcAccountPage
-    h3 {
+    #smcToolsPage .row-card,
+    #smcToolsPage .tool-card,
+    #smcToolsPage .dashboard-tool,
+    #smcToolsPage .dashboard-tool-card,
+    #smcToolsPage .afford-card,
+    #smcToolsPage .replan-card,
+    #smcToolsPage .replan-option,
+    #smcToolsPage .replan-result,
+    #smcToolsPage .afford-result {
+
+      background:
+        var(--smc-card-2) !important;
+
+      color:
+        var(--smc-text) !important;
+
+      border:
+        1px solid
+        var(--smc-border) !important;
+
+      box-shadow:
+        none !important;
+    }
+
+    /* INTRO STEP BOXES */
+
+    #smcPlanPage .steps {
+      gap: 10px !important;
+    }
+
+    #smcPlanPage .step {
+      color:
+        #b8c8cf !important;
+
+      border-radius:
+        12px !important;
+
+      padding:
+        14px !important;
+
+      text-align:
+        center !important;
+
+      font-weight:
+        700 !important;
+    }
+
+    /* HEADINGS */
+
+    #smcPlanPage h1,
+    #smcPlanPage h2,
+    #smcPlanPage h3,
+    #smcPlanPage h4,
+
+    #smcToolsPage h1,
+    #smcToolsPage h2,
+    #smcToolsPage h3,
+    #smcToolsPage h4,
+
+    #smcAccountPage h1,
+    #smcAccountPage h2,
+    #smcAccountPage h3 {
+
       color:
         var(--smc-text) !important;
     }
 
-    #smcPlanPage
-    p,
-    #smcPlanPage
-    .helper,
-    #smcPlanPage
-    label,
+    /* REGULAR TEXT */
 
-    #smcToolsPage
-    p,
-    #smcToolsPage
-    label,
+    #smcPlanPage p,
+    #smcPlanPage .helper,
+    #smcPlanPage .bill-meta,
+    #smcPlanPage .safe-spend-note,
+    #smcPlanPage .result-note,
 
-    #smcAccountPage
-    p,
-    #smcAccountPage
-    label {
+    #smcToolsPage p,
+    #smcToolsPage .helper,
+    #smcToolsPage .tool-helper,
+
+    #smcAccountPage p {
 
       color:
-        #9bb0bb !important;
+        var(--smc-muted) !important;
     }
 
-    #smcPlanPage
-    input,
-    #smcPlanPage
-    select,
+    #smcPlanPage label,
+    #smcToolsPage label,
+    #smcAccountPage label {
 
-    #smcToolsPage
-    input,
-    #smcToolsPage
-    select,
+      color:
+        #adc1ca !important;
 
-    #smcAccountPage
-    input,
-    #smcAccountPage
-    select {
+      font-weight:
+        700 !important;
+    }
+
+    /* INPUTS */
+
+    #smcPlanPage input,
+    #smcPlanPage select,
+    #smcPlanPage textarea,
+
+    #smcToolsPage input,
+    #smcToolsPage select,
+    #smcToolsPage textarea,
+
+    #smcAccountPage input,
+    #smcAccountPage select {
 
       background:
-        #0a1720 !important;
+        var(--smc-input) !important;
+
+      color:
+        #f7fbfc !important;
+
+      border:
+        1px solid
+        rgba(111,163,179,.26) !important;
+
+      border-radius:
+        11px !important;
+
+      box-shadow:
+        inset 0 0 0 1px
+        rgba(0,0,0,.12) !important;
+    }
+
+    #smcPlanPage input:focus,
+    #smcPlanPage select:focus,
+    #smcPlanPage textarea:focus,
+
+    #smcToolsPage input:focus,
+    #smcToolsPage select:focus,
+    #smcToolsPage textarea:focus {
+
+      outline: none !important;
+
+      border-color:
+        var(--smc-teal) !important;
+
+      box-shadow:
+        0 0 0 3px
+        rgba(69,225,192,.11) !important;
+    }
+
+    #smcPlanPage input::placeholder,
+    #smcToolsPage input::placeholder {
+
+      color:
+        #55717e !important;
+
+      opacity: 1 !important;
+    }
+
+    #smcPlanPage input[type="date"],
+    #smcToolsPage input[type="date"] {
+      color-scheme: dark;
+    }
+
+    /* AUTOFILL */
+
+    #smcPlanPage input:-webkit-autofill,
+    #smcToolsPage input:-webkit-autofill {
+
+      -webkit-text-fill-color:
+        white !important;
+
+      box-shadow:
+        0 0 0 1000px
+        var(--smc-input)
+        inset !important;
+
+      transition:
+        background-color
+        9999s ease-in-out
+        0s;
+    }
+
+    /* REMOVE BUTTONS */
+
+    #smcPlanPage .remove-button,
+    #smcPlanPage .btn-danger,
+    #smcPlanPage button[class*="remove"],
+    #smcPlanPage button[class*="danger"] {
+
+      background:
+        rgba(155,48,56,.16) !important;
+
+      color:
+        #ff8d91 !important;
+
+      border:
+        1px solid
+        rgba(255,116,121,.28) !important;
+
+      border-radius:
+        10px !important;
+
+      box-shadow:
+        none !important;
+    }
+
+    #smcPlanPage .remove-button:hover,
+    #smcPlanPage .btn-danger:hover,
+    #smcPlanPage button[class*="remove"]:hover {
+
+      background:
+        rgba(194,60,68,.25) !important;
+    }
+
+    /* ADD / SECONDARY BUTTONS */
+
+    #smcPlanPage .btn-secondary,
+    #smcPlanPage button[class*="secondary"],
+    #smcPlanPage .add-button,
+    #smcPlanPage button[id*="add"],
+    #smcPlanPage button[id*="Add"] {
+
+      background:
+        rgba(49,103,112,.18) !important;
+
+      color:
+        #d5e6eb !important;
+
+      border:
+        1px solid
+        rgba(111,163,179,.25) !important;
+
+      border-radius:
+        11px !important;
+
+      box-shadow:
+        none !important;
+    }
+
+    /* PRIMARY BUTTONS */
+
+    #smcPlanPage .btn-primary,
+    #smcPlanPage button[id*="optimize"],
+    #smcPlanPage button[id*="Optimize"],
+
+    #smcToolsPage .btn-primary,
+    #smcToolsPage button[id*="afford"],
+    #smcToolsPage button[id*="Afford"],
+    #smcToolsPage button[id*="replan"],
+    #smcToolsPage button[id*="Replan"] {
+
+      background:
+        linear-gradient(
+          90deg,
+          #187b74,
+          #258f87
+        ) !important;
 
       color:
         white !important;
 
       border:
         1px solid
-        rgba(123,167,182,.22) !important;
+        rgba(69,225,192,.35) !important;
+
+      box-shadow:
+        none !important;
 
       border-radius:
-        10px !important;
+        11px !important;
     }
 
-    #smcPlanPage
-    input::placeholder,
+    /* TOOL CHOICE BUTTONS */
 
-    #smcToolsPage
-    input::placeholder {
+    #smcToolsPage button:not(.smc-action-button) {
+
+      background:
+        #13242e !important;
+
       color:
-        #607782 !important;
+        #dce8ec !important;
+
+      border:
+        1px solid
+        rgba(122,166,181,.20) !important;
+
+      box-shadow:
+        none !important;
+    }
+
+    #smcToolsPage button:not(.smc-action-button):hover {
+
+      background:
+        #17303a !important;
+
+      border-color:
+        rgba(69,225,192,.32) !important;
+    }
+
+    /* SAVED PLANS */
+
+    #smcAccountPage .saved-plan-item {
+
+      background:
+        var(--smc-card-2) !important;
+
+      border:
+        1px solid
+        var(--smc-border) !important;
+
+      color:
+        var(--smc-text) !important;
+    }
+
+    #smcAccountPage .saved-plan-meta {
+
+      color:
+        var(--smc-muted) !important;
+    }
+
+    /* RESULT STATUS */
+
+    #smcPlanPage .status {
+
+      background:
+        #13242e !important;
+
+      color:
+        #dce8ec !important;
+
+      border:
+        1px solid
+        var(--smc-border) !important;
+
+      border-radius:
+        14px !important;
+    }
+
+    #smcPlanPage .status.good {
+
+      background:
+        rgba(37,122,91,.14) !important;
+
+      border-color:
+        rgba(92,231,177,.24) !important;
+    }
+
+    #smcPlanPage .status.warning {
+
+      background:
+        rgba(151,91,33,.16) !important;
+
+      border-color:
+        rgba(255,157,85,.25) !important;
+    }
+
+    #smcPlanPage .status.bad {
+
+      background:
+        rgba(158,55,62,.15) !important;
+
+      border-color:
+        rgba(255,116,121,.25) !important;
+    }
+
+    /* SUMMARY TILES */
+
+    #smcPlanPage .summary-tile strong {
+      color:
+        white !important;
+    }
+
+    #smcPlanPage .summary-tile span {
+      color:
+        #91a7b2 !important;
+    }
+
+    #smcPlanPage .summary-tile.safe {
+
+      background:
+        rgba(28,107,95,.22) !important;
+
+      border-color:
+        rgba(69,225,192,.25) !important;
+    }
+
+    /* RESULT BILL LINES */
+
+    #smcPlanPage .bill-item {
+
+      border-radius:
+        11px !important;
+
+      margin-bottom:
+        7px !important;
+    }
+
+    /* SAFE SPEND */
+
+    #smcPlanPage .safe-spend-box {
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(20,89,81,.26),
+          rgba(17,36,45,.92)
+        ) !important;
+
+      border-color:
+        rgba(69,225,192,.25) !important;
+    }
+
+    #smcPlanPage .safe-spend-number {
+
+      color:
+        var(--smc-teal) !important;
+    }
+
+    /* TOOL CARD FIX */
+
+    #smcToolsPage > div,
+    #smcToolsContent > div {
+
+      color:
+        var(--smc-text);
+    }
+
+    #smcToolsPage .dashboard-section,
+    #smcToolsPage .dashboard-card,
+    #smcToolsPage .tool-section,
+    #smcToolsPage .afford-section,
+    #smcToolsPage .replan-section {
+
+      background:
+        var(--smc-card) !important;
+
+      border:
+        1px solid
+        var(--smc-border) !important;
+
+      color:
+        var(--smc-text) !important;
+    }
+
+    /* =========================================================
+       ACCOUNT
+    ========================================================= */
+
+    .smc-account-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(0,1fr)
+        );
+
+      gap: 15px;
+
+      margin-bottom: 16px;
+    }
+
+    .smc-account-action {
+      padding: 22px;
+
+      border:
+        1px solid
+        var(--smc-border);
+
+      border-radius: 18px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #10202a,
+          #0d1922
+        );
+
+      color: white;
+    }
+
+    .smc-account-action h3 {
+      margin: 12px 0 6px;
+
+      font-size: 17px;
+    }
+
+    .smc-account-action p {
+      min-height: 38px;
+
+      margin: 0 0 15px;
+
+      color: #8fa2ae;
+
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .smc-account-action button {
+      border:
+        1px solid
+        rgba(69,225,192,.35);
+
+      border-radius: 999px;
+
+      padding: 9px 15px;
+
+      background:
+        rgba(37,133,122,.18);
+
+      color:
+        var(--smc-teal);
+
+      font-weight: 750;
+
+      cursor: pointer;
     }
 
     .smc-placeholder-card {
@@ -1571,118 +1725,28 @@
         1px solid
         var(--smc-border);
 
-      border-radius:
-        18px;
+      border-radius: 18px;
 
-      padding:
-        28px;
+      padding: 28px;
 
-      color:
-        #a3b5be;
+      color: #a3b5be;
     }
 
     .smc-placeholder-card h2 {
-      color:
-        white;
+      color: white;
 
-      margin:
-        0 0 8px;
+      margin: 0 0 8px;
     }
 
-    .smc-account-grid {
-      display: grid;
-
-      grid-template-columns:
-        repeat(
-          2,
-          minmax(0,1fr)
-        );
-
-      gap:
-        15px;
-
-      margin-bottom:
-        16px;
-    }
-
-    .smc-account-action {
-      padding:
-        22px;
-
-      border:
-        1px solid
-        var(--smc-border);
-
-      border-radius:
-        18px;
-
-      background:
-        linear-gradient(
-          145deg,
-          #10202a,
-          #0d1922
-        );
-
-      color:
-        white;
-    }
-
-    .smc-account-action h3 {
-      margin:
-        12px 0 6px;
-
-      font-size:
-        17px;
-    }
-
-    .smc-account-action p {
-      min-height:
-        38px;
-
-      margin:
-        0 0 15px;
-
-      color:
-        #8fa2ae;
-
-      font-size:
-        12px;
-
-      line-height:
-        1.5;
-    }
-
-    .smc-account-action button {
-      border:
-        1px solid
-        rgba(69,225,192,.35);
-
-      border-radius:
-        999px;
-
-      padding:
-        9px 15px;
-
-      background:
-        rgba(37,133,122,.18);
-
-      color:
-        var(--smc-teal);
-
-      font-weight:
-        750;
-
-      cursor:
-        pointer;
-    }
+    /* =========================================================
+       MOBILE
+    ========================================================= */
 
     .smc-bottom-nav {
       display: none;
     }
 
-    @media (
-      max-width: 1050px
-    ) {
+    @media (max-width: 1050px) {
 
       :root {
         --smc-sidebar-width:
@@ -1715,12 +1779,9 @@
         grid-column:
           span 12;
       }
-
     }
 
-    @media (
-      max-width: 760px
-    ) {
+    @media (max-width: 760px) {
 
       #smcAppShell {
         display: block;
@@ -1736,11 +1797,9 @@
       }
 
       .smc-topbar {
-        min-height:
-          54px;
+        min-height: 54px;
 
-        margin-bottom:
-          17px;
+        margin-bottom: 17px;
       }
 
       .smc-search {
@@ -1748,18 +1807,15 @@
       }
 
       .smc-user-header {
-        margin-left:
-          auto;
+        margin-left: auto;
       }
 
       .smc-page-heading {
-        align-items:
-          flex-start;
+        align-items: flex-start;
       }
 
       .smc-page-heading h1 {
-        font-size:
-          28px;
+        font-size: 28px;
       }
 
       .smc-date-block {
@@ -1767,8 +1823,7 @@
       }
 
       .smc-home-grid {
-        grid-template-columns:
-          1fr;
+        grid-template-columns: 1fr;
       }
 
       .smc-available-card,
@@ -1779,26 +1834,20 @@
       .smc-small-stat,
       .smc-status-card,
       .smc-progress-card {
-        grid-column:
-          1;
+        grid-column: 1;
       }
 
       .smc-chart-area {
-        grid-template-columns:
-          1fr;
+        grid-template-columns: 1fr;
       }
 
       .smc-account-grid {
-        grid-template-columns:
-          1fr;
+        grid-template-columns: 1fr;
       }
 
       .smc-status-card {
-        align-items:
-          flex-start;
-
-        flex-direction:
-          column;
+        align-items: flex-start;
+        flex-direction: column;
       }
 
       .smc-bottom-nav {
@@ -1811,21 +1860,15 @@
         display: grid;
 
         grid-template-columns:
-          repeat(
-            5,
-            1fr
-          );
+          repeat(5,1fr);
 
-        z-index:
-          9500;
+        z-index: 9500;
 
         padding:
           7px 7px
           max(
             7px,
-            env(
-              safe-area-inset-bottom
-            )
+            env(safe-area-inset-bottom)
           );
 
         background:
@@ -1841,40 +1884,30 @@
 
       .smc-mobile-nav-button {
         border: 0;
-        background:
-          transparent;
+        background: transparent;
 
-        color:
-          #718792;
+        color: #718792;
 
         display: grid;
         place-items: center;
 
         gap: 3px;
 
-        font-size:
-          9px;
+        font-size: 9px;
 
-        padding:
-          5px 1px;
+        padding: 5px 1px;
 
-        cursor:
-          pointer;
+        cursor: pointer;
       }
 
       .smc-mobile-nav-button svg {
-        width:
-          21px;
-
-        height:
-          21px;
+        width: 21px;
+        height: 21px;
       }
 
       .smc-mobile-nav-button.active {
-        color:
-          var(--smc-teal);
+        color: var(--smc-teal);
       }
-
     }
 
     @media print {
@@ -1883,8 +1916,7 @@
       .smc-topbar,
       .smc-bottom-nav,
       .smc-page-heading {
-        display:
-          none !important;
+        display: none !important;
       }
 
       #smcAppShell {
@@ -1894,26 +1926,18 @@
       .smc-main {
         padding: 0;
       }
-
     }
-
   `;
 
-  document.head.appendChild(
-    style
-  );
+  document.head.appendChild(style);
 
   /* =========================================================
-     APP SHELL HTML
+     SHELL
   ========================================================= */
 
-  const shell =
-    document.createElement(
-      "div"
-    );
+  const shell = document.createElement("div");
 
-  shell.id =
-    "smcAppShell";
+  shell.id = "smcAppShell";
 
   shell.innerHTML = `
 
@@ -2030,8 +2054,6 @@
 
       </header>
 
-      <!-- HOME -->
-
       <section
         id="smcHomePage"
         class="smc-page active"
@@ -2072,8 +2094,6 @@
 
         <div class="smc-home-grid">
 
-          <!-- AVAILABLE -->
-
           <article
             class="
               smc-dashboard-card
@@ -2105,9 +2125,7 @@
                 Protected Cushion
               </span>
 
-              <strong
-                id="smcCushion"
-              >
+              <strong id="smcCushion">
                 $0.00
               </strong>
 
@@ -2119,17 +2137,13 @@
                 Bills Before Payday
               </span>
 
-              <strong
-                id="smcBillsBeforePayday"
-              >
+              <strong id="smcBillsBeforePayday">
                 $0.00
               </strong>
 
             </div>
 
           </article>
-
-          <!-- SAFE TO SPEND -->
 
           <article
             class="
@@ -2157,26 +2171,16 @@
                 class="smc-safe-ring"
               >
 
-                <div
-                  class="
-                    smc-safe-ring-content
-                  "
-                >
+                <div class="smc-safe-ring-content">
 
                   <span
                     id="smcSafeAmount"
-                    class="
-                      smc-safe-ring-amount
-                    "
+                    class="smc-safe-ring-amount"
                   >
                     $0.00
                   </span>
 
-                  <span
-                    class="
-                      smc-safe-ring-label
-                    "
-                  >
+                  <span class="smc-safe-ring-label">
                     Left to spend
                   </span>
 
@@ -2204,8 +2208,6 @@
 
           </article>
 
-          <!-- NEXT PAYDAY -->
-
           <article
             class="
               smc-dashboard-card
@@ -2216,12 +2218,7 @@
 
             <div class="smc-card-title">
 
-              <span
-                style="
-                  color:
-                  var(--smc-blue);
-                "
-              >
+              <span style="color:var(--smc-blue);">
                 ${icon("calendar")}
               </span>
 
@@ -2261,8 +2258,6 @@
 
           </article>
 
-          <!-- FORECAST -->
-
           <article
             class="
               smc-dashboard-card
@@ -2277,9 +2272,7 @@
 
                 <div class="smc-card-title">
 
-                  <span
-                    class="smc-icon-teal"
-                  >
+                  <span class="smc-icon-teal">
                     ${icon("chart")}
                   </span>
 
@@ -2303,20 +2296,15 @@
                 id="smcForecastSvg"
                 viewBox="0 0 500 190"
                 preserveAspectRatio="none"
-              >
-              </svg>
+              ></svg>
 
-              <div
-                class="smc-forecast-result"
-              >
+              <div class="smc-forecast-result">
 
                 <span>
                   Forecast Ending Balance
                 </span>
 
-                <strong
-                  id="smcForecastEnding"
-                >
+                <strong id="smcForecastEnding">
                   $0.00
                 </strong>
 
@@ -2325,8 +2313,6 @@
             </div>
 
           </article>
-
-          <!-- UPCOMING -->
 
           <article
             class="
@@ -2338,12 +2324,7 @@
 
             <div class="smc-card-title">
 
-              <span
-                style="
-                  color:
-                  var(--smc-purple);
-                "
-              >
+              <span style="color:var(--smc-purple);">
                 ${icon("calendar")}
               </span>
 
@@ -2354,12 +2335,9 @@
             <div
               id="smcUpcomingList"
               class="smc-upcoming-list"
-            >
-            </div>
+            ></div>
 
           </article>
-
-          <!-- INCOME -->
 
           <article
             class="
@@ -2386,15 +2364,11 @@
               $0.00
             </div>
 
-            <div
-              class="smc-small-stat-note"
-            >
+            <div class="smc-small-stat-note">
               Upcoming paychecks
             </div>
 
           </article>
-
-          <!-- BILLS -->
 
           <article
             class="
@@ -2406,12 +2380,7 @@
 
             <div class="smc-card-title">
 
-              <span
-                style="
-                  color:
-                  var(--smc-orange);
-                "
-              >
+              <span style="color:var(--smc-orange);">
                 ${icon("bill")}
               </span>
 
@@ -2426,15 +2395,11 @@
               $0.00
             </div>
 
-            <div
-              class="smc-small-stat-note"
-            >
+            <div class="smc-small-stat-note">
               This planning period
             </div>
 
           </article>
-
-          <!-- LIVING -->
 
           <article
             class="
@@ -2446,12 +2411,7 @@
 
             <div class="smc-card-title">
 
-              <span
-                style="
-                  color:
-                  var(--smc-purple);
-                "
-              >
+              <span style="color:var(--smc-purple);">
                 ${icon("cart")}
               </span>
 
@@ -2466,15 +2426,11 @@
               $0.00
             </div>
 
-            <div
-              class="smc-small-stat-note"
-            >
+            <div class="smc-small-stat-note">
               This planning period
             </div>
 
           </article>
-
-          <!-- STATUS -->
 
           <article
             class="
@@ -2483,13 +2439,9 @@
             "
           >
 
-            <div
-              class="smc-status-left"
-            >
+            <div class="smc-status-left">
 
-              <div
-                class="smc-warning-icon"
-              >
+              <div class="smc-warning-icon">
                 !
               </div>
 
@@ -2522,8 +2474,7 @@
               style="
                 width:auto;
                 margin:0;
-                padding:
-                  0 20px;
+                padding:0 20px;
               "
             >
               Open Money Tools
@@ -2531,8 +2482,6 @@
             </button>
 
           </article>
-
-          <!-- MOTIVATION -->
 
           <article
             class="
@@ -2543,8 +2492,7 @@
 
             <div
               style="
-                color:
-                var(--smc-green);
+                color:var(--smc-green);
                 font-size:24px;
               "
             >
@@ -2552,8 +2500,7 @@
             </div>
 
             <h3>
-              Progress Over
-              Perfection
+              Progress Over Perfection
             </h3>
 
             <p>
@@ -2568,8 +2515,6 @@
 
       </section>
 
-      <!-- MY PLAN -->
-
       <section
         id="smcPlanPage"
         class="smc-page"
@@ -2579,16 +2524,12 @@
         <div class="smc-page-heading">
 
           <div>
-
-            <h1>
-              My Plan
-            </h1>
+            <h1>My Plan</h1>
 
             <p>
               Build, optimize and update
               your paycheck plan.
             </p>
-
           </div>
 
         </div>
@@ -2596,12 +2537,9 @@
         <div
           id="smcPlanContent"
           class="smc-section-wrap"
-        >
-        </div>
+        ></div>
 
       </section>
-
-      <!-- TOOLS -->
 
       <section
         id="smcToolsPage"
@@ -2612,16 +2550,12 @@
         <div class="smc-page-heading">
 
           <div>
-
-            <h1>
-              Money Tools
-            </h1>
+            <h1>Money Tools</h1>
 
             <p>
               Quick answers when your
               money situation changes.
             </p>
-
           </div>
 
         </div>
@@ -2629,12 +2563,9 @@
         <div
           id="smcToolsContent"
           class="smc-section-wrap"
-        >
-        </div>
+        ></div>
 
       </section>
-
-      <!-- GOALS -->
 
       <section
         id="smcGoalsPage"
@@ -2645,16 +2576,12 @@
         <div class="smc-page-heading">
 
           <div>
-
-            <h1>
-              Goals
-            </h1>
+            <h1>Goals</h1>
 
             <p>
               Build toward the things
               that matter to you.
             </p>
-
           </div>
 
         </div>
@@ -2669,15 +2596,9 @@
           savings goals, sinking funds
           and debt payoff tools.
 
-          We are building the app
-          structure first so this page
-          never becomes cluttered.
-
         </div>
 
       </section>
-
-      <!-- ACCOUNT -->
 
       <section
         id="smcAccountPage"
@@ -2688,32 +2609,21 @@
         <div class="smc-page-heading">
 
           <div>
-
-            <h1>
-              Account
-            </h1>
+            <h1>Account</h1>
 
             <p>
               Manage your profile and
               saved money plans.
             </p>
-
           </div>
 
         </div>
 
         <div class="smc-account-grid">
 
-          <article
-            class="smc-account-action"
-          >
+          <article class="smc-account-action">
 
-            <div
-              style="
-                color:
-                var(--smc-teal);
-              "
-            >
+            <div style="color:var(--smc-teal);">
               ${icon("user",27)}
             </div>
 
@@ -2736,16 +2646,9 @@
 
           </article>
 
-          <article
-            class="smc-account-action"
-          >
+          <article class="smc-account-action">
 
-            <div
-              style="
-                color:
-                var(--smc-purple);
-              "
-            >
+            <div style="color:var(--smc-purple);">
               ${icon("plan",27)}
             </div>
 
@@ -2755,8 +2658,7 @@
 
             <p>
               Open, switch or manage
-              plans saved to your
-              account.
+              plans saved to your account.
             </p>
 
             <button
@@ -2773,22 +2675,16 @@
         <div
           id="smcAccountContent"
           class="smc-section-wrap"
-        >
-        </div>
+        ></div>
 
       </section>
 
     </main>
 
-    <!-- MOBILE NAV -->
-
     <nav class="smc-bottom-nav">
 
       <button
-        class="
-          smc-mobile-nav-button
-          active
-        "
+        class="smc-mobile-nav-button active"
         data-page="home"
         type="button"
       >
@@ -2797,9 +2693,7 @@
       </button>
 
       <button
-        class="
-          smc-mobile-nav-button
-        "
+        class="smc-mobile-nav-button"
         data-page="plan"
         type="button"
       >
@@ -2808,9 +2702,7 @@
       </button>
 
       <button
-        class="
-          smc-mobile-nav-button
-        "
+        class="smc-mobile-nav-button"
         data-page="tools"
         type="button"
       >
@@ -2819,9 +2711,7 @@
       </button>
 
       <button
-        class="
-          smc-mobile-nav-button
-        "
+        class="smc-mobile-nav-button"
         data-page="goals"
         type="button"
       >
@@ -2830,9 +2720,7 @@
       </button>
 
       <button
-        class="
-          smc-mobile-nav-button
-        "
+        class="smc-mobile-nav-button"
         data-page="account"
         type="button"
       >
@@ -2841,50 +2729,39 @@
       </button>
 
     </nav>
-
   `;
 
-  document.body.appendChild(
-    shell
-  );
+  document.body.appendChild(shell);
 
   /* =========================================================
      NAVIGATION
   ========================================================= */
 
-  function openPage(
-    pageName
-  ) {
+  function openPage(pageName) {
 
     document
-      .querySelectorAll(
-        ".smc-page"
-      )
-      .forEach(
-        page => {
-          page.classList.toggle(
-            "active",
-            page.dataset
-              .pageName ===
-              pageName
-          );
-        }
-      );
+      .querySelectorAll(".smc-page")
+      .forEach(page => {
+
+        page.classList.toggle(
+          "active",
+          page.dataset.pageName === pageName
+        );
+
+      });
 
     document
       .querySelectorAll(
         ".smc-nav-button, .smc-mobile-nav-button"
       )
-      .forEach(
-        button => {
-          button.classList.toggle(
-            "active",
-            button.dataset
-              .page ===
-              pageName
-          );
-        }
-      );
+      .forEach(button => {
+
+        button.classList.toggle(
+          "active",
+          button.dataset.page === pageName
+        );
+
+      });
 
     window.scrollTo({
       top: 0,
@@ -2895,50 +2772,42 @@
       pageName === "home"
         ? ""
         : pageName;
-
   }
 
   document
-    .querySelectorAll(
-      "[data-page]"
-    )
-    .forEach(
-      button => {
-        button.addEventListener(
-          "click",
-          () => {
-            openPage(
-              button.dataset.page
-            );
-          }
-        );
-      }
-    );
+    .querySelectorAll("[data-page]")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+          openPage(button.dataset.page);
+        }
+      );
+
+    });
 
   document
-    .querySelectorAll(
-      "[data-go-page]"
-    )
-    .forEach(
-      button => {
-        button.addEventListener(
-          "click",
-          () => {
-            openPage(
-              button.dataset
-                .goPage
-            );
-          }
-        );
-      }
-    );
+    .querySelectorAll("[data-go-page]")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+          openPage(
+            button.dataset.goPage
+          );
+        }
+      );
+
+    });
 
   window.StretchMyCheckApp = {
     openPage
   };
 
   /* =========================================================
-     MOVE EXISTING WORKING CONTENT
+     MOVE EXISTING CONTENT
   ========================================================= */
 
   const legacyApp =
@@ -2961,27 +2830,19 @@
       "smcAccountContent"
     );
 
-  function topLegacyChild(
-    element
-  ) {
+  function topLegacyChild(element) {
 
-    if (
-      !element ||
-      !legacyApp
-    ) {
+    if (!element || !legacyApp) {
       return null;
     }
 
-    let node =
-      element;
+    let node = element;
 
     while (
       node.parentElement &&
-      node.parentElement !==
-        legacyApp
+      node.parentElement !== legacyApp
     ) {
-      node =
-        node.parentElement;
+      node = node.parentElement;
     }
 
     return node;
@@ -2993,25 +2854,17 @@
   ) {
 
     const element =
-      document.getElementById(
-        id
-      );
+      document.getElementById(id);
 
     const node =
-      topLegacyChild(
-        element
-      );
+      topLegacyChild(element);
 
     if (
       node &&
       destination &&
-      node.parentElement !==
-        destination
+      node.parentElement !== destination
     ) {
-      destination.appendChild(
-        node
-      );
-
+      destination.appendChild(node);
       return node;
     }
 
@@ -3024,14 +2877,9 @@
   ) {
 
     const element =
-      document.getElementById(
-        id
-      );
+      document.getElementById(id);
 
-    if (
-      !element ||
-      !destination
-    ) {
+    if (!element || !destination) {
       return null;
     }
 
@@ -3040,42 +2888,32 @@
       ".afford-card",
       ".tool-card",
       ".dashboard-tool",
-      ".forecast-card",
+      ".dashboard-tool-card",
       "section",
       ".card"
     ];
 
     let node = null;
 
-    for (
-      const selector
-      of selectors
-    ) {
+    for (const selector of selectors) {
+
       const candidate =
-        element.closest(
-          selector
-        );
+        element.closest(selector);
 
       if (
         candidate &&
-        candidate !==
-          legacyApp
+        candidate !== legacyApp
       ) {
-        node =
-          candidate;
-
+        node = candidate;
         break;
       }
     }
 
     if (
       node &&
-      node.parentElement !==
-        destination
+      node.parentElement !== destination
     ) {
-      destination.appendChild(
-        node
-      );
+      destination.appendChild(node);
     }
 
     return node;
@@ -3087,35 +2925,25 @@
       return;
     }
 
-    /*
-      Move auth area into
-      new top right.
-    */
-
     const oldHeader =
       legacyApp.querySelector(
         ".topbar"
       );
 
     const accountArea =
-      oldHeader
-        ?.querySelector(
-          ".account-buttons"
-        );
+      oldHeader?.querySelector(
+        ".account-buttons"
+      );
 
     if (accountArea) {
+
       document
         .getElementById(
           "smcUserHeader"
         )
-        .appendChild(
-          accountArea
-        );
-    }
+        .appendChild(accountArea);
 
-    /*
-      Move planner pieces.
-    */
+    }
 
     const intro =
       legacyApp.querySelector(
@@ -3123,9 +2951,7 @@
       );
 
     if (intro) {
-      planContent.appendChild(
-        intro
-      );
+      planContent.appendChild(intro);
     }
 
     moveTopLevelById(
@@ -3153,11 +2979,6 @@
       planContent
     );
 
-    /*
-      Saved-plan controls belong
-      under Account now.
-    */
-
     const savedCard =
       document.querySelector(
         ".saved-plans-card"
@@ -3168,13 +2989,6 @@
         savedCard
       );
     }
-
-    /*
-      Existing tool widgets.
-      These selectors are kept
-      flexible because dashboard.js
-      creates them dynamically.
-    */
 
     moveClosestUseful(
       "affordButton",
@@ -3191,66 +3005,26 @@
       toolsContent
     );
 
-    if (
-      !toolsContent.children.length
-    ) {
-
-      const placeholder =
-        document.createElement(
-          "div"
-        );
-
-      placeholder.className =
-        "smc-placeholder-card";
-
-      placeholder.innerHTML = `
-        <h2>
-          Your Money Tools
-        </h2>
-
-        Can I Afford This? and
-        Smart Replan are still
-        connected to your planner.
-
-        We'll finish moving their
-        cards into this page during
-        the next visual pass.
-      `;
-
-      toolsContent.appendChild(
-        placeholder
-      );
-    }
-
-    /*
-      Hide whatever is left of
-      the original page.
-    */
-
     legacyApp.setAttribute(
       "aria-hidden",
       "true"
     );
 
-    document.body
-      .classList.add(
-        "smc-shell-ready"
-      );
-
+    document.body.classList.add(
+      "smc-shell-ready"
+    );
   }
 
   /* =========================================================
-     PROFILE / NAME
+     PROFILE
   ========================================================= */
 
-  let displayName =
-    "";
+  let displayName = "";
 
   function greetingForTime() {
 
     const hour =
-      new Date()
-        .getHours();
+      new Date().getHours();
 
     if (hour < 12) {
       return "Good morning";
@@ -3277,12 +3051,7 @@
     heading.innerHTML = `
       ${greetingForTime()},
       <span id="smcGreetingName">
-        ${
-          escapeHTML(
-            displayName ||
-            "there"
-          )
-        }
+        ${escapeHTML(displayName || "there")}
       </span>
     `;
   }
@@ -3302,21 +3071,14 @@
         displayName =
           await window
             .StretchMyCheckAuth
-            .getDisplayName() ||
-          "";
+            .getDisplayName() || "";
 
-      } catch (
-        error
-      ) {
-        console.error(
-          error
-        );
+      } catch (error) {
+        console.error(error);
       }
-
     }
 
     renderGreeting();
-
   }
 
   window.addEventListener(
@@ -3324,9 +3086,7 @@
     event => {
 
       displayName =
-        event.detail
-          ?.firstName ||
-        "";
+        event.detail?.firstName || "";
 
       renderGreeting();
 
@@ -3349,234 +3109,164 @@
     }
 
     element.textContent =
-      new Date()
-        .toLocaleDateString(
-          "en-US",
-          {
-            weekday:
-              "long",
-
-            month:
-              "short",
-
-            day:
-              "numeric",
-
-            year:
-              "numeric"
-          }
-        );
-
+      new Date().toLocaleDateString(
+        "en-US",
+        {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        }
+      );
   }
 
   /* =========================================================
-     DATA
+     PLANNER DATA
   ========================================================= */
 
   function readPaychecks() {
 
     return [
-      ...document
-        .querySelectorAll(
-          ".paycheck-entry"
-        )
-    ]
-      .map(
-        entry => ({
-
-          name:
-            entry
-              .querySelector(
-                ".paycheck-name"
-              )
-              ?.value
-              ?.trim() ||
-            "Paycheck",
-
-          date:
-            entry
-              .querySelector(
-                ".paycheck-date"
-              )
-              ?.value ||
-            "",
-
-          amount:
-            money(
-              entry
-                .querySelector(
-                  ".paycheck-amount"
-                )
-                ?.value
-            )
-
-        })
+      ...document.querySelectorAll(
+        ".paycheck-entry"
       )
+    ]
+      .map(entry => ({
+        name:
+          entry.querySelector(
+            ".paycheck-name"
+          )?.value?.trim() ||
+          "Paycheck",
+
+        date:
+          entry.querySelector(
+            ".paycheck-date"
+          )?.value || "",
+
+        amount:
+          money(
+            entry.querySelector(
+              ".paycheck-amount"
+            )?.value
+          )
+      }))
       .filter(
         paycheck =>
           paycheck.date ||
           paycheck.amount
       )
       .sort(
-        (
-          a,
-          b
-        ) =>
+        (a,b) =>
           String(a.date)
             .localeCompare(
               String(b.date)
             )
       );
-
   }
 
   function readBills() {
 
     return [
-      ...document
-        .querySelectorAll(
-          ".bill-entry"
-        )
-    ].map(
-      entry => ({
+      ...document.querySelectorAll(
+        ".bill-entry"
+      )
+    ].map(entry => ({
+      name:
+        entry.querySelector(
+          ".bill-name"
+        )?.value?.trim() ||
+        "Bill",
 
-        name:
-          entry
-            .querySelector(
-              ".bill-name"
-            )
-            ?.value
-            ?.trim() ||
-          "Bill",
+      amount:
+        money(
+          entry.querySelector(
+            ".bill-amount"
+          )?.value
+        ),
 
-        amount:
-          money(
-            entry
-              .querySelector(
-                ".bill-amount"
-              )
-              ?.value
-          ),
-
-        date:
-          entry
-            .querySelector(
-              ".bill-due-date"
-            )
-            ?.value ||
-          ""
-
-      })
-    );
-
+      date:
+        entry.querySelector(
+          ".bill-due-date"
+        )?.value || ""
+    }));
   }
 
   function readLivingTotal() {
 
     const fields = [
       {
-        amount:
-          "groceryAmount",
-
-        mode:
-          "groceryMode"
+        amount: "groceryAmount",
+        mode: "groceryMode"
       },
       {
-        amount:
-          "gasAmount",
-
-        mode:
-          "gasMode"
+        amount: "gasAmount",
+        mode: "gasMode"
       },
       {
-        amount:
-          "otherAmount",
-
-        mode:
-          "otherMode"
+        amount: "otherAmount",
+        mode: "otherMode"
       }
     ];
 
     const paycheckCount =
       Math.max(
-        readPaychecks()
-          .length,
+        readPaychecks().length,
         1
       );
 
     return fields.reduce(
-      (
-        total,
-        field
-      ) => {
+      (total,field) => {
 
         const value =
           money(
-            document
-              .getElementById(
-                field.amount
-              )
-              ?.value
+            document.getElementById(
+              field.amount
+            )?.value
           );
 
         const mode =
-          document
-            .getElementById(
-              field.mode
-            )
-            ?.value ||
-          "total";
+          document.getElementById(
+            field.mode
+          )?.value || "total";
 
         return total +
           (
-            mode ===
-            "percheck"
-              ? value *
-                paycheckCount
+            mode === "percheck"
+              ? value * paycheckCount
               : value
           );
-
       },
       0
     );
-
   }
 
   function getSnapshot() {
 
     const startingBalance =
       money(
-        document
-          .getElementById(
-            "startingBalance"
-          )
-          ?.value
+        document.getElementById(
+          "startingBalance"
+        )?.value
       );
 
     const cushion =
       money(
-        document
-          .getElementById(
-            "protectedCushion"
-          )
-          ?.value
+        document.getElementById(
+          "protectedCushion"
+        )?.value
       );
 
-    let dashboard =
-      null;
+    let dashboard = null;
 
     try {
 
       dashboard =
         window
           .StretchMyCheckDashboard
-          ?.getSnapshot
-          ?.() ||
+          ?.getSnapshot?.() ||
         null;
 
-    } catch (
-      error
-    ) {
+    } catch (error) {
       dashboard = null;
     }
 
@@ -3591,33 +3281,23 @@
 
     const billTotal =
       bills.reduce(
-        (
-          total,
-          bill
-        ) =>
-          total +
-          bill.amount,
+        (total,bill) =>
+          total + bill.amount,
         0
       );
 
     const incomeTotal =
       paychecks.reduce(
-        (
-          total,
-          paycheck
-        ) =>
-          total +
-          paycheck.amount,
+        (total,paycheck) =>
+          total + paycheck.amount,
         0
       );
 
     const safe =
       Number.isFinite(
-        dashboard
-          ?.displayedSafe
+        dashboard?.displayedSafe
       )
-        ? dashboard
-            .displayedSafe
+        ? dashboard.displayedSafe
         : Math.max(
             startingBalance -
             cushion,
@@ -3626,25 +3306,20 @@
 
     const dailySafe =
       Number.isFinite(
-        dashboard
-          ?.dailySafe
+        dashboard?.dailySafe
       )
-        ? dashboard
-            .dailySafe
+        ? dashboard.dailySafe
         : 0;
 
     const billsBefore =
       Number.isFinite(
-        dashboard
-          ?.billsBeforePayday
+        dashboard?.billsBeforePayday
       )
-        ? dashboard
-            .billsBeforePayday
+        ? dashboard.billsBeforePayday
         : 0;
 
     let nextPaycheck =
-      dashboard
-        ?.nextPaycheck ||
+      dashboard?.nextPaycheck ||
       null;
 
     if (
@@ -3663,9 +3338,7 @@
         paychecks.find(
           paycheck => {
 
-            if (
-              !paycheck.date
-            ) {
+            if (!paycheck.date) {
               return false;
             }
 
@@ -3674,13 +3347,10 @@
                 `${paycheck.date}T00:00:00`
               );
 
-            return date >=
-              today;
-
+            return date >= today;
           }
         ) ||
         paychecks[0];
-
     }
 
     const optimized =
@@ -3704,7 +3374,6 @@
           );
 
     return {
-
       startingBalance,
       cushion,
       safe,
@@ -3718,18 +3387,14 @@
       incomeTotal,
       endingBalance,
       optimized
-
     };
-
   }
 
   /* =========================================================
-     FORECAST CHART
+     CHART
   ========================================================= */
 
-  function drawChart(
-    snapshot
-  ) {
+  function drawChart(snapshot) {
 
     const svg =
       document.getElementById(
@@ -3741,8 +3406,7 @@
     }
 
     const values = [
-      snapshot
-        .startingBalance
+      snapshot.startingBalance
     ];
 
     if (
@@ -3751,72 +3415,47 @@
         ?.length
     ) {
 
-      snapshot
-        .optimized
-        .paychecks
-        .forEach(
-          paycheck => {
+      snapshot.optimized.paychecks
+        .forEach(paycheck => {
 
-            if (
-              Number.isFinite(
-                paycheck
-                  .runningBalance
-              )
-            ) {
-              values.push(
-                paycheck
-                  .runningBalance
-              );
-            }
-
+          if (
+            Number.isFinite(
+              paycheck.runningBalance
+            )
+          ) {
+            values.push(
+              paycheck.runningBalance
+            );
           }
-        );
+        });
 
     } else {
 
       let running =
-        snapshot
-          .startingBalance;
+        snapshot.startingBalance;
 
-      snapshot
-        .paychecks
-        .forEach(
-          paycheck => {
+      snapshot.paychecks
+        .forEach(paycheck => {
 
-            running +=
-              paycheck.amount;
+          running +=
+            paycheck.amount;
 
-            values.push(
-              running
-            );
-
-          }
-        );
+          values.push(running);
+        });
 
       values[
         values.length - 1
       ] =
-        snapshot
-          .endingBalance;
-
+        snapshot.endingBalance;
     }
 
-    if (
-      values.length === 1
-    ) {
-      values.push(
-        values[0]
-      );
+    if (values.length === 1) {
+      values.push(values[0]);
     }
 
-    const width =
-      500;
-
-    const height =
-      190;
-
-    const padding =
-      18;
+    const width = 500;
+    const height = 190;
+    const padding = 18;
 
     const max =
       Math.max(
@@ -3838,10 +3477,7 @@
 
     const points =
       values.map(
-        (
-          value,
-          index
-        ) => {
+        (value,index) => {
 
           const x =
             padding +
@@ -3876,17 +3512,13 @@
             y,
             value
           };
-
         }
       );
 
     const line =
       points
         .map(
-          (
-            point,
-            index
-          ) =>
+          (point,index) =>
             `${
               index === 0
                 ? "M"
@@ -3895,67 +3527,60 @@
         )
         .join(" ");
 
-    const fill =
-      `${line}
-       L ${
-         points[
-           points.length - 1
-         ].x
-       } ${
-         height - padding
-       }
-       L ${
-         points[0].x
-       } ${
-         height - padding
-       }
-       Z`;
+    const fill = `
+      ${line}
+      L ${
+        points[
+          points.length - 1
+        ].x
+      } ${
+        height - padding
+      }
+      L ${
+        points[0].x
+      } ${
+        height - padding
+      }
+      Z
+    `;
 
     const gridLines =
       [0,1,2,3]
-        .map(
-          index => {
+        .map(index => {
 
-            const y =
-              padding +
-              index *
+          const y =
+            padding +
+            index *
+            (
               (
-                (
-                  height -
-                  padding * 2
-                ) /
-                3
-              );
+                height -
+                padding * 2
+              ) /
+              3
+            );
 
-            return `
-              <line
-                class="smc-chart-grid"
-                x1="${padding}"
-                y1="${y}"
-                x2="${
-                  width -
-                  padding
-                }"
-                y2="${y}"
-              />
-            `;
-
-          }
-        )
+          return `
+            <line
+              class="smc-chart-grid"
+              x1="${padding}"
+              y1="${y}"
+              x2="${width-padding}"
+              y2="${y}"
+            />
+          `;
+        })
         .join("");
 
     const dots =
       points
-        .map(
-          point => `
-            <circle
-              class="smc-chart-dot"
-              cx="${point.x}"
-              cy="${point.y}"
-              r="4.5"
-            />
-          `
-        )
+        .map(point => `
+          <circle
+            class="smc-chart-dot"
+            cx="${point.x}"
+            cy="${point.y}"
+            r="4.5"
+          />
+        `)
         .join("");
 
     svg.innerHTML = `
@@ -3999,18 +3624,14 @@
       />
 
       ${dots}
-
     `;
-
   }
 
   /* =========================================================
-     UPCOMING LIST
+     UPCOMING
   ========================================================= */
 
-  function formatShortDate(
-    dateValue
-  ) {
+  function formatShortDate(dateValue) {
 
     if (!dateValue) {
       return {
@@ -4020,19 +3641,14 @@
     }
 
     const date =
-      dateValue
-        instanceof Date
-          ? dateValue
-          : new Date(
-              `${
-                String(
-                  dateValue
-                ).slice(
-                  0,
-                  10
-                )
-              }T00:00:00`
-            );
+      dateValue instanceof Date
+        ? dateValue
+        : new Date(
+            `${
+              String(dateValue)
+                .slice(0,10)
+            }T00:00:00`
+          );
 
     if (
       Number.isNaN(
@@ -4046,28 +3662,20 @@
     }
 
     return {
-
       month:
-        date
-          .toLocaleDateString(
-            "en-US",
-            {
-              month:
-                "short"
-            }
-          ),
+        date.toLocaleDateString(
+          "en-US",
+          {
+            month: "short"
+          }
+        ),
 
       day:
-        date
-          .getDate()
-
+        date.getDate()
     };
-
   }
 
-  function renderUpcoming(
-    snapshot
-  ) {
+  function renderUpcoming(snapshot) {
 
     const container =
       document.getElementById(
@@ -4078,8 +3686,7 @@
       return;
     }
 
-    const items =
-      [];
+    const items = [];
 
     if (
       snapshot.optimized
@@ -4087,107 +3694,60 @@
         ?.length
     ) {
 
-      snapshot
-        .optimized
-        .paychecks
-        .forEach(
-          paycheck => {
+      snapshot.optimized.paychecks
+        .forEach(paycheck => {
 
-            items.push({
+          items.push({
+            type: "income",
+            date: paycheck.date,
+            name:
+              paycheck.name ||
+              "Paycheck",
+            amount:
+              paycheck.amount
+          });
 
-              type:
-                "income",
+          paycheck.bills
+            ?.forEach(bill => {
 
-              date:
-                paycheck.date,
-
-              name:
-                paycheck.name ||
-                "Paycheck",
-
-              amount:
-                paycheck.amount
+              items.push({
+                type: "expense",
+                date: paycheck.date,
+                name: bill.name,
+                amount: bill.amount
+              });
 
             });
 
-            paycheck
-              .bills
-              ?.forEach(
-                bill => {
+          if (
+            paycheck.necessities > 0
+          ) {
 
-                  items.push({
-
-                    type:
-                      "expense",
-
-                    date:
-                      paycheck.date,
-
-                    name:
-                      bill.name,
-
-                    amount:
-                      bill.amount
-
-                  });
-
-                }
-              );
-
-            if (
-              paycheck
-                .necessities >
-              0
-            ) {
-
-              items.push({
-
-                type:
-                  "expense",
-
-                date:
-                  paycheck.date,
-
-                name:
-                  "Living Expenses",
-
-                amount:
-                  paycheck
-                    .necessities
-
-              });
-
-            }
+            items.push({
+              type: "expense",
+              date: paycheck.date,
+              name:
+                "Living Expenses",
+              amount:
+                paycheck.necessities
+            });
 
           }
-        );
+        });
 
     } else {
 
-      snapshot
-        .paychecks
-        .forEach(
-          paycheck => {
+      snapshot.paychecks
+        .forEach(paycheck => {
 
-            items.push({
+          items.push({
+            type: "income",
+            date: paycheck.date,
+            name: paycheck.name,
+            amount: paycheck.amount
+          });
 
-              type:
-                "income",
-
-              date:
-                paycheck.date,
-
-              name:
-                paycheck.name,
-
-              amount:
-                paycheck.amount
-
-            });
-
-          }
-        );
-
+        });
     }
 
     if (!items.length) {
@@ -4210,82 +3770,59 @@
 
     container.innerHTML =
       items
-        .slice(
-          0,
-          6
-        )
-        .map(
-          item => {
+        .slice(0,6)
+        .map(item => {
 
-            const date =
-              formatShortDate(
-                item.date
-              );
+          const date =
+            formatShortDate(
+              item.date
+            );
 
-            const sign =
-              item.type ===
-              "income"
-                ? "+"
-                : "-";
+          const sign =
+            item.type === "income"
+              ? "+"
+              : "-";
 
-            return `
+          return `
+            <div
+              class="smc-upcoming-item"
+            >
 
               <div
-                class="smc-upcoming-item"
+                class="smc-upcoming-date"
               >
+                ${escapeHTML(date.month)}
 
-                <div
-                  class="smc-upcoming-date"
-                >
-
-                  ${escapeHTML(
-                    date.month
-                  )}
-
-                  <strong>
-                    ${escapeHTML(
-                      date.day
-                    )}
-                  </strong>
-
-                </div>
-
-                <div
-                  class="smc-upcoming-name"
-                >
-                  ${escapeHTML(
-                    item.name
-                  )}
-                </div>
-
-                <div
-                  class="${
-                    item.type ===
-                    "income"
-                      ? "smc-income"
-                      : "smc-expense"
-                  }"
-                  style="
-                    font-size:11px;
-                  "
-                >
-                  ${sign}${currency(
-                    item.amount
-                  )}
-                </div>
-
+                <strong>
+                  ${escapeHTML(date.day)}
+                </strong>
               </div>
 
-            `;
+              <div
+                class="smc-upcoming-name"
+              >
+                ${escapeHTML(item.name)}
+              </div>
 
-          }
-        )
+              <div
+                class="${
+                  item.type === "income"
+                    ? "smc-income"
+                    : "smc-expense"
+                }"
+                style="font-size:11px;"
+              >
+                ${sign}${currency(item.amount)}
+              </div>
+
+            </div>
+          `;
+        })
         .join("");
-
   }
 
   /* =========================================================
-     HOME RENDER
+     HOME
   ========================================================= */
 
   function renderHome() {
@@ -4294,29 +3831,21 @@
       getSnapshot();
 
     const set =
-      (
-        id,
-        value
-      ) => {
+      (id,value) => {
 
         const element =
-          document
-            .getElementById(
-              id
-            );
+          document.getElementById(id);
 
         if (element) {
           element.textContent =
             value;
         }
-
       };
 
     set(
       "smcAvailableNow",
       currency(
-        snapshot
-          .startingBalance
+        snapshot.startingBalance
       )
     );
 
@@ -4330,8 +3859,7 @@
     set(
       "smcBillsBeforePayday",
       currency(
-        snapshot
-          .billsBefore
+        snapshot.billsBefore
       )
     );
 
@@ -4344,42 +3872,36 @@
 
     set(
       "smcDailySafe",
-      `${
-        currency(
-          snapshot.dailySafe
-        )
-      } per day`
+      `${currency(
+        snapshot.dailySafe
+      )} per day`
     );
 
     set(
       "smcForecastEnding",
       currency(
-        snapshot
-          .endingBalance
+        snapshot.endingBalance
       )
     );
 
     set(
       "smcIncomeTotal",
       currency(
-        snapshot
-          .incomeTotal
+        snapshot.incomeTotal
       )
     );
 
     set(
       "smcBillTotal",
       currency(
-        snapshot
-          .billTotal
+        snapshot.billTotal
       )
     );
 
     set(
       "smcLivingTotal",
       currency(
-        snapshot
-          .livingTotal
+        snapshot.livingTotal
       )
     );
 
@@ -4390,8 +3912,7 @@
 
     const usable =
       Math.max(
-        snapshot
-          .startingBalance -
+        snapshot.startingBalance -
         snapshot.cushion,
         1
       );
@@ -4410,19 +3931,14 @@
       );
 
     if (ring) {
-
-      ring.style
-        .setProperty(
-          "--progress",
-          `${
-            Number.isFinite(
-              percent
-            )
-              ? percent
-              : 0
-          }%`
-        );
-
+      ring.style.setProperty(
+        "--progress",
+        `${
+          Number.isFinite(percent)
+            ? percent
+            : 0
+        }%`
+      );
     }
 
     const safeNote =
@@ -4440,9 +3956,7 @@
         "smcStatusText"
       );
 
-    if (
-      snapshot.safe <= 0
-    ) {
+    if (snapshot.safe <= 0) {
 
       if (safeNote) {
         safeNote.textContent =
@@ -4513,12 +4027,10 @@
         statusText.textContent =
           "Your current plan leaves room above your protected money.";
       }
-
     }
 
     const paycheck =
-      snapshot
-        .nextPaycheck;
+      snapshot.nextPaycheck;
 
     if (paycheck) {
 
@@ -4526,27 +4038,20 @@
         paycheck.date ||
         paycheck.dateValue;
 
-      let date =
-        null;
+      let date = null;
 
       if (
-        dateValue
-        instanceof Date
+        dateValue instanceof Date
       ) {
-        date =
-          dateValue;
-      } else if (
-        dateValue
-      ) {
+        date = dateValue;
+
+      } else if (dateValue) {
+
         date =
           new Date(
             `${
-              String(
-                dateValue
-              ).slice(
-                0,
-                10
-              )
+              String(dateValue)
+                .slice(0,10)
             }T00:00:00`
           );
       }
@@ -4560,20 +4065,14 @@
 
         set(
           "smcPaydayDate",
-          date
-            .toLocaleDateString(
-              "en-US",
-              {
-                weekday:
-                  "short",
-
-                month:
-                  "short",
-
-                day:
-                  "numeric"
-              }
-            )
+          date.toLocaleDateString(
+            "en-US",
+            {
+              weekday: "short",
+              month: "short",
+              day: "numeric"
+            }
+          )
         );
 
         const today =
@@ -4614,7 +4113,6 @@
                   : "s"
               } away`
         );
-
       }
 
       set(
@@ -4642,17 +4140,11 @@
         "smcPaydayDays",
         "—"
       );
-
     }
 
-    drawChart(
-      snapshot
-    );
+    drawChart(snapshot);
 
-    renderUpcoming(
-      snapshot
-    );
-
+    renderUpcoming(snapshot);
   }
 
   /* =========================================================
@@ -4669,8 +4161,7 @@
 
         window
           .StretchMyCheckAuth
-          ?.showProfile
-          ?.();
+          ?.showProfile?.();
 
       }
     );
@@ -4685,8 +4176,7 @@
 
         window
           .StretchMyCheckPlans
-          ?.openSavedPlans
-          ?.();
+          ?.openSavedPlans?.();
 
       }
     );
@@ -4700,99 +4190,62 @@
       "smcPlanSearch"
     );
 
-  search
-    ?.addEventListener(
-      "keydown",
-      event => {
+  search?.addEventListener(
+    "keydown",
+    event => {
 
-        if (
-          event.key !==
-          "Enter"
-        ) {
-          return;
-        }
-
-        const query =
-          search.value
-            .trim()
-            .toLowerCase();
-
-        if (!query) {
-          return;
-        }
-
-        if (
-          query.includes(
-            "bill"
-          ) ||
-          query.includes(
-            "pay"
-          ) ||
-          query.includes(
-            "plan"
-          )
-        ) {
-          openPage(
-            "plan"
-          );
-        }
-
-        else if (
-          query.includes(
-            "afford"
-          ) ||
-          query.includes(
-            "replan"
-          ) ||
-          query.includes(
-            "tool"
-          )
-        ) {
-          openPage(
-            "tools"
-          );
-        }
-
-        else if (
-          query.includes(
-            "goal"
-          ) ||
-          query.includes(
-            "save"
-          ) ||
-          query.includes(
-            "debt"
-          )
-        ) {
-          openPage(
-            "goals"
-          );
-        }
-
-        else if (
-          query.includes(
-            "account"
-          ) ||
-          query.includes(
-            "profile"
-          )
-        ) {
-          openPage(
-            "account"
-          );
-        }
-
-        else {
-          openPage(
-            "home"
-          );
-        }
-
+      if (event.key !== "Enter") {
+        return;
       }
-    );
+
+      const query =
+        search.value
+          .trim()
+          .toLowerCase();
+
+      if (!query) {
+        return;
+      }
+
+      if (
+        query.includes("bill") ||
+        query.includes("pay") ||
+        query.includes("plan")
+      ) {
+        openPage("plan");
+      }
+
+      else if (
+        query.includes("afford") ||
+        query.includes("replan") ||
+        query.includes("tool")
+      ) {
+        openPage("tools");
+      }
+
+      else if (
+        query.includes("goal") ||
+        query.includes("save") ||
+        query.includes("debt")
+      ) {
+        openPage("goals");
+      }
+
+      else if (
+        query.includes("account") ||
+        query.includes("profile")
+      ) {
+        openPage("account");
+      }
+
+      else {
+        openPage("home");
+      }
+    }
+  );
 
   /* =========================================================
-     UPDATE LISTENERS
+     LIVE REFRESH
   ========================================================= */
 
   function scheduleRefresh() {
@@ -4801,7 +4254,6 @@
       renderHome,
       60
     );
-
   }
 
   document.addEventListener(
@@ -4815,7 +4267,6 @@
       ) {
         scheduleRefresh();
       }
-
     }
   );
 
@@ -4832,7 +4283,6 @@
         renderHome,
         250
       );
-
     }
   );
 
@@ -4855,11 +4305,6 @@
 
     renderHome();
 
-    /*
-      Recheck after saved-plan
-      auto-loading / optimizer.
-    */
-
     window.setTimeout(
       renderHome,
       500
@@ -4872,10 +4317,7 @@
 
     const requested =
       window.location.hash
-        .replace(
-          "#",
-          ""
-        );
+        .replace("#","");
 
     if (
       [
@@ -4884,15 +4326,10 @@
         "tools",
         "goals",
         "account"
-      ].includes(
-        requested
-      )
+      ].includes(requested)
     ) {
-      openPage(
-        requested
-      );
+      openPage(requested);
     }
-
   }
 
   window.setTimeout(
