@@ -1,5 +1,8 @@
 (() => {
-  const supabaseClient = window.supabaseClient;
+  "use strict";
+
+  const supabaseClient =
+    window.supabaseClient;
 
   if (!supabaseClient) {
     console.error(
@@ -12,10 +15,14 @@
     "https://stretchmycheck.github.io/stretch-my-check/";
 
   const accountArea =
-    document.querySelector(".account-buttons");
+    document.querySelector(
+      ".account-buttons"
+    );
 
   if (!accountArea) {
-    console.error("Could not find .account-buttons in index.html.");
+    console.error(
+      "Could not find .account-buttons."
+    );
     return;
   }
 
@@ -23,40 +30,39 @@
      STYLES
   ========================================================= */
 
-  const style = document.createElement("style");
+  const style =
+    document.createElement("style");
 
   style.textContent = `
     .auth-header-wrap {
       position: relative;
       display: flex;
       align-items: center;
-      gap: 9px;
-      flex-wrap: wrap;
+      gap: 10px;
       justify-content: flex-end;
+      flex-wrap: wrap;
     }
 
-    .auth-email-small {
-      font-size: 12px;
-      opacity: .9;
-      max-width: 220px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .auth-user-name {
+      font-size: 14px;
+      font-weight: 750;
     }
 
     .auth-menu {
       position: absolute;
-      top: calc(100% + 8px);
+      top: calc(100% + 10px);
       right: 0;
       width: 250px;
-      background: white;
+      background: #ffffff;
       color: #17242c;
-      border-radius: 12px;
-      padding: 10px;
-      box-shadow: 0 14px 38px rgba(0,0,0,.22);
-      z-index: 10020;
-      display: none;
       border: 1px solid #d6e0e5;
+      border-radius: 14px;
+      padding: 10px;
+      box-shadow:
+        0 18px 45px
+        rgba(0,0,0,.22);
+      display: none;
+      z-index: 10020;
     }
 
     .auth-menu.show {
@@ -64,11 +70,12 @@
     }
 
     .auth-menu-email {
+      padding: 8px 10px 11px;
+      margin-bottom: 6px;
+      border-bottom:
+        1px solid #edf1f3;
       font-size: 12px;
       color: #667681;
-      padding: 8px 9px 10px;
-      border-bottom: 1px solid #edf1f3;
-      margin-bottom: 6px;
       word-break: break-word;
     }
 
@@ -78,10 +85,10 @@
       background: transparent;
       color: #17242c;
       text-align: left;
-      border-radius: 8px;
-      padding: 10px;
+      padding: 11px 10px;
+      border-radius: 9px;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 750;
     }
 
     .auth-menu button:hover {
@@ -95,7 +102,8 @@
     .auth-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(10,24,32,.72);
+      background:
+        rgba(5,14,19,.78);
       display: none;
       align-items: center;
       justify-content: center;
@@ -110,42 +118,45 @@
     .auth-modal {
       width: 100%;
       max-width: 460px;
-      background: #fff;
+      background: #ffffff;
       color: #17242c;
-      border-radius: 18px;
-      padding: 22px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.28);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow:
+        0 24px 70px
+        rgba(0,0,0,.32);
     }
 
     .auth-modal-header {
       display: flex;
+      justify-content:
+        space-between;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 14px;
+      margin-bottom: 18px;
     }
 
     .auth-modal-header h2 {
       margin: 0;
-      font-size: 23px;
+      font-size: 24px;
     }
 
     .auth-close {
       width: 40px;
       height: 40px;
       border: 0;
-      border-radius: 9px;
+      border-radius: 10px;
       background: #edf2f4;
+      color: #17242c;
       cursor: pointer;
       font-size: 20px;
-      color: #17242c;
     }
 
     .auth-field {
       display: flex;
       flex-direction: column;
       gap: 7px;
-      margin-bottom: 13px;
+      margin-bottom: 14px;
     }
 
     .auth-field label {
@@ -155,30 +166,51 @@
 
     .auth-field input {
       width: 100%;
-      border: 1px solid #d6e0e5;
-      border-radius: 10px;
+      box-sizing: border-box;
+      border:
+        1px solid #d6e0e5;
+      border-radius: 11px;
+      min-height: 46px;
       padding: 12px 13px;
-      min-height: 45px;
+      font-size: 16px;
       color: #17242c;
       background: #fff;
     }
 
+    .auth-field input:focus {
+      outline: none;
+      border-color: #247c8b;
+      box-shadow:
+        0 0 0 3px
+        rgba(36,124,139,.12);
+    }
+
     .auth-main-button {
       width: 100%;
+      min-height: 47px;
       border: 0;
-      border-radius: 10px;
-      padding: 13px 15px;
-      min-height: 46px;
-      cursor: pointer;
+      border-radius: 11px;
       background: #247c8b;
-      color: white;
+      color: #fff;
+      padding: 13px 15px;
       font-weight: 800;
-      margin-top: 4px;
+      cursor: pointer;
+      margin-top: 3px;
     }
 
     .auth-main-button:disabled {
       opacity: .65;
-      cursor: not-allowed;
+      cursor: wait;
+    }
+
+    .auth-secondary-row {
+      display: flex;
+      justify-content:
+        space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 11px;
     }
 
     .auth-link-button {
@@ -187,16 +219,13 @@
       color: #247c8b;
       font-weight: 750;
       cursor: pointer;
-      padding: 8px 0 0;
+      padding: 7px 0;
     }
 
-    .auth-secondary-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 10px;
+    .auth-helper {
+      color: #667681;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     .auth-message {
@@ -204,8 +233,8 @@
       margin-top: 14px;
       padding: 11px 12px;
       border-radius: 10px;
-      line-height: 1.45;
       font-size: 14px;
+      line-height: 1.45;
     }
 
     .auth-message.show {
@@ -230,27 +259,17 @@
       color: #294d5f;
     }
 
-    .auth-helper {
-      color: #667681;
-      font-size: 12px;
-      line-height: 1.45;
-      margin-top: -4px;
-      margin-bottom: 10px;
-    }
-
-    @media (max-width: 700px) {
+    @media (
+      max-width: 700px
+    ) {
       .auth-header-wrap {
-        width: 100%;
-        justify-content: flex-start;
+        justify-content:
+          flex-start;
       }
 
       .auth-menu {
         left: 0;
         right: auto;
-      }
-
-      .auth-email-small {
-        max-width: 180px;
       }
     }
 
@@ -262,19 +281,28 @@
     }
   `;
 
-  document.head.appendChild(style);
+  document.head.appendChild(
+    style
+  );
 
   /* =========================================================
      MODAL
   ========================================================= */
 
-  const overlay = document.createElement("div");
-  overlay.className = "auth-modal-overlay";
+  const overlay =
+    document.createElement("div");
+
+  overlay.className =
+    "auth-modal-overlay";
 
   overlay.innerHTML = `
     <div class="auth-modal">
+
       <div class="auth-modal-header">
-        <h2 id="authModalTitle">Account</h2>
+
+        <h2 id="authModalTitle">
+          Account
+        </h2>
 
         <button
           id="authCloseButton"
@@ -284,6 +312,7 @@
         >
           ×
         </button>
+
       </div>
 
       <div id="authModalBody"></div>
@@ -292,47 +321,85 @@
         id="authMessage"
         class="auth-message"
       ></div>
+
     </div>
   `;
 
-  document.body.appendChild(overlay);
+  document.body.appendChild(
+    overlay
+  );
 
   const modalTitle =
-    document.getElementById("authModalTitle");
+    document.getElementById(
+      "authModalTitle"
+    );
 
   const modalBody =
-    document.getElementById("authModalBody");
+    document.getElementById(
+      "authModalBody"
+    );
 
   const authMessage =
-    document.getElementById("authMessage");
+    document.getElementById(
+      "authMessage"
+    );
 
-  const authCloseButton =
-    document.getElementById("authCloseButton");
+  const closeButton =
+    document.getElementById(
+      "authCloseButton"
+    );
 
-  function openModal(title, html) {
-    modalTitle.textContent = title;
-    modalBody.innerHTML = html;
-    clearAuthMessage();
-    overlay.classList.add("show");
+  function openModal(
+    title,
+    content
+  ) {
+    modalTitle.textContent =
+      title;
+
+    modalBody.innerHTML =
+      content;
+
+    clearMessage();
+
+    closeButton.style.display =
+      "";
+
+    overlay.classList.add(
+      "show"
+    );
   }
 
   function closeModal() {
-    overlay.classList.remove("show");
-    clearAuthMessage();
+    overlay.classList.remove(
+      "show"
+    );
+
+    clearMessage();
+
+    closeButton.style.display =
+      "";
   }
 
-  function showAuthMessage(message, type = "info") {
-    authMessage.textContent = message;
+  function showMessage(
+    message,
+    type = "info"
+  ) {
+    authMessage.textContent =
+      message;
+
     authMessage.className =
       `auth-message show ${type}`;
   }
 
-  function clearAuthMessage() {
-    authMessage.textContent = "";
-    authMessage.className = "auth-message";
+  function clearMessage() {
+    authMessage.textContent =
+      "";
+
+    authMessage.className =
+      "auth-message";
   }
 
-  authCloseButton.addEventListener(
+  closeButton.addEventListener(
     "click",
     closeModal
   );
@@ -340,7 +407,9 @@
   overlay.addEventListener(
     "click",
     event => {
-      if (event.target === overlay) {
+      if (
+        event.target === overlay
+      ) {
         closeModal();
       }
     }
@@ -351,7 +420,8 @@
     event => {
       if (
         event.key === "Escape" &&
-        overlay.classList.contains("show")
+        overlay.classList
+          .contains("show")
       ) {
         closeModal();
       }
@@ -359,17 +429,73 @@
   );
 
   /* =========================================================
-     SIGN-UP MODAL
+     PROFILE HELPERS
   ========================================================= */
 
-  function showSignUpModal() {
+  function getFirstName(user) {
+    return String(
+      user
+        ?.user_metadata
+        ?.first_name || ""
+    ).trim();
+  }
+
+  function notifyProfile(
+    user
+  ) {
+    window.dispatchEvent(
+      new CustomEvent(
+        "stretchmycheck:profile-updated",
+        {
+          detail: {
+            user,
+            firstName:
+              getFirstName(user)
+          }
+        }
+      )
+    );
+  }
+
+  /* =========================================================
+     CREATE ACCOUNT
+  ========================================================= */
+
+  function showSignUp() {
     openModal(
       "Create Account",
       `
+        <p class="auth-helper">
+          Create your Stretch My Check
+          profile so your dashboard can
+          greet you by name.
+        </p>
+
         <div class="auth-field">
-          <label for="authSignupEmail">Email</label>
+          <label
+            for="signupFirstName"
+          >
+            First name
+          </label>
+
           <input
-            id="authSignupEmail"
+            id="signupFirstName"
+            type="text"
+            maxlength="40"
+            autocomplete="given-name"
+            placeholder="What should we call you?"
+          >
+        </div>
+
+        <div class="auth-field">
+          <label
+            for="signupEmail"
+          >
+            Email
+          </label>
+
+          <input
+            id="signupEmail"
             type="email"
             autocomplete="email"
             placeholder="you@example.com"
@@ -377,9 +503,14 @@
         </div>
 
         <div class="auth-field">
-          <label for="authSignupPassword">Password</label>
+          <label
+            for="signupPassword"
+          >
+            Password
+          </label>
+
           <input
-            id="authSignupPassword"
+            id="signupPassword"
             type="password"
             autocomplete="new-password"
             placeholder="At least 6 characters"
@@ -387,11 +518,14 @@
         </div>
 
         <div class="auth-field">
-          <label for="authSignupConfirmPassword">
+          <label
+            for="signupConfirm"
+          >
             Confirm password
           </label>
+
           <input
-            id="authSignupConfirmPassword"
+            id="signupConfirm"
             type="password"
             autocomplete="new-password"
             placeholder="Enter it again"
@@ -399,20 +533,24 @@
         </div>
 
         <button
-          id="authSignupSubmit"
+          id="signupSubmit"
           class="auth-main-button"
           type="button"
         >
           Create Account
         </button>
 
-        <div class="auth-secondary-row">
-          <span class="auth-helper">
+        <div
+          class="auth-secondary-row"
+        >
+          <span
+            class="auth-helper"
+          >
             Already have an account?
           </span>
 
           <button
-            id="authSwitchToSignin"
+            id="signupToSignin"
             class="auth-link-button"
             type="button"
           >
@@ -423,51 +561,87 @@
     );
 
     document
-      .getElementById("authSwitchToSignin")
-      .addEventListener("click", showSignInModal);
+      .getElementById(
+        "signupToSignin"
+      )
+      .addEventListener(
+        "click",
+        showSignIn
+      );
 
     document
-      .getElementById("authSignupSubmit")
-      .addEventListener("click", createAccount);
+      .getElementById(
+        "signupSubmit"
+      )
+      .addEventListener(
+        "click",
+        createAccount
+      );
   }
 
   async function createAccount() {
-    clearAuthMessage();
+    clearMessage();
+
+    const firstName =
+      document
+        .getElementById(
+          "signupFirstName"
+        )
+        .value
+        .trim();
 
     const email =
       document
-        .getElementById("authSignupEmail")
+        .getElementById(
+          "signupEmail"
+        )
         .value
         .trim();
 
     const password =
       document
-        .getElementById("authSignupPassword")
+        .getElementById(
+          "signupPassword"
+        )
         .value;
 
-    const confirmPassword =
+    const confirm =
       document
-        .getElementById("authSignupConfirmPassword")
+        .getElementById(
+          "signupConfirm"
+        )
         .value;
+
+    if (!firstName) {
+      showMessage(
+        "Enter your first name.",
+        "bad"
+      );
+      return;
+    }
 
     if (!email) {
-      showAuthMessage(
+      showMessage(
         "Enter your email address.",
         "bad"
       );
       return;
     }
 
-    if (password.length < 6) {
-      showAuthMessage(
+    if (
+      password.length < 6
+    ) {
+      showMessage(
         "Your password must be at least 6 characters.",
         "bad"
       );
       return;
     }
 
-    if (password !== confirmPassword) {
-      showAuthMessage(
+    if (
+      password !== confirm
+    ) {
+      showMessage(
         "The passwords do not match.",
         "bad"
       );
@@ -476,29 +650,39 @@
 
     const button =
       document.getElementById(
-        "authSignupSubmit"
+        "signupSubmit"
       );
 
     button.disabled = true;
-    button.textContent = "Creating Account...";
+    button.textContent =
+      "Creating Account...";
 
     const {
       data,
       error
     } =
-      await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: SITE_URL
-        }
-      });
+      await supabaseClient.auth
+        .signUp({
+          email,
+          password,
+
+          options: {
+            emailRedirectTo:
+              SITE_URL,
+
+            data: {
+              first_name:
+                firstName
+            }
+          }
+        });
 
     button.disabled = false;
-    button.textContent = "Create Account";
+    button.textContent =
+      "Create Account";
 
     if (error) {
-      showAuthMessage(
+      showMessage(
         error.message ||
           "Could not create your account.",
         "bad"
@@ -507,37 +691,42 @@
     }
 
     if (data?.session) {
-      showAuthMessage(
-        "Your account was created and you are signed in.",
+      showMessage(
+        "Account created. You're signed in!",
         "good"
       );
 
       setTimeout(
         closeModal,
-        900
+        700
       );
 
       return;
     }
 
-    showAuthMessage(
+    showMessage(
       "Account created! Check your email and click the confirmation link before signing in.",
       "good"
     );
   }
 
   /* =========================================================
-     SIGN-IN MODAL
+     SIGN IN
   ========================================================= */
 
-  function showSignInModal() {
+  function showSignIn() {
     openModal(
       "Sign In",
       `
         <div class="auth-field">
-          <label for="authSigninEmail">Email</label>
+          <label
+            for="signinEmail"
+          >
+            Email
+          </label>
+
           <input
-            id="authSigninEmail"
+            id="signinEmail"
             type="email"
             autocomplete="email"
             placeholder="you@example.com"
@@ -545,9 +734,14 @@
         </div>
 
         <div class="auth-field">
-          <label for="authSigninPassword">Password</label>
+          <label
+            for="signinPassword"
+          >
+            Password
+          </label>
+
           <input
-            id="authSigninPassword"
+            id="signinPassword"
             type="password"
             autocomplete="current-password"
             placeholder="Your password"
@@ -555,16 +749,19 @@
         </div>
 
         <button
-          id="authSigninSubmit"
+          id="signinSubmit"
           class="auth-main-button"
           type="button"
         >
           Sign In
         </button>
 
-        <div class="auth-secondary-row">
+        <div
+          class="auth-secondary-row"
+        >
+
           <button
-            id="authForgotPassword"
+            id="forgotPassword"
             class="auth-link-button"
             type="button"
           >
@@ -572,32 +769,39 @@
           </button>
 
           <button
-            id="authSwitchToSignup"
+            id="signinToSignup"
             class="auth-link-button"
             type="button"
           >
             Create Account
           </button>
+
         </div>
       `
     );
 
     document
-      .getElementById("authForgotPassword")
+      .getElementById(
+        "forgotPassword"
+      )
       .addEventListener(
         "click",
-        showForgotPasswordModal
+        showForgotPassword
       );
 
     document
-      .getElementById("authSwitchToSignup")
+      .getElementById(
+        "signinToSignup"
+      )
       .addEventListener(
         "click",
-        showSignUpModal
+        showSignUp
       );
 
     document
-      .getElementById("authSigninSubmit")
+      .getElementById(
+        "signinSubmit"
+      )
       .addEventListener(
         "click",
         signIn
@@ -605,21 +809,28 @@
   }
 
   async function signIn() {
-    clearAuthMessage();
+    clearMessage();
 
     const email =
       document
-        .getElementById("authSigninEmail")
+        .getElementById(
+          "signinEmail"
+        )
         .value
         .trim();
 
     const password =
       document
-        .getElementById("authSigninPassword")
+        .getElementById(
+          "signinPassword"
+        )
         .value;
 
-    if (!email || !password) {
-      showAuthMessage(
+    if (
+      !email ||
+      !password
+    ) {
+      showMessage(
         "Enter your email and password.",
         "bad"
       );
@@ -628,11 +839,12 @@
 
     const button =
       document.getElementById(
-        "authSigninSubmit"
+        "signinSubmit"
       );
 
     button.disabled = true;
-    button.textContent = "Signing In...";
+    button.textContent =
+      "Signing In...";
 
     const {
       error
@@ -644,10 +856,11 @@
         });
 
     button.disabled = false;
-    button.textContent = "Sign In";
+    button.textContent =
+      "Sign In";
 
     if (error) {
-      showAuthMessage(
+      showMessage(
         error.message ||
           "Could not sign in.",
         "bad"
@@ -655,14 +868,14 @@
       return;
     }
 
-    showAuthMessage(
+    showMessage(
       "Signed in successfully.",
       "good"
     );
 
     setTimeout(
       closeModal,
-      650
+      600
     );
   }
 
@@ -670,19 +883,25 @@
      FORGOT PASSWORD
   ========================================================= */
 
-  function showForgotPasswordModal() {
+  function showForgotPassword() {
     openModal(
       "Reset Password",
       `
         <p class="auth-helper">
-          Enter the email address for your Stretch My Check account.
-          We'll send you a secure password-reset link.
+          Enter your account email.
+          We'll send you a secure
+          password reset link.
         </p>
 
         <div class="auth-field">
-          <label for="authResetEmail">Email</label>
+          <label
+            for="resetEmail"
+          >
+            Email
+          </label>
+
           <input
-            id="authResetEmail"
+            id="resetEmail"
             type="email"
             autocomplete="email"
             placeholder="you@example.com"
@@ -690,7 +909,7 @@
         </div>
 
         <button
-          id="authResetSubmit"
+          id="resetSubmit"
           class="auth-main-button"
           type="button"
         >
@@ -698,7 +917,7 @@
         </button>
 
         <button
-          id="authBackToSignin"
+          id="resetBack"
           class="auth-link-button"
           type="button"
         >
@@ -708,31 +927,37 @@
     );
 
     document
-      .getElementById("authBackToSignin")
+      .getElementById(
+        "resetBack"
+      )
       .addEventListener(
         "click",
-        showSignInModal
+        showSignIn
       );
 
     document
-      .getElementById("authResetSubmit")
+      .getElementById(
+        "resetSubmit"
+      )
       .addEventListener(
         "click",
-        sendResetLink
+        sendReset
       );
   }
 
-  async function sendResetLink() {
-    clearAuthMessage();
+  async function sendReset() {
+    clearMessage();
 
     const email =
       document
-        .getElementById("authResetEmail")
+        .getElementById(
+          "resetEmail"
+        )
         .value
         .trim();
 
     if (!email) {
-      showAuthMessage(
+      showMessage(
         "Enter your email address.",
         "bad"
       );
@@ -741,11 +966,12 @@
 
     const button =
       document.getElementById(
-        "authResetSubmit"
+        "resetSubmit"
       );
 
     button.disabled = true;
-    button.textContent = "Sending...";
+    button.textContent =
+      "Sending...";
 
     const {
       error
@@ -754,47 +980,51 @@
         .resetPasswordForEmail(
           email,
           {
-            redirectTo: SITE_URL
+            redirectTo:
+              SITE_URL
           }
         );
 
     button.disabled = false;
-    button.textContent = "Send Reset Link";
+    button.textContent =
+      "Send Reset Link";
 
     if (error) {
-      showAuthMessage(
+      showMessage(
         error.message ||
-          "Could not send the reset email.",
+          "Could not send reset email.",
         "bad"
       );
       return;
     }
 
-    showAuthMessage(
-      "Password reset email sent. Open the link in that email to choose a new password.",
+    showMessage(
+      "Password reset email sent.",
       "good"
     );
   }
 
   /* =========================================================
-     SET / CHANGE PASSWORD
+     CHANGE PASSWORD
   ========================================================= */
 
-  function showChangePasswordModal(
-    isRecovery = false
+  function showChangePassword(
+    recovery = false
   ) {
     openModal(
-      isRecovery
+      recovery
         ? "Choose a New Password"
         : "Change Password",
       `
         <div class="auth-field">
-          <label for="authNewPassword">
+          <label
+            for="newPassword"
+          >
             New password
           </label>
 
           <input
-            id="authNewPassword"
+            id="newPassword"
             type="password"
             autocomplete="new-password"
             placeholder="At least 6 characters"
@@ -802,12 +1032,14 @@
         </div>
 
         <div class="auth-field">
-          <label for="authConfirmNewPassword">
+          <label
+            for="confirmNewPassword"
+          >
             Confirm new password
           </label>
 
           <input
-            id="authConfirmNewPassword"
+            id="confirmNewPassword"
             type="password"
             autocomplete="new-password"
             placeholder="Enter it again"
@@ -815,22 +1047,18 @@
         </div>
 
         <button
-          id="authUpdatePasswordSubmit"
+          id="updatePassword"
           class="auth-main-button"
           type="button"
         >
-          ${
-            isRecovery
-              ? "Save New Password"
-              : "Update Password"
-          }
+          Save New Password
         </button>
       `
     );
 
     document
       .getElementById(
-        "authUpdatePasswordSubmit"
+        "updatePassword"
       )
       .addEventListener(
         "click",
@@ -839,96 +1067,241 @@
   }
 
   async function updatePassword() {
-    clearAuthMessage();
+    clearMessage();
 
     const password =
       document
         .getElementById(
-          "authNewPassword"
+          "newPassword"
         )
         .value;
 
-    const confirmPassword =
+    const confirm =
       document
         .getElementById(
-          "authConfirmNewPassword"
+          "confirmNewPassword"
         )
         .value;
 
-    if (password.length < 6) {
-      showAuthMessage(
-        "Your new password must be at least 6 characters.",
+    if (
+      password.length < 6
+    ) {
+      showMessage(
+        "Password must be at least 6 characters.",
         "bad"
       );
       return;
     }
 
-    if (password !== confirmPassword) {
-      showAuthMessage(
+    if (
+      password !== confirm
+    ) {
+      showMessage(
         "The passwords do not match.",
         "bad"
       );
       return;
     }
 
-    const button =
-      document.getElementById(
-        "authUpdatePasswordSubmit"
-      );
-
-    button.disabled = true;
-    button.textContent = "Saving...";
-
     const {
       error
     } =
-      await supabaseClient.auth.updateUser({
-        password
-      });
-
-    button.disabled = false;
-    button.textContent = "Update Password";
+      await supabaseClient.auth
+        .updateUser({
+          password
+        });
 
     if (error) {
-      showAuthMessage(
+      showMessage(
         error.message ||
-          "Could not update your password.",
+          "Could not update password.",
         "bad"
       );
       return;
     }
 
-    showAuthMessage(
-      "Your password was updated successfully.",
+    showMessage(
+      "Password updated successfully.",
       "good"
     );
 
-    if (
-      window.history &&
-      window.location.hash
-    ) {
-      window.history.replaceState(
-        null,
-        document.title,
-        window.location.pathname
-      );
-    }
-
     setTimeout(
       closeModal,
-      900
+      700
     );
   }
 
   /* =========================================================
-     HEADER ACCOUNT AREA
+     PROFILE
+  ========================================================= */
+
+  function showProfile(
+    user,
+    required = false
+  ) {
+    const currentName =
+      getFirstName(user);
+
+    openModal(
+      required
+        ? "Finish Your Profile"
+        : "Your Profile",
+      `
+        <p class="auth-helper">
+          ${
+            required
+              ? "Before we open your dashboard, tell us what name Stretch My Check should call you."
+              : "Change the name Stretch My Check uses on your dashboard."
+          }
+        </p>
+
+        <div class="auth-field">
+          <label
+            for="profileFirstName"
+          >
+            First name
+          </label>
+
+          <input
+            id="profileFirstName"
+            type="text"
+            maxlength="40"
+            autocomplete="given-name"
+            placeholder="Your first name"
+          >
+        </div>
+
+        <button
+          id="saveProfile"
+          class="auth-main-button"
+          type="button"
+        >
+          Save Profile
+        </button>
+      `
+    );
+
+    const input =
+      document.getElementById(
+        "profileFirstName"
+      );
+
+    input.value =
+      currentName;
+
+    if (required) {
+      closeButton.style.display =
+        "none";
+    }
+
+    document
+      .getElementById(
+        "saveProfile"
+      )
+      .addEventListener(
+        "click",
+        async () => {
+          clearMessage();
+
+          const firstName =
+            input.value.trim();
+
+          if (!firstName) {
+            showMessage(
+              "Enter your first name.",
+              "bad"
+            );
+            return;
+          }
+
+          const button =
+            document.getElementById(
+              "saveProfile"
+            );
+
+          button.disabled = true;
+          button.textContent =
+            "Saving...";
+
+          const {
+            data,
+            error
+          } =
+            await supabaseClient.auth
+              .updateUser({
+                data: {
+                  first_name:
+                    firstName
+                }
+              });
+
+          button.disabled = false;
+          button.textContent =
+            "Save Profile";
+
+          if (error) {
+            showMessage(
+              error.message ||
+                "Could not save your profile.",
+              "bad"
+            );
+            return;
+          }
+
+          const updatedUser =
+            data?.user || user;
+
+          renderSignedIn(
+            updatedUser
+          );
+
+          notifyProfile(
+            updatedUser
+          );
+
+          showMessage(
+            "Profile saved.",
+            "good"
+          );
+
+          setTimeout(
+            closeModal,
+            600
+          );
+        }
+      );
+  }
+
+  function requireProfile(
+    user
+  ) {
+    if (
+      user &&
+      !getFirstName(user)
+    ) {
+      setTimeout(
+        () => {
+          showProfile(
+            user,
+            true
+          );
+        },
+        200
+      );
+    }
+  }
+
+  /* =========================================================
+     HEADER
   ========================================================= */
 
   function renderSignedOut() {
     accountArea.innerHTML = `
-      <div class="auth-header-wrap">
+      <div
+        class="auth-header-wrap"
+      >
         <button
-          id="authCreateAccountButton"
+          id="createAccountButton"
           class="account-button"
           type="button"
         >
@@ -936,7 +1309,7 @@
         </button>
 
         <button
-          id="authSignInButton"
+          id="signInButton"
           class="account-button"
           type="button"
         >
@@ -947,85 +1320,111 @@
 
     document
       .getElementById(
-        "authCreateAccountButton"
+        "createAccountButton"
       )
       .addEventListener(
         "click",
-        showSignUpModal
+        showSignUp
       );
 
     document
       .getElementById(
-        "authSignInButton"
+        "signInButton"
       )
       .addEventListener(
         "click",
-        showSignInModal
+        showSignIn
       );
   }
 
-  function renderSignedIn(user) {
+  function renderSignedIn(
+    user
+  ) {
     const email =
-      user?.email || "Signed in";
+      user?.email ||
+      "Signed in";
+
+    const firstName =
+      getFirstName(user);
 
     accountArea.innerHTML = `
-      <div class="auth-header-wrap">
-        <span class="auth-email-small"></span>
+      <div
+        class="auth-header-wrap"
+      >
+
+        <span
+          class="auth-user-name"
+        ></span>
 
         <button
-          id="authAccountMenuButton"
+          id="accountMenuButton"
           class="account-button"
           type="button"
-          aria-expanded="false"
         >
           Account ▾
         </button>
 
         <div
-          id="authAccountMenu"
+          id="accountMenu"
           class="auth-menu"
         >
+
           <div
-            id="authAccountMenuEmail"
+            id="accountMenuEmail"
             class="auth-menu-email"
           ></div>
 
           <button
-            id="authChangePasswordButton"
+            id="profileButton"
+            type="button"
+          >
+            Profile
+          </button>
+
+          <button
+            id="changePasswordButton"
             type="button"
           >
             Change Password
           </button>
 
           <button
-            id="authSignOutButton"
+            id="signOutButton"
             class="auth-danger"
             type="button"
           >
             Sign Out
           </button>
+
         </div>
+
       </div>
     `;
 
     accountArea
-      .querySelector(".auth-email-small")
-      .textContent = email;
+      .querySelector(
+        ".auth-user-name"
+      )
+      .textContent =
+        firstName
+          ? `Hi, ${firstName}`
+          : email;
 
     document
       .getElementById(
-        "authAccountMenuEmail"
+        "accountMenuEmail"
       )
-      .textContent = email;
+      .textContent =
+        email;
 
     const menu =
       document.getElementById(
-        "authAccountMenu"
+        "accountMenu"
       );
 
     const menuButton =
       document.getElementById(
-        "authAccountMenuButton"
+        "accountMenuButton"
       );
 
     menuButton.addEventListener(
@@ -1033,41 +1432,63 @@
       event => {
         event.stopPropagation();
 
-        const isOpen =
-          menu.classList.toggle("show");
-
-        menuButton.setAttribute(
-          "aria-expanded",
-          String(isOpen)
+        menu.classList.toggle(
+          "show"
         );
       }
     );
 
     document
       .getElementById(
-        "authChangePasswordButton"
+        "profileButton"
       )
       .addEventListener(
         "click",
         () => {
-          menu.classList.remove("show");
-          showChangePasswordModal(false);
+          menu.classList.remove(
+            "show"
+          );
+
+          showProfile(
+            user,
+            false
+          );
         }
       );
 
     document
       .getElementById(
-        "authSignOutButton"
+        "changePasswordButton"
+      )
+      .addEventListener(
+        "click",
+        () => {
+          menu.classList.remove(
+            "show"
+          );
+
+          showChangePassword(
+            false
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        "signOutButton"
       )
       .addEventListener(
         "click",
         async () => {
-          menu.classList.remove("show");
+          menu.classList.remove(
+            "show"
+          );
 
           const {
             error
           } =
-            await supabaseClient.auth.signOut();
+            await supabaseClient.auth
+              .signOut();
 
           if (error) {
             window.alert(
@@ -1084,31 +1505,33 @@
     event => {
       const menu =
         document.getElementById(
-          "authAccountMenu"
+          "accountMenu"
         );
 
-      const menuButton =
+      const button =
         document.getElementById(
-          "authAccountMenuButton"
+          "accountMenuButton"
         );
 
       if (
         menu &&
-        menuButton &&
-        !menu.contains(event.target) &&
-        !menuButton.contains(event.target)
+        button &&
+        !menu.contains(
+          event.target
+        ) &&
+        !button.contains(
+          event.target
+        )
       ) {
-        menu.classList.remove("show");
-        menuButton.setAttribute(
-          "aria-expanded",
-          "false"
+        menu.classList.remove(
+          "show"
         );
       }
     }
   );
 
   /* =========================================================
-     INITIAL SESSION
+     AUTH STATE
   ========================================================= */
 
   async function refreshHeader() {
@@ -1116,7 +1539,8 @@
       data,
       error
     } =
-      await supabaseClient.auth.getSession();
+      await supabaseClient.auth
+        .getSession();
 
     if (error) {
       console.error(error);
@@ -1124,37 +1548,105 @@
       return;
     }
 
-    if (data?.session?.user) {
-      renderSignedIn(
-        data.session.user
-      );
+    const user =
+      data?.session?.user;
+
+    if (user) {
+      renderSignedIn(user);
+      requireProfile(user);
+      notifyProfile(user);
     } else {
       renderSignedOut();
     }
   }
 
+  supabaseClient.auth
+    .onAuthStateChange(
+      (
+        event,
+        session
+      ) => {
+        const user =
+          session?.user;
+
+        if (user) {
+          renderSignedIn(
+            user
+          );
+
+          if (
+            event ===
+              "SIGNED_IN" ||
+            event ===
+              "USER_UPDATED"
+          ) {
+            requireProfile(
+              user
+            );
+
+            notifyProfile(
+              user
+            );
+          }
+        } else {
+          renderSignedOut();
+        }
+
+        if (
+          event ===
+          "PASSWORD_RECOVERY"
+        ) {
+          setTimeout(
+            () => {
+              showChangePassword(
+                true
+              );
+            },
+            150
+          );
+        }
+      }
+    );
+
   /* =========================================================
-     AUTH EVENTS
+     PUBLIC API
   ========================================================= */
 
-  supabaseClient.auth.onAuthStateChange(
-    (event, session) => {
-      if (session?.user) {
-        renderSignedIn(session.user);
-      } else {
-        renderSignedOut();
-      }
+  window.StretchMyCheckAuth = {
 
-      if (event === "PASSWORD_RECOVERY") {
-        setTimeout(
-          () => {
-            showChangePasswordModal(true);
-          },
-          150
+    showProfile:
+      async () => {
+        const {
+          data
+        } =
+          await supabaseClient.auth
+            .getUser();
+
+        if (
+          data?.user
+        ) {
+          showProfile(
+            data.user,
+            false
+          );
+        }
+      },
+
+    getDisplayName:
+      async () => {
+        const {
+          data
+        } =
+          await supabaseClient.auth
+            .getUser();
+
+        return getFirstName(
+          data?.user
         );
-      }
-    }
-  );
+      },
+
+    refreshHeader
+  };
 
   refreshHeader();
 

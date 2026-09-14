@@ -1,5 +1,8 @@
 (() => {
-  const supabaseClient = window.supabaseClient;
+  "use strict";
+
+  const supabaseClient =
+    window.supabaseClient;
 
   if (!supabaseClient) {
     console.error(
@@ -9,10 +12,13 @@
   }
 
   /* =========================================================
-     SAVED PLANS STYLES
+     STYLES
   ========================================================= */
 
-  const style = document.createElement("style");
+  const style =
+    document.createElement(
+      "style"
+    );
 
   style.textContent = `
     .saved-plans-card {
@@ -20,7 +26,9 @@
       border-radius: 18px;
       padding: 22px;
       margin-bottom: 18px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.055);
+      box-shadow:
+        0 8px 24px
+        rgba(0,0,0,.055);
     }
 
     .saved-plans-card h2 {
@@ -36,7 +44,10 @@
 
     .saved-plan-controls {
       display: grid;
-      grid-template-columns: minmax(0,1fr) auto auto;
+      grid-template-columns:
+        minmax(0,1fr)
+        auto
+        auto;
       gap: 10px;
       align-items: end;
     }
@@ -54,25 +65,27 @@
 
     .saved-plan-field input {
       width: 100%;
-      border: 1px solid #d6e0e5;
+      box-sizing: border-box;
+      min-height: 45px;
+      border:
+        1px solid #d6e0e5;
       border-radius: 10px;
       padding: 12px 13px;
-      min-height: 45px;
-      box-sizing: border-box;
+      font-size: 16px;
     }
 
     .saved-plan-btn {
       border: 0;
       border-radius: 10px;
       padding: 12px 15px;
+      min-height: 45px;
       font-weight: 750;
       cursor: pointer;
-      min-height: 45px;
     }
 
     .saved-plan-btn.primary {
       background: #247c8b;
-      color: white;
+      color: #fff;
     }
 
     .saved-plan-btn.secondary {
@@ -85,18 +98,13 @@
       color: #a12424;
     }
 
-    .saved-plan-btn:disabled {
-      opacity: .65;
-      cursor: not-allowed;
-    }
-
     .saved-plan-message {
       display: none;
       margin-top: 12px;
       padding: 11px 12px;
       border-radius: 10px;
-      line-height: 1.45;
       font-size: 14px;
+      line-height: 1.45;
     }
 
     .saved-plan-message.show {
@@ -105,26 +113,30 @@
 
     .saved-plan-message.good {
       background: #e9f8ef;
-      border: 1px solid #a9ddbc;
+      border:
+        1px solid #a9ddbc;
       color: #17663b;
     }
 
     .saved-plan-message.bad {
       background: #fff0f0;
-      border: 1px solid #efb4b4;
+      border:
+        1px solid #efb4b4;
       color: #9b2828;
     }
 
     .saved-plan-message.info {
       background: #eef6f8;
-      border: 1px solid #bdd8df;
+      border:
+        1px solid #bdd8df;
       color: #294d5f;
     }
 
     .saved-plans-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(10,24,32,.72);
+      background:
+        rgba(10,24,32,.75);
       display: none;
       align-items: center;
       justify-content: center;
@@ -138,21 +150,25 @@
 
     .saved-plans-modal {
       width: 100%;
-      max-width: 620px;
-      max-height: 80vh;
-      overflow: auto;
-      background: white;
+      max-width: 650px;
+      max-height: 82vh;
+      overflow-y: auto;
+      background: #fff;
+      color: #17242c;
       border-radius: 18px;
       padding: 22px;
-      box-shadow: 0 18px 50px rgba(0,0,0,.25);
+      box-shadow:
+        0 20px 60px
+        rgba(0,0,0,.3);
     }
 
     .saved-plans-modal-header {
       display: flex;
-      justify-content: space-between;
-      gap: 12px;
+      justify-content:
+        space-between;
       align-items: center;
-      margin-bottom: 14px;
+      gap: 12px;
+      margin-bottom: 15px;
     }
 
     .saved-plans-modal-header h2 {
@@ -175,17 +191,20 @@
     }
 
     .saved-plan-item {
-      border: 1px solid #d6e0e5;
+      border:
+        1px solid #d6e0e5;
       border-radius: 12px;
       padding: 14px;
       display: grid;
-      grid-template-columns: minmax(0,1fr) auto;
+      grid-template-columns:
+        minmax(0,1fr)
+        auto;
       gap: 12px;
       align-items: center;
     }
 
     .saved-plan-item h3 {
-      margin: 0 0 4px;
+      margin: 0 0 5px;
       font-size: 17px;
     }
 
@@ -201,17 +220,22 @@
       justify-content: flex-end;
     }
 
-    @media (max-width: 800px) {
+    @media (
+      max-width: 800px
+    ) {
       .saved-plan-controls {
-        grid-template-columns: 1fr;
+        grid-template-columns:
+          1fr;
       }
 
       .saved-plan-item {
-        grid-template-columns: 1fr;
+        grid-template-columns:
+          1fr;
       }
 
       .saved-plan-actions {
-        justify-content: flex-start;
+        justify-content:
+          flex-start;
       }
     }
 
@@ -223,32 +247,50 @@
     }
   `;
 
-  document.head.appendChild(style);
-
+  document.head.appendChild(
+    style
+  );
 
   /* =========================================================
-     CREATE SAVED PLANS SECTION
+     SAVED PLAN CARD
   ========================================================= */
 
-  const plannerIntro = document.querySelector(".intro-card");
+  const intro =
+    document.querySelector(
+      ".intro-card"
+    );
 
-  const saveCard = document.createElement("section");
+  const saveCard =
+    document.createElement(
+      "section"
+    );
 
-  saveCard.className = "saved-plans-card no-print";
+  saveCard.className =
+    "saved-plans-card no-print";
 
   saveCard.innerHTML = `
-    <h2>Saved Plans</h2>
+    <h2>
+      Saved Plans
+    </h2>
 
     <p>
-      Save this planner to your account so you can come back later,
-      load it again, update it, or delete it.
+      Save your current plan to your
+      account and come back to it later.
+      Your most recently updated plan
+      will automatically load when you
+      sign in.
     </p>
 
-    <div class="saved-plan-controls">
+    <div
+      class="saved-plan-controls"
+    >
 
-      <div class="saved-plan-field">
-
-        <label for="savedPlanName">
+      <div
+        class="saved-plan-field"
+      >
+        <label
+          for="savedPlanName"
+        >
           Plan name
         </label>
 
@@ -258,7 +300,6 @@
           maxlength="80"
           placeholder="Example: September Bills"
         >
-
       </div>
 
       <button
@@ -285,35 +326,40 @@
     ></div>
   `;
 
-
-  if (plannerIntro && plannerIntro.parentNode) {
-
-    plannerIntro.insertAdjacentElement(
+  if (
+    intro &&
+    intro.parentNode
+  ) {
+    intro.insertAdjacentElement(
       "afterend",
       saveCard
     );
-
   } else {
-
     document
       .querySelector(".app")
       ?.prepend(saveCard);
   }
 
-
   /* =========================================================
-     SAVED PLANS POPUP
+     MODAL
   ========================================================= */
 
-  const modalOverlay = document.createElement("div");
+  const modalOverlay =
+    document.createElement(
+      "div"
+    );
 
   modalOverlay.className =
     "saved-plans-modal-overlay";
 
   modalOverlay.innerHTML = `
-    <div class="saved-plans-modal">
+    <div
+      class="saved-plans-modal"
+    >
 
-      <div class="saved-plans-modal-header">
+      <div
+        class="saved-plans-modal-header"
+      >
 
         <h2>
           My Saved Plans
@@ -338,15 +384,14 @@
     </div>
   `;
 
-  document.body.appendChild(modalOverlay);
-
-
-  /* =========================================================
-     ELEMENT REFERENCES
-  ========================================================= */
+  document.body.appendChild(
+    modalOverlay
+  );
 
   const planNameInput =
-    document.getElementById("savedPlanName");
+    document.getElementById(
+      "savedPlanName"
+    );
 
   const saveButton =
     document.getElementById(
@@ -373,8 +418,11 @@
       "closeSavedPlansButton"
     );
 
-  let editingPlanId = null;
+  let editingPlanId =
+    null;
 
+  let lastAutoLoadedUserId =
+    null;
 
   /* =========================================================
      MESSAGES
@@ -384,148 +432,130 @@
     message,
     type = "info"
   ) {
-
-    messageBox.textContent = message;
+    messageBox.textContent =
+      message;
 
     messageBox.className =
       `saved-plan-message show ${type}`;
   }
 
-
   function clearMessage() {
-
-    messageBox.textContent = "";
+    messageBox.textContent =
+      "";
 
     messageBox.className =
       "saved-plan-message";
   }
 
-
   /* =========================================================
-     GET CURRENT USER
+     USER
   ========================================================= */
 
   async function getUser() {
-
     const {
       data,
       error
     } =
-      await supabaseClient.auth.getUser();
-
+      await supabaseClient.auth
+        .getUser();
 
     if (error) {
-
       console.error(error);
-
       return null;
     }
-
 
     return data?.user || null;
   }
 
-
   /* =========================================================
-     READ PAYCHECKS
+     READ PLANNER
   ========================================================= */
 
-  function readPaychecksFromForm() {
-
+  function readPaychecks() {
     return [
       ...document.querySelectorAll(
         ".paycheck-entry"
       )
-    ].map(entry => ({
+    ].map(
+      entry => ({
+        name:
+          entry.querySelector(
+            ".paycheck-name"
+          )?.value || "",
 
-      name:
-        entry.querySelector(
-          ".paycheck-name"
-        )?.value || "",
+        date:
+          entry.querySelector(
+            ".paycheck-date"
+          )?.value || "",
 
-      date:
-        entry.querySelector(
-          ".paycheck-date"
-        )?.value || "",
-
-      amount:
-        entry.querySelector(
-          ".paycheck-amount"
-        )?.value || ""
-
-    }));
+        amount:
+          entry.querySelector(
+            ".paycheck-amount"
+          )?.value || ""
+      })
+    );
   }
 
-
-  /* =========================================================
-     READ BILLS
-  ========================================================= */
-
-  function readBillsFromForm() {
-
+  function readBills() {
     return [
       ...document.querySelectorAll(
         ".bill-entry"
       )
-    ].map(entry => ({
+    ].map(
+      entry => ({
+        name:
+          entry.querySelector(
+            ".bill-name"
+          )?.value || "",
 
-      name:
-        entry.querySelector(
-          ".bill-name"
-        )?.value || "",
+        amount:
+          entry.querySelector(
+            ".bill-amount"
+          )?.value || "",
 
-      amount:
-        entry.querySelector(
-          ".bill-amount"
-        )?.value || "",
+        type:
+          entry.querySelector(
+            ".bill-type"
+          )?.value ||
+          "fixed",
 
-      type:
-        entry.querySelector(
-          ".bill-type"
-        )?.value || "fixed",
+        priority:
+          entry.querySelector(
+            ".bill-priority"
+          )?.value ||
+          "essential",
 
-      priority:
-        entry.querySelector(
-          ".bill-priority"
-        )?.value || "essential",
+        dueDate:
+          entry.querySelector(
+            ".bill-due-date"
+          )?.value || "",
 
-      dueDate:
-        entry.querySelector(
-          ".bill-due-date"
-        )?.value || "",
+        flexRule:
+          entry.querySelector(
+            ".flex-rule"
+          )?.value ||
+          "any",
 
-      flexRule:
-        entry.querySelector(
-          ".flex-rule"
-        )?.value || "any",
+        byDate:
+          entry.querySelector(
+            ".flex-by-date"
+          )?.value || "",
 
-      byDate:
-        entry.querySelector(
-          ".flex-by-date"
-        )?.value || "",
+        startDate:
+          entry.querySelector(
+            ".flex-start-date"
+          )?.value || "",
 
-      startDate:
-        entry.querySelector(
-          ".flex-start-date"
-        )?.value || "",
-
-      endDate:
-        entry.querySelector(
-          ".flex-end-date"
-        )?.value || ""
-
-    }));
+        endDate:
+          entry.querySelector(
+            ".flex-end-date"
+          )?.value || ""
+      })
+    );
   }
 
-
-  /* =========================================================
-     BUILD COMPLETE PLAN DATA
-  ========================================================= */
-
   function buildPlanData() {
-
     return {
-
       version: 1,
 
       startingBalance:
@@ -538,9 +568,7 @@
           "protectedCushion"
         )?.value || "",
 
-
       groceries: {
-
         amount:
           document.getElementById(
             "groceryAmount"
@@ -549,13 +577,11 @@
         mode:
           document.getElementById(
             "groceryMode"
-          )?.value || "total"
-
+          )?.value ||
+          "total"
       },
 
-
       gas: {
-
         amount:
           document.getElementById(
             "gasAmount"
@@ -564,13 +590,11 @@
         mode:
           document.getElementById(
             "gasMode"
-          )?.value || "total"
-
+          )?.value ||
+          "total"
       },
 
-
       other: {
-
         amount:
           document.getElementById(
             "otherAmount"
@@ -579,47 +603,46 @@
         mode:
           document.getElementById(
             "otherMode"
-          )?.value || "total"
-
+          )?.value ||
+          "total"
       },
 
-
       paychecks:
-        readPaychecksFromForm(),
+        readPaychecks(),
 
       bills:
-        readBillsFromForm()
-
+        readBills()
     };
   }
 
-
   /* =========================================================
-     HELPER FOR RESTORING VALUES
+     LOAD PLANNER
   ========================================================= */
 
-  function setValue(id, value) {
-
+  function setValue(
+    id,
+    value
+  ) {
     const element =
-      document.getElementById(id);
+      document.getElementById(
+        id
+      );
 
     if (element) {
-
       element.value =
         value ?? "";
     }
   }
 
-
-  /* =========================================================
-     LOAD SAVED PLAN INTO PLANNER
-  ========================================================= */
-
-  function loadPlanIntoForm(plan) {
+  function loadPlanIntoForm(
+    plan
+  ) {
+    if (!plan) {
+      return;
+    }
 
     const data =
       plan.plan_data || {};
-
 
     setValue(
       "startingBalance",
@@ -631,7 +654,6 @@
       data.protectedCushion
     );
 
-
     setValue(
       "groceryAmount",
       data.groceries?.amount
@@ -639,9 +661,9 @@
 
     setValue(
       "groceryMode",
-      data.groceries?.mode || "total"
+      data.groceries?.mode ||
+        "total"
     );
-
 
     setValue(
       "gasAmount",
@@ -650,9 +672,9 @@
 
     setValue(
       "gasMode",
-      data.gas?.mode || "total"
+      data.gas?.mode ||
+        "total"
     );
-
 
     setValue(
       "otherAmount",
@@ -661,32 +683,30 @@
 
     setValue(
       "otherMode",
-      data.other?.mode || "total"
+      data.other?.mode ||
+        "total"
     );
 
-
-    /* -------------------------
-       RESTORE PAYCHECKS
-    ------------------------- */
+    /* PAYCHECKS */
 
     const paychecksContainer =
       document.getElementById(
         "paychecksContainer"
       );
 
-
-    if (paychecksContainer) {
-
-      paychecksContainer.innerHTML = "";
+    if (
+      paychecksContainer
+    ) {
+      paychecksContainer.innerHTML =
+        "";
     }
 
-
     const paychecks =
-      Array.isArray(data.paychecks) &&
+      Array.isArray(
+        data.paychecks
+      ) &&
       data.paychecks.length
-
         ? data.paychecks
-
         : [
             {
               name: "",
@@ -695,245 +715,308 @@
             }
           ];
 
+    paychecks.forEach(
+      paycheck => {
+        if (
+          typeof window
+            .addPaycheck ===
+          "function"
+        ) {
+          window.addPaycheck(
+            paycheck.name ||
+              "",
+            paycheck.date ||
+              "",
+            paycheck.amount ||
+              ""
+          );
+        } else if (
+          typeof addPaycheck ===
+          "function"
+        ) {
+          addPaycheck(
+            paycheck.name ||
+              "",
+            paycheck.date ||
+              "",
+            paycheck.amount ||
+              ""
+          );
+        }
+      }
+    );
 
-    paychecks.forEach(paycheck => {
-
-      addPaycheck(
-        paycheck.name || "",
-        paycheck.date || "",
-        paycheck.amount || ""
-      );
-
-    });
-
-
-    /* -------------------------
-       RESTORE BILLS
-    ------------------------- */
+    /* BILLS */
 
     const billsContainer =
       document.getElementById(
         "billsContainer"
       );
 
-
-    if (billsContainer) {
-
-      billsContainer.innerHTML = "";
+    if (
+      billsContainer
+    ) {
+      billsContainer.innerHTML =
+        "";
     }
 
-
     const bills =
-      Array.isArray(data.bills) &&
+      Array.isArray(
+        data.bills
+      ) &&
       data.bills.length
-
         ? data.bills
-
         : [{}];
 
+    bills.forEach(
+      bill => {
+        if (
+          typeof window.addBill ===
+          "function"
+        ) {
+          window.addBill();
+        } else if (
+          typeof addBill ===
+          "function"
+        ) {
+          addBill();
+        }
 
-    bills.forEach(bill => {
+        const entry =
+          billsContainer
+            ?.lastElementChild;
 
-      addBill();
+        if (!entry) {
+          return;
+        }
 
+        const name =
+          entry.querySelector(
+            ".bill-name"
+          );
 
-      const entry =
-        billsContainer?.lastElementChild;
+        const amount =
+          entry.querySelector(
+            ".bill-amount"
+          );
 
+        const type =
+          entry.querySelector(
+            ".bill-type"
+          );
 
-      if (!entry) return;
+        const priority =
+          entry.querySelector(
+            ".bill-priority"
+          );
 
+        const dueDate =
+          entry.querySelector(
+            ".bill-due-date"
+          );
 
-      const name =
-        entry.querySelector(
-          ".bill-name"
-        );
+        const flexRule =
+          entry.querySelector(
+            ".flex-rule"
+          );
 
-      const amount =
-        entry.querySelector(
-          ".bill-amount"
-        );
+        const byDate =
+          entry.querySelector(
+            ".flex-by-date"
+          );
 
-      const type =
-        entry.querySelector(
-          ".bill-type"
-        );
+        const startDate =
+          entry.querySelector(
+            ".flex-start-date"
+          );
 
-      const priority =
-        entry.querySelector(
-          ".bill-priority"
-        );
+        const endDate =
+          entry.querySelector(
+            ".flex-end-date"
+          );
 
-      const dueDate =
-        entry.querySelector(
-          ".bill-due-date"
-        );
+        if (name) {
+          name.value =
+            bill.name || "";
+        }
 
-      const flexRule =
-        entry.querySelector(
-          ".flex-rule"
-        );
+        if (amount) {
+          amount.value =
+            bill.amount || "";
+        }
 
-      const byDate =
-        entry.querySelector(
-          ".flex-by-date"
-        );
+        if (type) {
+          type.value =
+            bill.type ||
+            "fixed";
 
-      const startDate =
-        entry.querySelector(
-          ".flex-start-date"
-        );
+          type.dispatchEvent(
+            new Event(
+              "change"
+            )
+          );
+        }
 
-      const endDate =
-        entry.querySelector(
-          ".flex-end-date"
-        );
+        if (priority) {
+          priority.value =
+            bill.priority ||
+            "essential";
+        }
 
+        if (dueDate) {
+          dueDate.value =
+            bill.dueDate || "";
+        }
 
-      if (name) {
+        if (flexRule) {
+          flexRule.value =
+            bill.flexRule ||
+            "any";
 
-        name.value =
-          bill.name || "";
+          flexRule.dispatchEvent(
+            new Event(
+              "change"
+            )
+          );
+        }
+
+        if (byDate) {
+          byDate.value =
+            bill.byDate || "";
+        }
+
+        if (startDate) {
+          startDate.value =
+            bill.startDate ||
+            "";
+        }
+
+        if (endDate) {
+          endDate.value =
+            bill.endDate || "";
+        }
       }
-
-
-      if (amount) {
-
-        amount.value =
-          bill.amount || "";
-      }
-
-
-      if (type) {
-
-        type.value =
-          bill.type || "fixed";
-
-        type.dispatchEvent(
-          new Event("change")
-        );
-      }
-
-
-      if (priority) {
-
-        priority.value =
-          bill.priority || "essential";
-      }
-
-
-      if (dueDate) {
-
-        dueDate.value =
-          bill.dueDate || "";
-      }
-
-
-      if (flexRule) {
-
-        flexRule.value =
-          bill.flexRule || "any";
-
-        flexRule.dispatchEvent(
-          new Event("change")
-        );
-      }
-
-
-      if (byDate) {
-
-        byDate.value =
-          bill.byDate || "";
-      }
-
-
-      if (startDate) {
-
-        startDate.value =
-          bill.startDate || "";
-      }
-
-
-      if (endDate) {
-
-        endDate.value =
-          bill.endDate || "";
-      }
-
-    });
-
+    );
 
     editingPlanId =
       plan.id;
 
-
     planNameInput.value =
       plan.plan_name || "";
-
 
     saveButton.textContent =
       "Update Saved Plan";
 
-
     document
-      .getElementById("plannerResults")
-      ?.classList.remove("show");
-
+      .getElementById(
+        "plannerResults"
+      )
+      ?.classList.remove(
+        "show"
+      );
 
     clearMessage();
 
-
     showMessage(
-      `Loaded "${plan.plan_name}".`,
+      `Loaded "${plan.plan_name || "Untitled Plan"}".`,
       "good"
     );
-
 
     modalOverlay.classList.remove(
       "show"
     );
 
+    window.dispatchEvent(
+      new CustomEvent(
+        "stretchmycheck:plan-loaded",
+        {
+          detail: {
+            id:
+              plan.id,
 
-    window.scrollTo({
+            name:
+              plan.plan_name ||
+              "Untitled Plan",
 
-      top: 0,
+            updatedAt:
+              plan.updated_at ||
+              plan.created_at ||
+              null
+          }
+        }
+      )
+    );
 
-      behavior: "smooth"
+    /*
+      Rebuild optimized planner,
+      dashboard, and forecast.
+    */
 
-    });
+    window.setTimeout(
+      () => {
+        const optimizeButton =
+          document.getElementById(
+            "optimizeButton"
+          );
+
+        if (
+          optimizeButton
+        ) {
+          optimizeButton.click();
+        }
+
+        if (
+          window
+            .StretchMyCheckDashboard &&
+          typeof window
+            .StretchMyCheckDashboard
+            .refresh ===
+            "function"
+        ) {
+          window
+            .StretchMyCheckDashboard
+            .refresh();
+        }
+
+        if (
+          window
+            .StretchMyCheckForecast &&
+          typeof window
+            .StretchMyCheckForecast
+            .refresh ===
+            "function"
+        ) {
+          window
+            .StretchMyCheckForecast
+            .refresh();
+        }
+      },
+      100
+    );
   }
 
-
   /* =========================================================
-     SAVE OR UPDATE PLAN
+     SAVE
   ========================================================= */
 
   async function savePlan() {
-
     clearMessage();
-
 
     const user =
       await getUser();
 
-
     if (!user) {
-
       showMessage(
         "Sign in before saving a plan.",
         "bad"
       );
-
       return;
     }
-
 
     const planName =
       planNameInput.value.trim();
 
-
     if (!planName) {
-
       showMessage(
         "Give this plan a name before saving it.",
         "bad"
@@ -944,37 +1027,29 @@
       return;
     }
 
-
     const planData =
       buildPlanData();
 
-
-    saveButton.disabled = true;
-
+    saveButton.disabled =
+      true;
 
     saveButton.textContent =
       editingPlanId
         ? "Updating..."
         : "Saving...";
 
-
     try {
-
-      /* -------------------------
-         UPDATE EXISTING PLAN
-      ------------------------- */
-
-      if (editingPlanId) {
-
+      if (
+        editingPlanId
+      ) {
         const {
           error
         } =
           await supabaseClient
-
-            .from("saved_plans")
-
+            .from(
+              "saved_plans"
+            )
             .update({
-
               plan_name:
                 planName,
 
@@ -982,51 +1057,36 @@
                 planData,
 
               updated_at:
-                new Date().toISOString()
-
+                new Date()
+                  .toISOString()
             })
-
             .eq(
               "id",
               editingPlanId
             )
-
             .eq(
               "user_id",
               user.id
             );
 
-
         if (error) {
-
           throw error;
         }
-
 
         showMessage(
           `"${planName}" was updated.`,
           "good"
         );
-
-      }
-
-
-      /* -------------------------
-         CREATE NEW PLAN
-      ------------------------- */
-
-      else {
-
+      } else {
         const {
           data,
           error
         } =
           await supabaseClient
-
-            .from("saved_plans")
-
+            .from(
+              "saved_plans"
+            )
             .insert({
-
               user_id:
                 user.id,
 
@@ -1037,447 +1097,397 @@
                 planData,
 
               updated_at:
-                new Date().toISOString()
-
+                new Date()
+                  .toISOString()
             })
-
             .select("id")
-
             .single();
 
-
         if (error) {
-
           throw error;
         }
 
-
         editingPlanId =
           data.id;
-
 
         showMessage(
           `"${planName}" was saved to your account.`,
           "good"
         );
       }
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
       console.error(error);
 
-
       showMessage(
-
         error.message ||
-        "Could not save your plan.",
-
+          "Could not save your plan.",
         "bad"
-
       );
-
-    }
-
-    finally {
-
-      saveButton.disabled = false;
-
+    } finally {
+      saveButton.disabled =
+        false;
 
       saveButton.textContent =
         editingPlanId
-
           ? "Update Saved Plan"
-
           : "Save My Plan";
     }
   }
 
-
   /* =========================================================
-     FORMAT SAVED DATE
-  ========================================================= */
-
-  function formatSavedDate(value) {
-
-    if (!value) return "";
-
-
-    const date =
-      new Date(value);
-
-
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-
-      return "";
-    }
-
-
-    return date.toLocaleString(
-      "en-US",
-      {
-
-        month: "short",
-
-        day: "numeric",
-
-        year: "numeric",
-
-        hour: "numeric",
-
-        minute: "2-digit"
-
-      }
-    );
-  }
-
-
-  /* =========================================================
-     GET SAVED PLANS
+     FETCH
   ========================================================= */
 
   async function fetchPlans() {
-
     const user =
       await getUser();
 
-
     if (!user) {
-
-      showMessage(
-        "Sign in to view saved plans.",
-        "bad"
-      );
-
       return [];
     }
-
 
     const {
       data,
       error
     } =
       await supabaseClient
-
-        .from("saved_plans")
-
+        .from(
+          "saved_plans"
+        )
         .select(
           "id, plan_name, plan_data, created_at, updated_at"
         )
-
         .eq(
           "user_id",
           user.id
         )
-
         .order(
           "updated_at",
           {
-            ascending: false
+            ascending:
+              false
           }
         );
 
-
     if (error) {
-
       console.error(error);
 
-
       showMessage(
-
         error.message ||
-        "Could not load your saved plans.",
-
+          "Could not load your saved plans.",
         "bad"
-
       );
-
 
       return [];
     }
 
-
     return data || [];
   }
 
-
   /* =========================================================
-     OPEN SAVED PLANS
+     AUTO LOAD MOST RECENT
   ========================================================= */
 
+  async function loadMostRecentPlan(
+    force = false
+  ) {
+    const user =
+      await getUser();
+
+    if (!user) {
+      return null;
+    }
+
+    if (
+      !force &&
+      lastAutoLoadedUserId ===
+        user.id
+    ) {
+      return null;
+    }
+
+    const plans =
+      await fetchPlans();
+
+    lastAutoLoadedUserId =
+      user.id;
+
+    if (!plans.length) {
+      window.dispatchEvent(
+        new CustomEvent(
+          "stretchmycheck:no-saved-plans"
+        )
+      );
+
+      return null;
+    }
+
+    const newestPlan =
+      plans[0];
+
+    loadPlanIntoForm(
+      newestPlan
+    );
+
+    return newestPlan;
+  }
+
+  /* =========================================================
+     SAVED PLANS LIST
+  ========================================================= */
+
+  function formatDate(
+    value
+  ) {
+    if (!value) {
+      return "";
+    }
+
+    const date =
+      new Date(value);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "";
+    }
+
+    return date
+      .toLocaleString(
+        "en-US",
+        {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit"
+        }
+      );
+  }
+
   async function openSavedPlans() {
-
     clearMessage();
-
 
     const user =
       await getUser();
 
-
     if (!user) {
-
       showMessage(
         "Sign in to view saved plans.",
         "bad"
       );
-
       return;
     }
-
-
-    planList.innerHTML = `
-      <div class="saved-plan-meta">
-        Loading...
-      </div>
-    `;
-
 
     modalOverlay.classList.add(
       "show"
     );
 
+    planList.innerHTML = `
+      <div
+        class="saved-plan-meta"
+      >
+        Loading...
+      </div>
+    `;
 
     const plans =
       await fetchPlans();
 
-
     if (!plans.length) {
-
       planList.innerHTML = `
-        <div class="saved-plan-meta">
-          You do not have any saved plans yet.
+        <div
+          class="saved-plan-meta"
+        >
+          You do not have any
+          saved plans yet.
         </div>
       `;
 
       return;
     }
 
+    planList.innerHTML =
+      "";
 
-    planList.innerHTML = "";
+    plans.forEach(
+      plan => {
+        const item =
+          document.createElement(
+            "div"
+          );
 
+        item.className =
+          "saved-plan-item";
 
-    plans.forEach(plan => {
+        const info =
+          document.createElement(
+            "div"
+          );
 
-      const item =
-        document.createElement("div");
+        const title =
+          document.createElement(
+            "h3"
+          );
 
-
-      item.className =
-        "saved-plan-item";
-
-
-      const info =
-        document.createElement("div");
-
-
-      info.innerHTML = `
-        <h3></h3>
-
-        <div
-          class="saved-plan-meta"
-        ></div>
-      `;
-
-
-      info
-        .querySelector("h3")
-        .textContent =
-
+        title.textContent =
           plan.plan_name ||
           "Untitled Plan";
 
+        const meta =
+          document.createElement(
+            "div"
+          );
 
-      info
-        .querySelector(
-          ".saved-plan-meta"
-        )
-        .textContent =
+        meta.className =
+          "saved-plan-meta";
 
+        meta.textContent =
           `Last updated ${
-            formatSavedDate(
+            formatDate(
               plan.updated_at ||
               plan.created_at
             )
           }`;
 
-
-      const actions =
-        document.createElement("div");
-
-
-      actions.className =
-        "saved-plan-actions";
-
-
-      /* -------------------------
-         LOAD BUTTON
-      ------------------------- */
-
-      const loadButton =
-        document.createElement(
-          "button"
+        info.append(
+          title,
+          meta
         );
 
+        const actions =
+          document.createElement(
+            "div"
+          );
 
-      loadButton.className =
-        "saved-plan-btn primary";
+        actions.className =
+          "saved-plan-actions";
 
+        const loadButton =
+          document.createElement(
+            "button"
+          );
 
-      loadButton.type =
-        "button";
+        loadButton.className =
+          "saved-plan-btn primary";
 
+        loadButton.type =
+          "button";
 
-      loadButton.textContent =
-        "Load";
+        loadButton.textContent =
+          "Load";
 
-
-      loadButton.addEventListener(
-        "click",
-        () => {
-
-          loadPlanIntoForm(plan);
-
-        }
-      );
-
-
-      /* -------------------------
-         DELETE BUTTON
-      ------------------------- */
-
-      const deleteButton =
-        document.createElement(
-          "button"
-        );
-
-
-      deleteButton.className =
-        "saved-plan-btn danger";
-
-
-      deleteButton.type =
-        "button";
-
-
-      deleteButton.textContent =
-        "Delete";
-
-
-      deleteButton.addEventListener(
-        "click",
-        async () => {
-
-          const confirmed =
-            window.confirm(
-
-              `Delete "${plan.plan_name}"? This cannot be undone.`
-
+        loadButton.addEventListener(
+          "click",
+          () => {
+            loadPlanIntoForm(
+              plan
             );
-
-
-          if (!confirmed) {
-
-            return;
           }
+        );
 
+        const deleteButton =
+          document.createElement(
+            "button"
+          );
 
-          const user =
-            await getUser();
+        deleteButton.className =
+          "saved-plan-btn danger";
 
+        deleteButton.type =
+          "button";
 
-          if (!user) {
+        deleteButton.textContent =
+          "Delete";
 
-            return;
-          }
-
-
-          const {
-            error
-          } =
-            await supabaseClient
-
-              .from("saved_plans")
-
-              .delete()
-
-              .eq(
-                "id",
-                plan.id
-              )
-
-              .eq(
-                "user_id",
-                user.id
+        deleteButton.addEventListener(
+          "click",
+          async () => {
+            const confirmed =
+              window.confirm(
+                `Delete "${plan.plan_name}"? This cannot be undone.`
               );
 
+            if (!confirmed) {
+              return;
+            }
 
-          if (error) {
+            const user =
+              await getUser();
 
-            console.error(error);
+            if (!user) {
+              return;
+            }
 
+            const {
+              error
+            } =
+              await supabaseClient
+                .from(
+                  "saved_plans"
+                )
+                .delete()
+                .eq(
+                  "id",
+                  plan.id
+                )
+                .eq(
+                  "user_id",
+                  user.id
+                );
 
-            window.alert(
+            if (error) {
+              console.error(
+                error
+              );
 
-              error.message ||
-              "Could not delete this plan."
+              window.alert(
+                error.message ||
+                  "Could not delete this plan."
+              );
 
-            );
+              return;
+            }
 
+            if (
+              editingPlanId ===
+              plan.id
+            ) {
+              editingPlanId =
+                null;
 
-            return;
+              planNameInput.value =
+                "";
+
+              saveButton.textContent =
+                "Save My Plan";
+            }
+
+            await openSavedPlans();
           }
+        );
 
+        actions.append(
+          loadButton,
+          deleteButton
+        );
 
-          if (
-            editingPlanId ===
-            plan.id
-          ) {
+        item.append(
+          info,
+          actions
+        );
 
-            editingPlanId = null;
-
-
-            planNameInput.value =
-              "";
-
-
-            saveButton.textContent =
-              "Save My Plan";
-          }
-
-
-          await openSavedPlans();
-
-        }
-      );
-
-
-      actions.append(
-        loadButton,
-        deleteButton
-      );
-
-
-      item.append(
-        info,
-        actions
-      );
-
-
-      planList.appendChild(
-        item
-      );
-
-    });
+        planList.appendChild(
+          item
+        );
+      }
+    );
   }
 
-
   /* =========================================================
-     BUTTON EVENTS
+     BUTTONS
   ========================================================= */
 
   saveButton.addEventListener(
@@ -1485,67 +1495,124 @@
     savePlan
   );
 
-
   openButton.addEventListener(
     "click",
     openSavedPlans
   );
 
-
-  closeModalButton.addEventListener(
-    "click",
-    () => {
-
-      modalOverlay.classList.remove(
-        "show"
-      );
-
-    }
-  );
-
+  closeModalButton
+    .addEventListener(
+      "click",
+      () => {
+        modalOverlay
+          .classList
+          .remove(
+            "show"
+          );
+      }
+    );
 
   modalOverlay.addEventListener(
     "click",
     event => {
-
       if (
         event.target ===
         modalOverlay
       ) {
-
-        modalOverlay.classList.remove(
-          "show"
-        );
+        modalOverlay
+          .classList
+          .remove(
+            "show"
+          );
       }
-
     }
   );
-
 
   /* =========================================================
-     SIGN OUT / SESSION CHANGE
+     AUTH EVENTS
   ========================================================= */
 
-  supabaseClient.auth.onAuthStateChange(
-    (_event, session) => {
+  supabaseClient.auth
+    .onAuthStateChange(
+      (
+        event,
+        session
+      ) => {
+        if (
+          !session?.user
+        ) {
+          editingPlanId =
+            null;
 
-      if (!session?.user) {
+          lastAutoLoadedUserId =
+            null;
 
-        editingPlanId = null;
+          planNameInput.value =
+            "";
 
+          saveButton.textContent =
+            "Save My Plan";
 
-        planNameInput.value =
-          "";
+          clearMessage();
 
+          return;
+        }
 
-        saveButton.textContent =
-          "Save My Plan";
-
-
-        clearMessage();
+        if (
+          event ===
+          "SIGNED_IN"
+        ) {
+          window.setTimeout(
+            () => {
+              loadMostRecentPlan();
+            },
+            300
+          );
+        }
       }
+    );
 
+  /* =========================================================
+     PUBLIC API
+  ========================================================= */
+
+  window.StretchMyCheckPlans = {
+
+    fetchPlans,
+
+    loadPlan:
+      loadPlanIntoForm,
+
+    loadLatest:
+      () =>
+        loadMostRecentPlan(
+          true
+        ),
+
+    openSavedPlans
+  };
+
+  /* =========================================================
+     INITIAL SESSION
+  ========================================================= */
+
+  (async () => {
+    const {
+      data
+    } =
+      await supabaseClient.auth
+        .getSession();
+
+    if (
+      data?.session?.user
+    ) {
+      window.setTimeout(
+        () => {
+          loadMostRecentPlan();
+        },
+        350
+      );
     }
-  );
+  })();
 
 })();
