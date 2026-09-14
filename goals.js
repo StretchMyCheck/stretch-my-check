@@ -26,6 +26,9 @@
   let selectedGoalId =
     null;
 
+  let goalTransactions =
+    [];
+
   const money =
     value =>
       Number.isFinite(
@@ -39,8 +42,11 @@
       new Intl.NumberFormat(
         "en-US",
         {
-          style: "currency",
-          currency: "USD"
+          style:
+            "currency",
+
+          currency:
+            "USD"
         }
       ).format(
         money(value)
@@ -102,7 +108,9 @@
       value instanceof Date
     ) {
       const date =
-        new Date(value);
+        new Date(
+          value
+        );
 
       date.setHours(
         0,
@@ -115,16 +123,21 @@
     }
 
     const parts =
-      String(value)
+      String(
+        value
+      )
         .slice(
           0,
           10
         )
         .split("-")
-        .map(Number);
+        .map(
+          Number
+        );
 
     if (
-      parts.length !== 3 ||
+      parts.length !==
+        3 ||
       !parts.every(
         Number.isFinite
       )
@@ -157,7 +170,9 @@
     value
   ) {
     const date =
-      localDate(value);
+      localDate(
+        value
+      );
 
     if (!date) {
       return "";
@@ -167,7 +182,8 @@
       date.getFullYear()
     }-${
       String(
-        date.getMonth() + 1
+        date.getMonth() +
+          1
       ).padStart(
         2,
         "0"
@@ -186,17 +202,25 @@
     value
   ) {
     const date =
-      localDate(value);
+      localDate(
+        value
+      );
 
     return date
-      ? date.toLocaleDateString(
-          "en-US",
-          {
-            month: "short",
-            day: "numeric",
-            year: "numeric"
-          }
-        )
+      ? date
+          .toLocaleDateString(
+            "en-US",
+            {
+              month:
+                "short",
+
+              day:
+                "numeric",
+
+              year:
+                "numeric"
+            }
+          )
       : "No target date";
   }
 
@@ -204,7 +228,9 @@
     value
   ) {
     const date =
-      localDate(value);
+      localDate(
+        value
+      );
 
     if (!date) {
       return null;
@@ -249,7 +275,8 @@
       data,
       error
     } =
-      await sb.auth.getUser();
+      await sb.auth
+        .getUser();
 
     if (error) {
       console.error(
@@ -281,9 +308,10 @@
     );
 
     return [
-      ...document.querySelectorAll(
-        ".paycheck-entry"
-      )
+      ...document
+        .querySelectorAll(
+          ".paycheck-entry"
+        )
     ]
       .map(
         (
@@ -291,16 +319,19 @@
           index
         ) => {
           const dateValue =
-            entry.querySelector(
-              ".paycheck-date"
-            )?.value ||
+            entry
+              .querySelector(
+                ".paycheck-date"
+              )
+              ?.value ||
             "";
 
           return {
             name:
-              entry.querySelector(
-                ".paycheck-name"
-              )
+              entry
+                .querySelector(
+                  ".paycheck-name"
+                )
                 ?.value
                 ?.trim() ||
               `Paycheck ${
@@ -316,9 +347,11 @@
 
             amount:
               money(
-                entry.querySelector(
-                  ".paycheck-amount"
-                )?.value
+                entry
+                  .querySelector(
+                    ".paycheck-amount"
+                  )
+                  ?.value
               )
           };
         }
@@ -360,7 +393,8 @@
       paycheck => {
         const dateKey =
           key(
-            paycheck.dateValue ||
+            paycheck
+              .dateValue ||
             paycheck.date
           );
 
@@ -398,7 +432,7 @@
   }
 
   /* =========================================================
-     BUILD A PAYCHECK-BY-PAYCHECK GOAL PLAN
+     BUILD GOAL PLAN
   ========================================================= */
 
   function goalPlan(
@@ -443,7 +477,8 @@
         detail:
           "This goal is fully funded.",
 
-        rows: [],
+        rows:
+          [],
 
         shortfall:
           0,
@@ -462,14 +497,17 @@
           "neutral",
 
         headline:
-          `${currency(
-            remaining
-          )} left to save`,
+          `${
+            currency(
+              remaining
+            )
+          } left to save`,
 
         detail:
           "Add a target date to build a paycheck-by-paycheck path.",
 
-        rows: [],
+        rows:
+          [],
 
         shortfall:
           remaining,
@@ -498,14 +536,17 @@
           "neutral",
 
         headline:
-          `${currency(
-            remaining
-          )} left to save`,
+          `${
+            currency(
+              remaining
+            )
+          } left to save`,
 
         detail:
           "Add upcoming paychecks in My Plan through this target date.",
 
-        rows: [],
+        rows:
+          [],
 
         shortfall:
           remaining,
@@ -531,7 +572,8 @@
     let left =
       remaining;
 
-    const rows = [];
+    const rows =
+      [];
 
     if (
       hasOptimized
@@ -684,14 +726,18 @@
 
       headline:
         onTrack
-          ? `${currency(
-              firstContribution
-                ?.contribution ||
-                0
-            )} next recommended`
-          : `${currency(
-              shortfall
-            )} gap remains`,
+          ? `${
+              currency(
+                firstContribution
+                  ?.contribution ||
+                  0
+              )
+            } next recommended`
+          : `${
+              currency(
+                shortfall
+              )
+            } gap remains`,
 
       detail:
         hasOptimized
@@ -715,7 +761,7 @@
     );
 
   style.id =
-    "smcGoalsStylesV2";
+    "smcGoalsStylesV3";
 
   style.textContent = `
 
@@ -728,22 +774,19 @@
 
       --g-teal:
         #45e1c0;
-
-      --g-bg:
-        #0d1a23;
-
-      --g-card:
-        #11232d;
     }
 
     .smc-goals-shell {
-      display: grid;
+      display:
+        grid;
 
-      gap: 18px;
+      gap:
+        18px;
     }
 
     .smc-goals-summary {
-      display: grid;
+      display:
+        grid;
 
       grid-template-columns:
         repeat(
@@ -751,7 +794,8 @@
           minmax(0,1fr)
         );
 
-      gap: 14px;
+      gap:
+        14px;
     }
 
     .smc-goal-summary-card,
@@ -819,11 +863,11 @@
       display:
         flex;
 
-      align-items:
-        center;
-
       justify-content:
         space-between;
+
+      align-items:
+        center;
 
       gap:
         16px;
@@ -936,7 +980,8 @@
     .smc-goal-guidance-head,
     .smc-goal-progress-line,
     .smc-goal-plan-top,
-    .smc-goal-plan-row {
+    .smc-goal-plan-row,
+    .smc-goal-activity-row {
       display:
         flex;
 
@@ -1214,7 +1259,7 @@
     }
 
     /* =====================================================
-       GOAL BUTTONS
+       BUTTONS
     ===================================================== */
 
     .smc-goal-actions {
@@ -1278,7 +1323,7 @@
     }
 
     /* =====================================================
-       RIGHT-SIDE GOAL PLAN
+       RIGHT-SIDE PLAN
     ===================================================== */
 
     .smc-goal-plan-panel {
@@ -1515,6 +1560,230 @@
       line-height:
         1.5;
     }
+
+    /* =====================================================
+       RECENT ACTIVITY
+    ===================================================== */
+
+    .smc-goal-activity {
+      margin-top:
+        22px;
+
+      padding-top:
+        18px;
+
+      border-top:
+        1px solid
+        rgba(132,175,192,.12);
+    }
+
+    .smc-goal-activity-head {
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      justify-content:
+        space-between;
+
+      gap:
+        12px;
+
+      margin-bottom:
+        11px;
+    }
+
+    .smc-goal-activity-title {
+      color:
+        #fff;
+
+      font-size:
+        14px;
+
+      font-weight:
+        800;
+    }
+
+    .smc-goal-activity-count {
+      color:
+        #758e99;
+
+      font-size:
+        10px;
+    }
+
+    .smc-goal-activity-list {
+      display:
+        grid;
+
+      gap:
+        8px;
+    }
+
+    .smc-goal-activity-row {
+      align-items:
+        center;
+
+      padding:
+        12px;
+
+      border-radius:
+        12px;
+
+      background:
+        #0b1b24;
+
+      border:
+        1px solid
+        rgba(132,175,192,.10);
+    }
+
+    .smc-goal-activity-left {
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        10px;
+    }
+
+    .smc-goal-activity-icon {
+      width:
+        34px;
+
+      height:
+        34px;
+
+      flex:
+        0 0 34px;
+
+      display:
+        grid;
+
+      place-items:
+        center;
+
+      border-radius:
+        10px;
+
+      font-size:
+        17px;
+    }
+
+    .smc-goal-activity-icon.deposit {
+      color:
+        #67e7c4;
+
+      background:
+        rgba(36,139,115,.18);
+
+      border:
+        1px solid
+        rgba(69,225,192,.17);
+    }
+
+    .smc-goal-activity-icon.withdrawal {
+      color:
+        #c2a8ff;
+
+      background:
+        rgba(105,70,171,.16);
+
+      border:
+        1px solid
+        rgba(164,125,255,.16);
+    }
+
+    .smc-goal-activity-type {
+      color:
+        #e6eff2;
+
+      font-size:
+        11px;
+
+      font-weight:
+        750;
+    }
+
+    .smc-goal-activity-date {
+      color:
+        #718b96;
+
+      font-size:
+        9px;
+
+      margin-top:
+        3px;
+    }
+
+    .smc-goal-activity-amount {
+      font-size:
+        13px;
+
+      font-weight:
+        850;
+
+      text-align:
+        right;
+    }
+
+    .smc-goal-activity-amount.deposit {
+      color:
+        #67e7c4;
+    }
+
+    .smc-goal-activity-amount.withdrawal {
+      color:
+        #c2a8ff;
+    }
+
+    .smc-goal-activity-note {
+      margin-top:
+        3px;
+
+      color:
+        #718b96;
+
+      font-size:
+        9px;
+
+      text-align:
+        right;
+    }
+
+    .smc-goal-activity-empty {
+      padding:
+        18px;
+
+      border-radius:
+        12px;
+
+      background:
+        #0b1b24;
+
+      border:
+        1px dashed
+        rgba(132,175,192,.12);
+
+      color:
+        #78919c;
+
+      font-size:
+        10px;
+
+      line-height:
+        1.5;
+
+      text-align:
+        center;
+    }
+
+    /* =====================================================
+       EMPTY STATES
+    ===================================================== */
 
     .smc-goal-empty,
     .smc-plan-empty {
@@ -1861,14 +2130,6 @@
         block;
     }
 
-    .smc-goal-message.good {
-      color:
-        #91dfc1;
-
-      background:
-        rgba(29,102,74,.16);
-    }
-
     .smc-goal-message.bad {
       color:
         #ff9a9d;
@@ -1940,6 +2201,11 @@
       .smc-goal-primary {
         width:
           100%;
+      }
+
+      .smc-goal-activity-row {
+        align-items:
+          flex-start;
       }
     }
   `;
@@ -2052,14 +2318,13 @@
   }
 
   function message(
-    text,
-    type = "bad"
+    text
   ) {
     modalMessage.textContent =
       text;
 
     modalMessage.className =
-      `smc-goal-message show ${type}`;
+      "smc-goal-message show bad";
   }
 
   document
@@ -2099,35 +2364,23 @@
     }
 
     goalsPage.innerHTML = `
-      <div
-        class="smc-page-heading"
-      >
-
+      <div class="smc-page-heading">
         <div>
-
-          <h1>
-            Goals
-          </h1>
-
+          <h1>Goals</h1>
           <p>
             Build savings one step
             at a time.
           </p>
-
         </div>
-
       </div>
 
-      <div
-        class="smc-goals-shell"
-      >
+      <div class="smc-goals-shell">
 
         <div
           id="smcGoalsSignedOut"
           class="smc-goal-signed-out"
           style="display:none"
         >
-
           <h3>
             Sign in to use Goals
           </h3>
@@ -2137,21 +2390,15 @@
             sinking funds are stored
             with your account.
           </p>
-
         </div>
 
-        <div
-          id="smcGoalsApp"
-        >
+        <div id="smcGoalsApp">
 
-          <div
-            class="smc-goals-summary"
-          >
+          <div class="smc-goals-summary">
 
             <article
               class="smc-goal-summary-card"
             >
-
               <div
                 class="smc-goal-summary-label"
               >
@@ -2170,13 +2417,11 @@
               >
                 Across all active goals
               </div>
-
             </article>
 
             <article
               class="smc-goal-summary-card"
             >
-
               <div
                 class="smc-goal-summary-label"
               >
@@ -2195,13 +2440,11 @@
               >
                 Combined target amount
               </div>
-
             </article>
 
             <article
               class="smc-goal-summary-card"
             >
-
               <div
                 class="smc-goal-summary-label"
               >
@@ -2220,13 +2463,11 @@
               >
                 Progress toward all goals
               </div>
-
             </article>
 
             <article
               class="smc-goal-summary-card"
             >
-
               <div
                 class="smc-goal-summary-label"
               >
@@ -2236,9 +2477,7 @@
               <div
                 id="smcGoalsClosest"
                 class="smc-goal-summary-value"
-                style="
-                  font-size:20px;
-                "
+                style="font-size:20px"
               >
                 None yet
               </div>
@@ -2249,26 +2488,21 @@
               >
                 Create your first goal
               </div>
-
             </article>
 
           </div>
 
-          <div
-            class="smc-goals-toolbar"
-          >
+          <div class="smc-goals-toolbar">
 
             <div>
-
               <h2>
                 My Goals
               </h2>
 
               <p>
                 Select a goal to see its
-                paycheck-by-paycheck path.
+                paycheck plan and recent activity.
               </p>
-
             </div>
 
             <button
@@ -2281,9 +2515,7 @@
 
           </div>
 
-          <div
-            class="smc-goals-workspace"
-          >
+          <div class="smc-goals-workspace">
 
             <div
               id="smcGoalsGrid"
@@ -2402,7 +2634,8 @@
         )
         .filter(
           goal =>
-            goal.remaining > 0
+            goal.remaining >
+            0
         )
         .sort(
           (
@@ -2460,6 +2693,260 @@
   }
 
   /* =========================================================
+     TRANSACTION HELPERS
+  ========================================================= */
+
+  function formatActivityDate(
+    value
+  ) {
+    if (!value) {
+      return "";
+    }
+
+    const date =
+      new Date(
+        value
+      );
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "";
+    }
+
+    return date
+      .toLocaleDateString(
+        "en-US",
+        {
+          month:
+            "short",
+
+          day:
+            "numeric",
+
+          year:
+            "numeric"
+        }
+      );
+  }
+
+  function selectedTransactions() {
+    return goalTransactions
+      .filter(
+        transaction =>
+          Number(
+            transaction.goal_id
+          ) ===
+          Number(
+            selectedGoalId
+          )
+      )
+      .sort(
+        (
+          a,
+          b
+        ) =>
+          new Date(
+            b.created_at
+          ) -
+          new Date(
+            a.created_at
+          )
+      );
+  }
+
+  function renderActivity() {
+    const transactions =
+      selectedTransactions();
+
+    if (
+      !transactions.length
+    ) {
+      return `
+        <div
+          class="smc-goal-activity"
+        >
+
+          <div
+            class="smc-goal-activity-head"
+          >
+            <div
+              class="smc-goal-activity-title"
+            >
+              Recent Activity
+            </div>
+
+            <div
+              class="smc-goal-activity-count"
+            >
+              No activity yet
+            </div>
+          </div>
+
+          <div
+            class="smc-goal-activity-empty"
+          >
+            Money you add or withdraw
+            from this goal will appear here.
+          </div>
+
+        </div>
+      `;
+    }
+
+    const latest =
+      transactions
+        .slice(
+          0,
+          8
+        );
+
+    const rows =
+      latest
+        .map(
+          transaction => {
+            const isDeposit =
+              transaction
+                .transaction_type ===
+              "deposit";
+
+            return `
+              <div
+                class="smc-goal-activity-row"
+              >
+
+                <div
+                  class="smc-goal-activity-left"
+                >
+
+                  <div
+                    class="
+                      smc-goal-activity-icon
+                      ${
+                        isDeposit
+                          ? "deposit"
+                          : "withdrawal"
+                      }
+                    "
+                  >
+                    ${
+                      isDeposit
+                        ? "+"
+                        : "−"
+                    }
+                  </div>
+
+                  <div>
+
+                    <div
+                      class="smc-goal-activity-type"
+                    >
+                      ${
+                        isDeposit
+                          ? "Added to goal"
+                          : "Withdrawn from goal"
+                      }
+                    </div>
+
+                    <div
+                      class="smc-goal-activity-date"
+                    >
+                      ${esc(
+                        formatActivityDate(
+                          transaction.created_at
+                        )
+                      )}
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div>
+
+                  <div
+                    class="
+                      smc-goal-activity-amount
+                      ${
+                        isDeposit
+                          ? "deposit"
+                          : "withdrawal"
+                      }
+                    "
+                  >
+                    ${
+                      isDeposit
+                        ? "+"
+                        : "−"
+                    }${currency(
+                      transaction.amount
+                    )}
+                  </div>
+
+                  ${
+                    transaction.note
+                      ? `
+                        <div
+                          class="smc-goal-activity-note"
+                        >
+                          ${esc(
+                            transaction.note
+                          )}
+                        </div>
+                      `
+                      : ""
+                  }
+
+                </div>
+
+              </div>
+            `;
+          }
+        )
+        .join("");
+
+    return `
+      <div
+        class="smc-goal-activity"
+      >
+
+        <div
+          class="smc-goal-activity-head"
+        >
+          <div
+            class="smc-goal-activity-title"
+          >
+            Recent Activity
+          </div>
+
+          <div
+            class="smc-goal-activity-count"
+          >
+            ${
+              transactions.length
+            }
+            ${
+              transactions.length ===
+              1
+                ? "entry"
+                : "entries"
+            }
+          </div>
+        </div>
+
+        <div
+          class="smc-goal-activity-list"
+        >
+          ${rows}
+        </div>
+
+      </div>
+    `;
+  }
+
+  /* =========================================================
      RIGHT-SIDE GOAL PLAN PANEL
   ========================================================= */
 
@@ -2493,9 +2980,7 @@
           <div>
 
             <div
-              style="
-                font-size:34px;
-              "
+              style="font-size:34px"
             >
               🧭
             </div>
@@ -2507,9 +2992,8 @@
             <p>
               Select a goal on the left.
               Stretch My Check will turn
-              the recommendation into a
-              paycheck-by-paycheck path
-              here.
+              it into a paycheck-by-paycheck
+              savings path.
             </p>
 
           </div>
@@ -2541,7 +3025,7 @@
         goal.target_date
       );
 
-    const rows =
+    const paycheckRows =
       plan.rows.length
         ? plan.rows
             .map(
@@ -2705,7 +3189,6 @@
         <div
           class="smc-goal-plan-stat"
         >
-
           <small>
             Saved
           </small>
@@ -2715,13 +3198,11 @@
               goal.saved_amount
             )}
           </strong>
-
         </div>
 
         <div
           class="smc-goal-plan-stat"
         >
-
           <small>
             Still Needed
           </small>
@@ -2731,13 +3212,11 @@
               remaining
             )}
           </strong>
-
         </div>
 
         <div
           class="smc-goal-plan-stat"
         >
-
           <small>
             Planned
           </small>
@@ -2747,7 +3226,6 @@
               plan.totalPlanned
             )}
           </strong>
-
         </div>
 
       </div>
@@ -2766,13 +3244,12 @@
       <div
         class="smc-goal-plan-list"
       >
-        ${rows}
+        ${paycheckRows}
       </div>
 
       <div
         class="smc-goal-plan-note"
       >
-
         ${esc(
           plan.detail
         )}
@@ -2784,9 +3261,7 @@
               <br><br>
 
               <strong
-                style="
-                  color:#ffb071;
-                "
+                style="color:#ffb071"
               >
                 ${currency(
                   plan.shortfall
@@ -2797,13 +3272,14 @@
             `
             : ""
         }
-
       </div>
+
+      ${renderActivity()}
     `;
   }
 
   /* =========================================================
-     LEFT-SIDE GOAL CARDS
+     GOAL CARDS
   ========================================================= */
 
   function renderGoals() {
@@ -2830,17 +3306,13 @@
         >
 
           <div
-            style="
-              font-size:34px;
-            "
+            style="font-size:34px"
           >
             🎯
           </div>
 
           <h3
-            style="
-              color:#fff;
-            "
+            style="color:#fff"
           >
             Start with one goal
           </h3>
@@ -3049,20 +3521,17 @@
                 <div
                   class="smc-goal-progress-track"
                 >
-
                   <div
                     class="smc-goal-progress-fill"
                     style="
                       width:${progress}%;
                     "
                   ></div>
-
                 </div>
 
                 <div
                   class="smc-goal-progress-line"
                 >
-
                   <span>
                     ${Math.round(
                       progress
@@ -3080,7 +3549,6 @@
                           } left`
                     }
                   </span>
-
                 </div>
 
                 <div
@@ -3090,7 +3558,6 @@
                   <div
                     class="smc-goal-guidance-head"
                   >
-
                     <div
                       class="smc-goal-guidance-title"
                     >
@@ -3107,7 +3574,6 @@
                         plan.status
                       )}
                     </div>
-
                   </div>
 
                   <div
@@ -3297,7 +3763,7 @@
     renderPlanPanel();
   }
     /* =========================================================
-     LOAD GOALS
+     LOAD GOALS + TRANSACTIONS
   ========================================================= */
 
   async function loadGoals() {
@@ -3316,6 +3782,7 @@
 
     if (!currentUser) {
       goals = [];
+      goalTransactions = [];
 
       if (signedOut) {
         signedOut.style.display =
@@ -3340,35 +3807,73 @@
         "";
     }
 
-    const {
-      data,
-      error
-    } =
-      await sb
-        .from(
-          "financial_goals"
-        )
-        .select("*")
-        .eq(
-          "user_id",
-          currentUser.id
-        )
-        .order(
-          "updated_at",
-          {
-            ascending: false
-          }
-        );
+    const [
+      goalsResponse,
+      transactionsResponse
+    ] =
+      await Promise.all([
+        sb
+          .from(
+            "financial_goals"
+          )
+          .select("*")
+          .eq(
+            "user_id",
+            currentUser.id
+          )
+          .order(
+            "updated_at",
+            {
+              ascending:
+                false
+            }
+          ),
 
-    if (error) {
+        sb
+          .from(
+            "goal_transactions"
+          )
+          .select("*")
+          .eq(
+            "user_id",
+            currentUser.id
+          )
+          .order(
+            "created_at",
+            {
+              ascending:
+                false
+            }
+          )
+      ]);
+
+    if (
+      goalsResponse.error
+    ) {
       console.error(
-        error
+        goalsResponse.error
       );
 
       goals = [];
     } else {
       goals =
-        data || [];
+        goalsResponse.data ||
+        [];
+    }
+
+    if (
+      transactionsResponse.error
+    ) {
+      console.error(
+        transactionsResponse.error
+      );
+
+      goalTransactions =
+        [];
+    } else {
+      goalTransactions =
+        transactionsResponse.data ||
+        [];
     }
 
     renderGoals();
@@ -3406,7 +3911,6 @@
       <div
         class="smc-goal-field"
       >
-
         <label>
           Goal name
         </label>
@@ -3416,7 +3920,6 @@
           maxlength="80"
           placeholder="Emergency Fund"
         >
-
       </div>
 
       <div
@@ -3426,7 +3929,6 @@
         <div
           class="smc-goal-field"
         >
-
           <label>
             Goal type
           </label>
@@ -3434,7 +3936,6 @@
           <select
             id="smcGoalType"
           >
-
             <option
               value="savings"
             >
@@ -3446,15 +3947,12 @@
             >
               Sinking Fund
             </option>
-
           </select>
-
         </div>
 
         <div
           class="smc-goal-field"
         >
-
           <label>
             Icon
           </label>
@@ -3462,81 +3960,54 @@
           <select
             id="smcGoalIcon"
           >
-
-            <option
-              value="🎯"
-            >
+            <option value="🎯">
               🎯 Goal
             </option>
 
-            <option
-              value="💰"
-            >
+            <option value="💰">
               💰 Savings
             </option>
 
-            <option
-              value="🚗"
-            >
+            <option value="🚗">
               🚗 Car
             </option>
 
-            <option
-              value="🏠"
-            >
+            <option value="🏠">
               🏠 Home
             </option>
 
-            <option
-              value="✈️"
-            >
+            <option value="✈️">
               ✈️ Travel
             </option>
 
-            <option
-              value="🎂"
-            >
+            <option value="🎂">
               🎂 Birthday
             </option>
 
-            <option
-              value="🎄"
-            >
+            <option value="🎄">
               🎄 Holidays
             </option>
 
-            <option
-              value="🧯"
-            >
+            <option value="🧯">
               🧯 Emergency
             </option>
 
-            <option
-              value="🎓"
-            >
+            <option value="🎓">
               🎓 School
             </option>
 
-            <option
-              value="💻"
-            >
+            <option value="💻">
               💻 Technology
             </option>
 
-            <option
-              value="💳"
-            >
+            <option value="💳">
               💳 Debt
             </option>
 
-            <option
-              value="✨"
-            >
+            <option value="✨">
               ✨ Something Else
             </option>
-
           </select>
-
         </div>
 
       </div>
@@ -3548,7 +4019,6 @@
         <div
           class="smc-goal-field"
         >
-
           <label>
             Target amount
           </label>
@@ -3559,13 +4029,11 @@
             min="0"
             step="0.01"
           >
-
         </div>
 
         <div
           class="smc-goal-field"
         >
-
           <label>
             Already saved
           </label>
@@ -3576,7 +4044,6 @@
             min="0"
             step="0.01"
           >
-
         </div>
 
       </div>
@@ -3584,7 +4051,6 @@
       <div
         class="smc-goal-field"
       >
-
         <label>
           Target date
           <span
@@ -3601,13 +4067,11 @@
           id="smcGoalDate"
           type="date"
         >
-
       </div>
 
       <div
         class="smc-goal-field"
       >
-
         <label>
           Notes
           <span
@@ -3625,7 +4089,6 @@
           maxlength="300"
           placeholder="What is this money for?"
         ></textarea>
-
       </div>
 
       <div
@@ -3669,7 +4132,9 @@
       </div>
     `;
 
-    if (existing) {
+    if (
+      existing
+    ) {
       document
         .getElementById(
           "smcGoalName"
@@ -3687,9 +4152,10 @@
           "savings";
 
       const iconSelect =
-        document.getElementById(
-          "smcGoalIcon"
-        );
+        document
+          .getElementById(
+            "smcGoalIcon"
+          );
 
       const currentIcon =
         icon(
@@ -3893,30 +4359,38 @@
           .toISOString()
     };
 
-    const response =
+    let response;
+
+    if (
       editingGoalId
-        ? await sb
-            .from(
-              "financial_goals"
-            )
-            .update(
-              payload
-            )
-            .eq(
-              "id",
-              editingGoalId
-            )
-            .eq(
-              "user_id",
-              currentUser.id
-            )
-        : await sb
-            .from(
-              "financial_goals"
-            )
-            .insert(
-              payload
-            );
+    ) {
+      response =
+        await sb
+          .from(
+            "financial_goals"
+          )
+          .update(
+            payload
+          )
+          .eq(
+            "id",
+            editingGoalId
+          )
+          .eq(
+            "user_id",
+            currentUser.id
+          );
+
+    } else {
+      response =
+        await sb
+          .from(
+            "financial_goals"
+          )
+          .insert(
+            payload
+          );
+    }
 
     if (
       response.error
@@ -3940,7 +4414,7 @@
   }
 
   /* =========================================================
-     ADD / WITHDRAW MONEY
+     ADD / WITHDRAW MONEY MODAL
   ========================================================= */
 
   function showMoneyChange(
@@ -4030,7 +4504,6 @@
       <div
         class="smc-goal-field"
       >
-
         <label>
           ${
             isWithdraw
@@ -4046,7 +4519,32 @@
           step="0.01"
           placeholder="50"
         >
+      </div>
 
+      <div
+        class="smc-goal-field"
+      >
+        <label>
+          Note
+          <span
+            style="
+              color:#718a96;
+              font-weight:500;
+            "
+          >
+            (optional)
+          </span>
+        </label>
+
+        <input
+          id="smcGoalMoneyNote"
+          maxlength="120"
+          placeholder="${
+            isWithdraw
+              ? "What was the money used for?"
+              : "Where did this money come from?"
+          }"
+        >
       </div>
 
       <div
@@ -4095,6 +4593,10 @@
     openModal();
   }
 
+  /* =========================================================
+     APPLY MONEY CHANGE + WRITE HISTORY
+  ========================================================= */
+
   async function applyMoneyChange() {
     const currentUser =
       await user();
@@ -4114,6 +4616,14 @@
           )
           .value
       );
+
+    const note =
+      document
+        .getElementById(
+          "smcGoalMoneyNote"
+        )
+        .value
+        .trim();
 
     if (
       amount <= 0
@@ -4156,9 +4666,16 @@
         : currentSaved +
           amount;
 
-    const {
-      error
-    } =
+    const transactionType =
+      moneyMode ===
+        "withdraw"
+        ? "withdrawal"
+        : "deposit";
+
+    const goalId =
+      moneyGoal.id;
+
+    const updateResponse =
       await sb
         .from(
           "financial_goals"
@@ -4173,28 +4690,116 @@
         })
         .eq(
           "id",
-          moneyGoal.id
+          goalId
         )
         .eq(
           "user_id",
           currentUser.id
-        );
+        )
+        .select("id");
 
-    if (error) {
+    if (
+      updateResponse.error
+    ) {
       console.error(
-        error
+        updateResponse.error
       );
 
       message(
-        error.message ||
+        updateResponse.error
+          .message ||
           "Could not update this goal."
       );
 
       return;
     }
 
+    if (
+      !updateResponse.data ||
+      !updateResponse.data.length
+    ) {
+      message(
+        "The goal could not be updated."
+      );
+
+      return;
+    }
+
+    const transactionResponse =
+      await sb
+        .from(
+          "goal_transactions"
+        )
+        .insert({
+          user_id:
+            currentUser.id,
+
+          goal_id:
+            goalId,
+
+          transaction_type:
+            transactionType,
+
+          amount:
+            amount,
+
+          note:
+            note ||
+            null
+        });
+
+    if (
+      transactionResponse.error
+    ) {
+      console.error(
+        transactionResponse.error
+      );
+
+      /*
+        Roll the goal balance back if
+        transaction history fails.
+      */
+
+      const rollbackResponse =
+        await sb
+          .from(
+            "financial_goals"
+          )
+          .update({
+            saved_amount:
+              currentSaved,
+
+            updated_at:
+              new Date()
+                .toISOString()
+          })
+          .eq(
+            "id",
+            goalId
+          )
+          .eq(
+            "user_id",
+            currentUser.id
+          );
+
+      if (
+        rollbackResponse.error
+      ) {
+        console.error(
+          "Goal balance rollback failed:",
+          rollbackResponse.error
+        );
+      }
+
+      message(
+        "The transaction could not be saved, so your goal balance was not changed."
+      );
+
+      return;
+    }
+
     selectedGoalId =
-      moneyGoal.id;
+      goalId;
 
     await loadGoals();
 
@@ -4228,7 +4833,7 @@
         `Delete "${
           goal?.goal_name ||
           "this goal"
-        }"? This cannot be undone.`
+        }"? This will also delete its activity history. This cannot be undone.`
       );
 
     if (!confirmed) {
@@ -4290,7 +4895,7 @@
   }
 
   /* =========================================================
-     REFRESH WHEN PLAN CHANGES
+     REFRESH WHEN PLANNER CHANGES
   ========================================================= */
 
   function refreshSoon() {
