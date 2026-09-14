@@ -17,30 +17,62 @@
       currency: "USD"
     }).format(Number.isFinite(value) ? value : 0);
 
+  function escapeHTML(text) {
+    return String(text ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   function parseLocalDate(value) {
     if (!value) return null;
 
-    const parts = value.split("-").map(Number);
-
-    if (parts.length !== 3) {
-      return null;
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime())
+        ? null
+        : value;
     }
 
-    const [year, month, day] = parts;
+    const text = String(value);
 
-    const date = new Date(
-      year,
-      month - 1,
-      day,
-      12,
-      0,
-      0,
-      0
-    );
+    const parts =
+      text.split("-").map(Number);
 
-    return Number.isNaN(date.getTime())
+    if (
+      parts.length === 3
+      &&
+      parts.every(Number.isFinite)
+    ) {
+      const [year, month, day] =
+        parts;
+
+      const date = new Date(
+        year,
+        month - 1,
+        day,
+        12,
+        0,
+        0,
+        0
+      );
+
+      return Number.isNaN(
+        date.getTime()
+      )
+        ? null
+        : date;
+    }
+
+    const fallback =
+      new Date(text);
+
+    return Number.isNaN(
+      fallback.getTime()
+    )
       ? null
-      : date;
+      : fallback;
   }
 
   function todayDate() {
@@ -71,14 +103,36 @@
   }
 
   function sameDay(a, b) {
-    if (!a || !b) return false;
+    if (!a || !b) {
+      return false;
+    }
 
     return (
-      a.getFullYear() === b.getFullYear()
+      a.getFullYear() ===
+        b.getFullYear()
       &&
-      a.getMonth() === b.getMonth()
+      a.getMonth() ===
+        b.getMonth()
       &&
-      a.getDate() === b.getDate()
+      a.getDate() ===
+        b.getDate()
+    );
+  }
+
+  function normalizeText(value) {
+    return String(
+      value ?? ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function almostSameMoney(a, b) {
+    return (
+      Math.abs(
+        money(a) - money(b)
+      ) < 0.01
     );
   }
 
@@ -138,7 +192,7 @@
     .forecast-summary {
       display: grid;
       grid-template-columns:
-        repeat(3, minmax(0,1fr));
+        repeat(3, minmax(0, 1fr));
       gap: 11px;
       margin-bottom: 22px;
     }
@@ -221,24 +275,34 @@
       border: 3px solid #e7f4f6;
     }
 
-    .forecast-event.bill .forecast-dot {
+    .forecast-event.bill
+    .forecast-dot {
       background: #d67a2c;
       border-color: #fff0df;
     }
 
-    .forecast-event.warning .forecast-dot {
-      background: #c43c3c;
-      border-color: #fde7e7;
+    .forecast-event.flexible
+    .forecast-dot {
+      background: #2e8b79;
+      border-color: #dff3ed;
     }
 
-    .forecast-event.living .forecast-dot {
+    .forecast-event.living
+    .forecast-dot {
       background: #8267b7;
       border-color: #eee9f8;
     }
 
-    .forecast-event.today .forecast-dot {
+    .forecast-event.today
+    .forecast-dot {
       background: #173943;
       border-color: #dde8ea;
+    }
+
+    .forecast-event.warning
+    .forecast-dot {
+      background: #c43c3c;
+      border-color: #fde7e7;
     }
 
     .forecast-event-card {
@@ -264,8 +328,8 @@
     .forecast-event-amount {
       margin-top: 9px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       gap: 10px;
       flex-wrap: wrap;
     }
@@ -293,6 +357,18 @@
       color: #697981;
       font-size: 12px;
       line-height: 1.5;
+    }
+
+    .forecast-note.success {
+      background: #edf8f3;
+      border: 1px solid #c8e6d7;
+      color: #306b55;
+    }
+
+    .forecast-note.warning {
+      background: #fff7e5;
+      border: 1px solid #ecd89b;
+      color: #735d20;
     }
 
     .forecast-empty {
@@ -331,14 +407,18 @@
     }
   `;
 
-  document.head.appendChild(style);
+  document.head.appendChild(
+    style
+  );
 
   /* =========================================================
-     BUILD SECTION
+     SECTION
      ========================================================= */
 
   const section =
-    document.createElement("section");
+    document.createElement(
+      "section"
+    );
 
   section.className =
     "money-forecast-card no-print";
@@ -398,7 +478,7 @@
   }
 
   /* =========================================================
-     READ PLANNER DATA
+     FORM DATA
      ========================================================= */
 
   function getPaychecks() {
@@ -407,34 +487,37 @@
         ".paycheck-entry"
       )
     ]
-      .map((entry, index) => {
-        const date =
-          parseLocalDate(
+      .map(
+        (entry, index) => {
+          const date =
+            parseLocalDate(
+              entry.querySelector(
+                ".paycheck-date"
+              )?.value
+            );
+
+          const amount =
+            money(
+              entry.querySelector(
+                ".paycheck-amount"
+              )?.value
+            );
+
+          const name =
             entry.querySelector(
-              ".paycheck-date"
-            )?.value
-          );
+              ".paycheck-name"
+            )?.value.trim()
+            ||
+            `Paycheck ${index + 1}`;
 
-        const amount =
-          money(
-            entry.querySelector(
-              ".paycheck-amount"
-            )?.value
-          );
-
-        const name =
-          entry.querySelector(
-            ".paycheck-name"
-          )?.value.trim()
-          ||
-          `Paycheck ${index + 1}`;
-
-        return {
-          name,
-          date,
-          amount
-        };
-      })
+          return {
+            entry,
+            name,
+            date,
+            amount
+          };
+        }
+      )
       .filter(
         item =>
           item.date
@@ -447,88 +530,56 @@
       );
   }
 
-  function getFixedBills() {
+  function getBills() {
     return [
       ...document.querySelectorAll(
         ".bill-entry"
       )
     ]
-      .map((entry, index) => {
-        const type =
-          entry.querySelector(
-            ".bill-type"
-          )?.value;
-
-        if (type !== "fixed") {
-          return null;
-        }
-
-        const amount =
-          money(
+      .map(
+        (entry, index) => {
+          const type =
             entry.querySelector(
-              ".bill-amount"
+              ".bill-type"
             )?.value
-          );
+            ||
+            "fixed";
 
-        const date =
-          parseLocalDate(
+          const amount =
+            money(
+              entry.querySelector(
+                ".bill-amount"
+              )?.value
+            );
+
+          const date =
+            parseLocalDate(
+              entry.querySelector(
+                ".bill-due-date"
+              )?.value
+            );
+
+          const name =
             entry.querySelector(
-              ".bill-due-date"
-            )?.value
-          );
+              ".bill-name"
+            )?.value.trim()
+            ||
+            `Bill ${index + 1}`;
 
-        const name =
-          entry.querySelector(
-            ".bill-name"
-          )?.value.trim()
-          ||
-          `Bill ${index + 1}`;
-
-        if (
-          !date
-          ||
-          amount <= 0
-        ) {
-          return null;
+          return {
+            entry,
+            index,
+            name,
+            amount,
+            type,
+            date
+          };
         }
-
-        return {
-          name,
-          date,
-          amount
-        };
-      })
-      .filter(Boolean);
-  }
-
-  function getFlexibleBillTotal() {
-    return [
-      ...document.querySelectorAll(
-        ".bill-entry"
       )
-    ].reduce(
-      (total, entry) => {
-        const type =
-          entry.querySelector(
-            ".bill-type"
-          )?.value;
-
-        if (type !== "flexible") {
-          return total;
-        }
-
-        return (
-          total
-          +
-          money(
-            entry.querySelector(
-              ".bill-amount"
-            )?.value
-          )
-        );
-      },
-      0
-    );
+      .filter(
+        bill =>
+          bill.amount > 0
+      );
   }
 
   function necessityPerPaycheck(
@@ -559,8 +610,7 @@
     }
 
     return (
-      amount
-      /
+      amount /
       Math.max(
         paycheckCount,
         1
@@ -593,7 +643,414 @@
   }
 
   /* =========================================================
-     CREATE FORECAST
+     OPTIMIZED PLAN ACCESS
+     ========================================================= */
+
+  function getLatestPlanData() {
+    try {
+      if (
+        typeof latestPlannerData !==
+          "undefined"
+        &&
+        latestPlannerData
+      ) {
+        return latestPlannerData;
+      }
+    } catch (error) {
+      // Ignore and try window fallback.
+    }
+
+    if (
+      window.latestPlannerData
+    ) {
+      return window.latestPlannerData;
+    }
+
+    return null;
+  }
+
+  function getPossibleAssignedArrays(
+    paycheck
+  ) {
+    if (
+      !paycheck
+      ||
+      typeof paycheck !==
+        "object"
+    ) {
+      return [];
+    }
+
+    const possibleKeys = [
+      "assignedBills",
+      "bills",
+      "billAssignments",
+      "assigned",
+      "obligations",
+      "expenses",
+      "assignedExpenses"
+    ];
+
+    const arrays = [];
+
+    possibleKeys.forEach(
+      key => {
+        if (
+          Array.isArray(
+            paycheck[key]
+          )
+        ) {
+          arrays.push(
+            paycheck[key]
+          );
+        }
+      }
+    );
+
+    return arrays;
+  }
+
+  function readBillName(item) {
+    if (
+      !item
+      ||
+      typeof item !==
+        "object"
+    ) {
+      return "";
+    }
+
+    return (
+      item.name
+      ??
+      item.billName
+      ??
+      item.title
+      ??
+      item.label
+      ??
+      item.bill?.name
+      ??
+      ""
+    );
+  }
+
+  function readBillAmount(item) {
+    if (
+      !item
+      ||
+      typeof item !==
+        "object"
+    ) {
+      return 0;
+    }
+
+    return money(
+      item.amount
+      ??
+      item.billAmount
+      ??
+      item.value
+      ??
+      item.cost
+      ??
+      item.bill?.amount
+      ??
+      0
+    );
+  }
+
+  function readBillType(item) {
+    if (
+      !item
+      ||
+      typeof item !==
+        "object"
+    ) {
+      return "";
+    }
+
+    return normalizeText(
+      item.type
+      ??
+      item.billType
+      ??
+      item.bill?.type
+      ??
+      ""
+    );
+  }
+
+  function readPaycheckDate(
+    item,
+    fallbackPaychecks,
+    index
+  ) {
+    if (
+      item
+      &&
+      typeof item === "object"
+    ) {
+      const possibleDate =
+        item.date
+        ??
+        item.payDate
+        ??
+        item.paycheckDate;
+
+      const parsed =
+        parseLocalDate(
+          possibleDate
+        );
+
+      if (parsed) {
+        return parsed;
+      }
+    }
+
+    return (
+      fallbackPaychecks[index]
+        ?.date
+      ||
+      null
+    );
+  }
+
+  function matchFlexibleBill(
+    assignment,
+    flexibleBills,
+    usedIndexes
+  ) {
+    const assignedName =
+      normalizeText(
+        readBillName(
+          assignment
+        )
+      );
+
+    const assignedAmount =
+      readBillAmount(
+        assignment
+      );
+
+    const assignedType =
+      readBillType(
+        assignment
+      );
+
+    for (
+      let index = 0;
+      index <
+      flexibleBills.length;
+      index += 1
+    ) {
+      if (
+        usedIndexes.has(index)
+      ) {
+        continue;
+      }
+
+      const bill =
+        flexibleBills[index];
+
+      const nameMatches =
+        assignedName
+        &&
+        normalizeText(
+          bill.name
+        ) ===
+          assignedName;
+
+      const amountMatches =
+        assignedAmount > 0
+        &&
+        almostSameMoney(
+          assignedAmount,
+          bill.amount
+        );
+
+      const explicitlyFlexible =
+        assignedType.includes(
+          "flex"
+        );
+
+      if (
+        nameMatches
+        &&
+        (
+          amountMatches
+          ||
+          assignedAmount <= 0
+        )
+      ) {
+        return index;
+      }
+
+      if (
+        explicitlyFlexible
+        &&
+        amountMatches
+      ) {
+        return index;
+      }
+    }
+
+    return -1;
+  }
+
+  function getOptimizedFlexibleAssignments(
+    paychecks,
+    flexibleBills
+  ) {
+    const result = [];
+    const usedIndexes =
+      new Set();
+
+    const plan =
+      getLatestPlanData();
+
+    if (
+      !plan
+      ||
+      flexibleBills.length === 0
+    ) {
+      return {
+        assignments:
+          result,
+        matched:
+          0
+      };
+    }
+
+    const possiblePaycheckArrays = [
+      plan.paychecks,
+      plan.payPeriods,
+      plan.periods,
+      plan.balanceResult
+        ?.paychecks,
+      plan.balanceResult
+        ?.periods
+    ].filter(
+      Array.isArray
+    );
+
+    for (
+      const planPaychecks
+      of possiblePaycheckArrays
+    ) {
+      planPaychecks.forEach(
+        (
+          paycheck,
+          paycheckIndex
+        ) => {
+          const payday =
+            readPaycheckDate(
+              paycheck,
+              paychecks,
+              paycheckIndex
+            );
+
+          if (!payday) {
+            return;
+          }
+
+          const assignedArrays =
+            getPossibleAssignedArrays(
+              paycheck
+            );
+
+          assignedArrays.forEach(
+            assignedArray => {
+              assignedArray.forEach(
+                assignment => {
+                  const matchIndex =
+                    matchFlexibleBill(
+                      assignment,
+                      flexibleBills,
+                      usedIndexes
+                    );
+
+                  if (
+                    matchIndex === -1
+                  ) {
+                    return;
+                  }
+
+                  const bill =
+                    flexibleBills[
+                      matchIndex
+                    ];
+
+                  usedIndexes.add(
+                    matchIndex
+                  );
+
+                  result.push({
+                    name:
+                      bill.name,
+                    amount:
+                      bill.amount,
+                    date:
+                      payday,
+                    source:
+                      "optimizer"
+                  });
+                }
+              );
+            }
+          );
+        }
+      );
+
+      if (
+        usedIndexes.size ===
+        flexibleBills.length
+      ) {
+        break;
+      }
+    }
+
+    return {
+      assignments:
+        result,
+      matched:
+        usedIndexes.size
+    };
+  }
+
+  /* =========================================================
+     FALLBACK SMART PLACEMENT
+     ========================================================= */
+
+  function chooseFallbackFlexiblePlacement(
+    bill,
+    paychecks
+  ) {
+    if (
+      paychecks.length === 0
+    ) {
+      return null;
+    }
+
+    /*
+      If optimizer data is unavailable,
+      place an undated flexible bill on the
+      latest paycheck in the visible plan.
+
+      This mirrors the idea of delaying a
+      flexible expense when possible instead
+      of reducing earlier available money.
+    */
+
+    return (
+      paychecks[
+        paychecks.length - 1
+      ].date
+    );
+  }
+
+  /* =========================================================
+     FORECAST
      ========================================================= */
 
   function createForecast() {
@@ -614,23 +1071,41 @@
         )?.value
       );
 
+    const allPaychecks =
+      getPaychecks();
+
     const paychecks =
-      getPaychecks()
+      allPaychecks
         .filter(
           paycheck =>
             paycheck.date >= today
         )
-        .slice(0, 4);
-
-    const fixedBills =
-      getFixedBills()
-        .filter(
-          bill =>
-            bill.date >= today
+        .slice(
+          0,
+          4
         );
 
-    const flexibleTotal =
-      getFlexibleBillTotal();
+    const bills =
+      getBills();
+
+    const fixedBills =
+      bills.filter(
+        bill =>
+          bill.type ===
+            "fixed"
+          &&
+          bill.date
+          &&
+          bill.date >=
+            today
+      );
+
+    const flexibleBills =
+      bills.filter(
+        bill =>
+          bill.type ===
+            "flexible"
+      );
 
     const livingPerPaycheck =
       getLivingPerPaycheck(
@@ -657,7 +1132,10 @@
     ) {
       summary.innerHTML = `
         <div class="forecast-summary-box">
-          <span>Available Now</span>
+          <span>
+            Available Now
+          </span>
+
           <strong>
             ${currency(
               startingBalance
@@ -666,7 +1144,10 @@
         </div>
 
         <div class="forecast-summary-box">
-          <span>Protected Cushion</span>
+          <span>
+            Protected Cushion
+          </span>
+
           <strong>
             ${currency(
               cushion
@@ -675,8 +1156,13 @@
         </div>
 
         <div class="forecast-summary-box">
-          <span>Upcoming Paychecks</span>
-          <strong>0</strong>
+          <span>
+            Upcoming Paychecks
+          </span>
+
+          <strong>
+            0
+          </strong>
         </div>
       `;
 
@@ -692,6 +1178,79 @@
 
       return;
     }
+
+    /* =======================================================
+       FIND OPTIMIZED FLEXIBLE BILL PLACEMENT
+       ======================================================= */
+
+    const optimized =
+      getOptimizedFlexibleAssignments(
+        allPaychecks,
+        flexibleBills
+      );
+
+    const flexibleAssignments =
+      [...optimized.assignments];
+
+    const alreadyAssignedNames =
+      new Set(
+        flexibleAssignments.map(
+          item =>
+            `${normalizeText(
+              item.name
+            )}|${item.amount.toFixed(
+              2
+            )}`
+        )
+      );
+
+    let fallbackCount = 0;
+
+    flexibleBills.forEach(
+      bill => {
+        const key =
+          `${normalizeText(
+            bill.name
+          )}|${bill.amount.toFixed(
+            2
+          )}`;
+
+        if (
+          alreadyAssignedNames.has(
+            key
+          )
+        ) {
+          return;
+        }
+
+        const fallbackDate =
+          chooseFallbackFlexiblePlacement(
+            bill,
+            paychecks
+          );
+
+        if (!fallbackDate) {
+          return;
+        }
+
+        flexibleAssignments.push({
+          name:
+            bill.name,
+          amount:
+            bill.amount,
+          date:
+            fallbackDate,
+          source:
+            "fallback"
+        });
+
+        fallbackCount += 1;
+      }
+    );
+
+    /* =======================================================
+       BUILD EVENTS
+       ======================================================= */
 
     const events = [];
 
@@ -738,30 +1297,6 @@
           sortOrder:
             1
         });
-
-        if (
-          livingPerPaycheck > 0
-        ) {
-          events.push({
-            type:
-              "living",
-
-            date:
-              paycheck.date,
-
-            title:
-              "Everyday Living Money",
-
-            description:
-              "Planned groceries, gas, and other necessities",
-
-            amount:
-              -livingPerPaycheck,
-
-            sortOrder:
-              3
-          });
-        }
       }
     );
 
@@ -789,6 +1324,69 @@
       }
     );
 
+    flexibleAssignments
+      .filter(
+        assignment =>
+          assignment.date >=
+            today
+      )
+      .forEach(
+        assignment => {
+          events.push({
+            type:
+              "flexible",
+
+            date:
+              assignment.date,
+
+            title:
+              assignment.name,
+
+            description:
+              assignment.source ===
+                "optimizer"
+                ? "Flexible bill • Smart placement"
+                : "Flexible bill • Planned placement",
+
+            amount:
+              -assignment.amount,
+
+            sortOrder:
+              3
+          });
+        }
+      );
+
+    paychecks.forEach(
+      paycheck => {
+        if (
+          livingPerPaycheck <= 0
+        ) {
+          return;
+        }
+
+        events.push({
+          type:
+            "living",
+
+          date:
+            paycheck.date,
+
+          title:
+            "Everyday Living Money",
+
+          description:
+            "Planned groceries, gas, and other necessities",
+
+          amount:
+            -livingPerPaycheck,
+
+          sortOrder:
+            4
+        });
+      }
+    );
+
     events.sort(
       (a, b) => {
         const dateDifference =
@@ -801,12 +1399,15 @@
         }
 
         return (
-          a.sortOrder
-          -
+          a.sortOrder -
           b.sortOrder
         );
       }
     );
+
+    /* =======================================================
+       RUNNING BALANCE
+       ======================================================= */
 
     let runningBalance =
       startingBalance;
@@ -816,10 +1417,13 @@
 
     let totalIncoming = 0;
 
+    let totalOutgoing = 0;
+
     events.forEach(
       event => {
         if (
-          event.type !== "today"
+          event.type !==
+            "today"
         ) {
           runningBalance +=
             event.amount;
@@ -835,16 +1439,29 @@
           );
 
         if (
-          event.type === "paycheck"
+          event.amount > 0
         ) {
           totalIncoming +=
             event.amount;
+        }
+
+        if (
+          event.amount < 0
+        ) {
+          totalOutgoing +=
+            Math.abs(
+              event.amount
+            );
         }
       }
     );
 
     const endingBalance =
       runningBalance;
+
+    /* =======================================================
+       SUMMARY
+       ======================================================= */
 
     summary.innerHTML = `
       <div class="forecast-summary-box">
@@ -884,6 +1501,10 @@
       </div>
     `;
 
+    /* =======================================================
+       TIMELINE
+       ======================================================= */
+
     timeline.innerHTML =
       events.map(
         event => {
@@ -891,7 +1512,8 @@
             "";
 
           if (
-            event.type === "today"
+            event.type ===
+              "today"
           ) {
             amountText =
               currency(
@@ -917,19 +1539,21 @@
               )}`;
           }
 
-          const negative =
+          const belowCushion =
             event.balance <
             cushion;
 
           return `
             <div
-              class="forecast-event
-              ${event.type}
-              ${
-                negative
-                ? "warning"
-                : ""
-              }"
+              class="
+                forecast-event
+                ${event.type}
+                ${
+                  belowCushion
+                    ? "warning"
+                    : ""
+                }
+              "
             >
 
               <div class="forecast-date">
@@ -951,14 +1575,20 @@
                 ></div>
               </div>
 
-              <div class="forecast-event-card">
+              <div
+                class="forecast-event-card"
+              >
 
                 <h4>
-                  ${event.title}
+                  ${escapeHTML(
+                    event.title
+                  )}
                 </h4>
 
                 <p>
-                  ${event.description}
+                  ${escapeHTML(
+                    event.description
+                  )}
                 </p>
 
                 <div
@@ -973,7 +1603,7 @@
                     class="
                       forecast-balance
                       ${
-                        negative
+                        belowCushion
                           ? "negative"
                           : ""
                       }
@@ -994,31 +1624,77 @@
         }
       ).join("");
 
+    /* =======================================================
+       FORECAST NOTE
+       ======================================================= */
+
     const notes = [];
 
+    let noteClass =
+      "forecast-note";
+
     if (
-      flexibleTotal > 0
+      flexibleBills.length > 0
+      &&
+      fallbackCount === 0
     ) {
       notes.push(
-        `${currency(
-          flexibleTotal
-        )} of flexible bills are not pinned to a specific date in this timeline. Your main optimizer still decides the healthiest paycheck for those bills.`
+        `Flexible bills are included using your optimized Stretch My Check placement.`
       );
+
+      noteClass +=
+        " success";
+    }
+
+    else if (
+      fallbackCount > 0
+    ) {
+      notes.push(
+        `${fallbackCount} flexible bill${
+          fallbackCount === 1
+            ? ""
+            : "s"
+        } could not be read directly from the latest optimizer result, so Stretch My Check placed ${
+          fallbackCount === 1
+            ? "it"
+            : "them"
+        } on the latest available paycheck for this forecast.`
+      );
+
+      notes.push(
+        `Run OPTIMIZE MY MONEY after changing bills or paychecks to refresh the smartest placement.`
+      );
+
+      noteClass +=
+        " warning";
     }
 
     if (
-      lowestBalance < cushion
+      lowestBalance <
+      cushion
     ) {
       notes.push(
-        `At one point this forecast drops below your ${currency(
+        `At one point the projected balance falls below your ${currency(
           cushion
-        )} protected cushion. Check your recommended plan for the exact optimized bill placement.`
+        )} protected cushion. Check the recommended plan before treating that money as available to spend.`
       );
+
+      if (
+        !noteClass.includes(
+          "warning"
+        )
+      ) {
+        noteClass =
+          "forecast-note warning";
+      }
     }
 
     if (
       notes.length > 0
     ) {
+      note.className =
+        noteClass;
+
       note.style.display =
         "block";
 
@@ -1027,6 +1703,9 @@
           "<br><br>"
         );
     } else {
+      note.className =
+        "forecast-note";
+
       note.style.display =
         "none";
 
@@ -1133,24 +1812,60 @@
         )
         ||
         target.textContent
-          ?.trim() === "Load"
+          ?.trim() ===
+          "Load"
       ) {
         window.setTimeout(
           createForecast,
-          150
+          180
         );
       }
     }
   );
 
-  window.StretchMyCheckForecast = {
-    refresh:
-      createForecast
-  };
+  function watchPlannerContainer(
+    id
+  ) {
+    const container =
+      document.getElementById(id);
+
+    if (!container) {
+      return;
+    }
+
+    const observer =
+      new MutationObserver(
+        scheduleRefresh
+      );
+
+    observer.observe(
+      container,
+      {
+        childList:
+          true,
+        subtree:
+          false
+      }
+    );
+  }
+
+  watchPlannerContainer(
+    "paychecksContainer"
+  );
+
+  watchPlannerContainer(
+    "billsContainer"
+  );
+
+  window
+    .StretchMyCheckForecast = {
+      refresh:
+        createForecast
+    };
 
   window.setTimeout(
     createForecast,
-    150
+    180
   );
 
 })();
