@@ -2,19 +2,29 @@
 "use strict";
 
 /*
-  Stretch My Check
-  Recurring Finances -> My Plan Integration
+=========================================================
+ STRETCH MY CHECK
+ Recurring Finances -> My Plan Integration
+ Version 2
+=========================================================
 
-  Purpose:
-  - Adds a Recurring Finances card to My Plan.
-  - Reads recurring items from window.StretchMyCheckRecurring.
-  - Determines the current planner date range.
-  - Previews recurring items before importing.
-  - Imports recurring income as paychecks.
-  - Imports recurring expenses as bills.
-  - Prevents duplicate imports.
-  - Does not modify Goals or Debt Payoff.
+Fixes:
+- Prevents stray blank paycheck rows during recurring import.
+- Uses the exact row created by the planner.
+- Never creates a second fallback row after a successful creation.
+- Verifies imported fields after creation.
+- Preserves preview-before-import.
+- Preserves duplicate protection.
+- Preserves automatic planner optimization.
+- Preserves recurring income / expense counts.
+- Does not modify Goals or Debt Payoff.
+=========================================================
 */
+
+
+/* =========================================================
+   SHORTCUTS / STATE
+========================================================= */
 
 const $ = (selector, root = document) =>
   root.querySelector(selector);
@@ -43,8 +53,7 @@ function escapeHTML(value) {
 
 
 function numberValue(value) {
-  const parsed =
-    parseFloat(value);
+  const parsed = parseFloat(value);
 
   return Number.isFinite(parsed)
     ? parsed
@@ -78,24 +87,24 @@ function parseLocalDate(value) {
     );
   }
 
-  const parts =
-    String(value)
-      .split("-")
-      .map(Number);
+  const text =
+    String(value).trim();
 
-  if (
-    parts.length === 3 &&
-    parts.every(Number.isFinite)
-  ) {
+  const isoMatch =
+    text.match(
+      /^(\d{4})-(\d{2})-(\d{2})$/
+    );
+
+  if (isoMatch) {
     return new Date(
-      parts[0],
-      parts[1] - 1,
-      parts[2]
+      Number(isoMatch[1]),
+      Number(isoMatch[2]) - 1,
+      Number(isoMatch[3])
     );
   }
 
   const date =
-    new Date(value);
+    new Date(text);
 
   if (
     Number.isNaN(
@@ -175,10 +184,7 @@ function today() {
 }
 
 
-function addDays(
-  date,
-  amount
-) {
+function addDays(date, amount) {
   const copy =
     new Date(date);
 
@@ -188,6 +194,65 @@ function addDays(
   );
 
   return copy;
+}
+
+
+function wait(milliseconds) {
+  return new Promise(
+    resolve =>
+      setTimeout(
+        resolve,
+        milliseconds
+      )
+  );
+}
+
+
+function dispatchInput(element) {
+  if (!element) {
+    return;
+  }
+
+  element.dispatchEvent(
+    new Event(
+      "input",
+      {
+        bubbles: true
+      }
+    )
+  );
+}
+
+
+function dispatchChange(element) {
+  if (!element) {
+    return;
+  }
+
+  element.dispatchEvent(
+    new Event(
+      "change",
+      {
+        bubbles: true
+      }
+    )
+  );
+}
+
+
+function setInputValue(
+  element,
+  value
+) {
+  if (!element) {
+    return;
+  }
+
+  element.value =
+    value ?? "";
+
+  dispatchInput(element);
+  dispatchChange(element);
 }
 
 
@@ -211,13 +276,13 @@ function installStyles() {
     "smcRecurringPlannerStyles";
 
   style.textContent = `
+
 #smcRecurringPlannerCard {
   margin-bottom: 24px;
 }
 
 .smc-rp-card {
   position: relative;
-
   overflow: hidden;
 
   border:
@@ -463,7 +528,9 @@ function installStyles() {
 }
 
 
-/* MODAL */
+/* =========================================================
+   MODAL
+========================================================= */
 
 .smc-rp-modal-bg {
   position: fixed;
@@ -933,6 +1000,7 @@ function installStyles() {
 @media (
   max-width: 760px
 ) {
+
   .smc-rp-top {
     align-items:
       flex-start;
@@ -994,7 +1062,7 @@ function installStyles() {
 
 
 /* =========================================================
-   FIND MY PLAN PAGE
+   FIND MY PLAN
 ========================================================= */
 
 function getPlanPage() {
@@ -1007,9 +1075,7 @@ function getPlanPage() {
 }
 
 
-function getPlanHeading(
-  planPage
-) {
+function getPlanHeading(planPage) {
   if (!planPage) {
     return null;
   }
@@ -1056,15 +1122,6 @@ function getPlanningRange() {
   const now =
     today();
 
-  /*
-    If the planner already has paychecks,
-    use those dates as the planning window.
-
-    Give the end a small extension so bills
-    immediately after the final paycheck can
-    still be considered.
-  */
-
   if (
     paycheckDates.length
   ) {
@@ -1093,14 +1150,6 @@ function getPlanningRange() {
     };
   }
 
-  /*
-    If there are no paycheck dates yet,
-    use today through 45 days ahead.
-
-    This lets recurring income populate
-    an empty plan.
-  */
-
   return {
     start:
       now,
@@ -1118,12 +1167,15 @@ function getPlanningRange() {
 
 
 /* =========================================================
-   EXISTING PLANNER DATA
+   EXISTING PLANNER ITEMS
 ========================================================= */
 
 function existingPaychecks() {
   return $$(".paycheck-entry")
     .map(entry => ({
+      element:
+        entry,
+
       name:
         String(
           $(
@@ -1157,6 +1209,9 @@ function existingPaychecks() {
 function existingBills() {
   return $$(".bill-entry")
     .map(entry => ({
+      element:
+        entry,
+
       name:
         String(
           $(
@@ -1187,10 +1242,7 @@ function existingBills() {
 }
 
 
-function amountsMatch(
-  a,
-  b
-) {
+function amountsMatch(a, b) {
   return (
     Math.abs(
       numberValue(a) -
@@ -1201,9 +1253,7 @@ function amountsMatch(
 }
 
 
-function isDuplicate(
-  item
-) {
+function isDuplicate(item) {
   if (
     item.kind ===
     "income"
@@ -1216,10 +1266,12 @@ function isDuplicate(
           )
             .trim()
             .toLowerCase() &&
+
         existing.date ===
           dateKey(
             item.date
           ) &&
+
         amountsMatch(
           existing.amount,
           item.amount
@@ -1235,10 +1287,12 @@ function isDuplicate(
         )
           .trim()
           .toLowerCase() &&
+
       existing.date ===
         dateKey(
           item.date
         ) &&
+
       amountsMatch(
         existing.amount,
         item.amount
@@ -1248,7 +1302,7 @@ function isDuplicate(
 
 
 /* =========================================================
-   GET RECURRING ITEMS
+   RECURRING API
 ========================================================= */
 
 function getRecurringAPI() {
@@ -1264,9 +1318,7 @@ async function ensureRecurringLoaded() {
   const api =
     getRecurringAPI();
 
-  if (
-    !api
-  ) {
+  if (!api) {
     return false;
   }
 
@@ -1287,6 +1339,10 @@ async function ensureRecurringLoaded() {
   return true;
 }
 
+
+/* =========================================================
+   COLLECT OCCURRENCES
+========================================================= */
 
 function collectRecurringForRange(
   start,
@@ -1339,7 +1395,7 @@ function collectRecurringForRange(
     dates.forEach(date => {
       results.push({
         key:
-          `income:${item.id}:${date}`,
+          `income:${item.id}:${dateKey(date)}`,
 
         kind:
           "income",
@@ -1367,6 +1423,7 @@ function collectRecurringForRange(
     });
   });
 
+
   expenses.forEach(item => {
     if (
       item.active ===
@@ -1393,7 +1450,7 @@ function collectRecurringForRange(
     dates.forEach(date => {
       results.push({
         key:
-          `expense:${item.id}:${date}`,
+          `expense:${item.id}:${dateKey(date)}`,
 
         kind:
           "expense",
@@ -1428,6 +1485,7 @@ function collectRecurringForRange(
       });
     });
   });
+
 
   return results.sort(
     (a, b) => {
@@ -1468,7 +1526,7 @@ function collectRecurringForRange(
 
 
 /* =========================================================
-   CARD
+   MAIN MY PLAN CARD
 ========================================================= */
 
 function buildCard() {
@@ -1497,6 +1555,7 @@ function buildCard() {
     "smcRecurringPlannerCard";
 
   integrationCard.innerHTML = `
+
 <div class="smc-rp-card">
 
   <div class="smc-rp-top">
@@ -1530,6 +1589,7 @@ function buildCard() {
   <div class="smc-rp-stats">
 
     <div class="smc-rp-stat">
+
       <div class="smc-rp-stat-label">
         Active Income
       </div>
@@ -1540,9 +1600,12 @@ function buildCard() {
       >
         0
       </div>
+
     </div>
 
+
     <div class="smc-rp-stat">
+
       <div class="smc-rp-stat-label">
         Active Expenses
       </div>
@@ -1553,9 +1616,12 @@ function buildCard() {
       >
         0
       </div>
+
     </div>
 
+
     <div class="smc-rp-stat">
+
       <div class="smc-rp-stat-label">
         Import Protection
       </div>
@@ -1563,11 +1629,14 @@ function buildCard() {
       <div class="smc-rp-stat-value">
         Duplicate Safe
       </div>
+
     </div>
 
   </div>
 
+
   <div class="smc-rp-help">
+
     <span class="smc-rp-help-icon">
       ✓
     </span>
@@ -1575,6 +1644,7 @@ function buildCard() {
     <span>
       You'll preview everything before it is added to My Plan.
     </span>
+
   </div>
 
 </div>
@@ -1605,11 +1675,12 @@ function buildCard() {
     );
   }
 
-  $("#smcRecurringPlannerOpen")
-    .addEventListener(
-      "click",
-      openPreview
-    );
+  $(
+    "#smcRecurringPlannerOpen"
+  )?.addEventListener(
+    "click",
+    openPreview
+  );
 
   refreshCard();
 
@@ -1618,7 +1689,7 @@ function buildCard() {
 
 
 /* =========================================================
-   MODAL
+   PREVIEW MODAL
 ========================================================= */
 
 function buildModal() {
@@ -1648,6 +1719,7 @@ function buildModal() {
   );
 
   previewModal.innerHTML = `
+
 <div
   class="smc-rp-modal"
   role="dialog"
@@ -1658,6 +1730,7 @@ function buildModal() {
   <div class="smc-rp-modal-head">
 
     <div>
+
       <h2 id="smcRPModalTitle">
         Add Recurring Items to My Plan
       </h2>
@@ -1665,6 +1738,7 @@ function buildModal() {
       <p>
         Review the upcoming repeating income and expenses below. Nothing is added until you confirm.
       </p>
+
     </div>
 
     <button
@@ -1678,28 +1752,32 @@ function buildModal() {
 
   </div>
 
+
   <div
     id="smcRPRange"
     class="smc-rp-range"
   ></div>
+
 
   <div
     id="smcRPPreviewList"
     class="smc-rp-preview-list"
   ></div>
 
+
   <div
     id="smcRPMessage"
     class="smc-rp-message"
   ></div>
+
 
   <div class="smc-rp-modal-actions">
 
     <div
       id="smcRPSelectedText"
       class="smc-rp-modal-actions-left"
-    >
-    </div>
+    ></div>
+
 
     <div class="smc-rp-modal-actions-right">
 
@@ -1731,23 +1809,26 @@ function buildModal() {
       previewModal
     );
 
-  $("#smcRPClose")
-    .addEventListener(
-      "click",
-      closePreview
-    );
+  $(
+    "#smcRPClose"
+  )?.addEventListener(
+    "click",
+    closePreview
+  );
 
-  $("#smcRPCancel")
-    .addEventListener(
-      "click",
-      closePreview
-    );
+  $(
+    "#smcRPCancel"
+  )?.addEventListener(
+    "click",
+    closePreview
+  );
 
-  $("#smcRPImport")
-    .addEventListener(
-      "click",
-      importSelected
-    );
+  $(
+    "#smcRPImport"
+  )?.addEventListener(
+    "click",
+    importSelected
+  );
 
   previewModal
     .addEventListener(
@@ -1766,9 +1847,7 @@ function buildModal() {
 }
 
 
-function showMessage(
-  text = ""
-) {
+function showMessage(text = "") {
   const box =
     $("#smcRPMessage");
 
@@ -1781,7 +1860,7 @@ function showMessage(
 
   box.classList.toggle(
     "show",
-    !!text
+    Boolean(text)
   );
 }
 
@@ -1904,7 +1983,7 @@ async function openPreview() {
     !available
   ) {
     alert(
-      "Recurring Finances is not available yet. Make sure recurring.js is loaded before recurring-planner.js."
+      "Recurring Finances is not available yet. Make sure recurring.js loads before recurring-planner.js."
     );
 
     return;
@@ -1919,14 +1998,16 @@ async function openPreview() {
     collectRecurringForRange(
       range.start,
       range.end
-    ).map(item => ({
-      ...item,
+    ).map(
+      item => ({
+        ...item,
 
-      duplicate:
-        isDuplicate(
-          item
-        )
-    }));
+        duplicate:
+          isDuplicate(
+            item
+          )
+      })
+    );
 
   renderPreview(
     range
@@ -1946,12 +2027,10 @@ async function openPreview() {
 
 
 /* =========================================================
-   PREVIEW RENDER
+   RENDER PREVIEW
 ========================================================= */
 
-function renderPreview(
-  range
-) {
+function renderPreview(range) {
   const rangeBox =
     $("#smcRPRange");
 
@@ -1970,7 +2049,9 @@ function renderPreview(
   }
 
   rangeBox.innerHTML = `
+
 <div>
+
   <span>
     Planning period
   </span>
@@ -1988,9 +2069,12 @@ function renderPreview(
       )
     )}
   </strong>
+
 </div>
 
+
 <div>
+
   <span>
     Found
   </span>
@@ -2004,13 +2088,16 @@ function renderPreview(
         : "items"
     }
   </strong>
+
 </div>
 `;
+
 
   if (
     !previewItems.length
   ) {
     list.innerHTML = `
+
 <div class="smc-rp-empty">
 
   <strong>
@@ -2032,6 +2119,7 @@ function renderPreview(
     return;
   }
 
+
   list.innerHTML =
     previewItems
       .map(
@@ -2039,6 +2127,7 @@ function renderPreview(
           item,
           index
         ) => {
+
           const duplicate =
             item.duplicate;
 
@@ -2054,6 +2143,7 @@ function renderPreview(
                 );
 
           return `
+
 <label
   class="smc-rp-preview-item ${
     duplicate
@@ -2072,6 +2162,7 @@ function renderPreview(
         : "checked"
     }
   >
+
 
   <div>
 
@@ -2093,6 +2184,7 @@ function renderPreview(
 
     </div>
 
+
     <div class="smc-rp-item-meta">
 
       ${escapeHTML(
@@ -2100,7 +2192,9 @@ function renderPreview(
           item.date
         )
       )}
+
       •
+
       ${escapeHTML(
         typeLabel
       )}
@@ -2109,9 +2203,11 @@ function renderPreview(
 
   </div>
 
+
   <div
     class="smc-rp-item-amount ${item.kind}"
   >
+
     ${
       item.kind ===
       "income"
@@ -2120,6 +2216,7 @@ function renderPreview(
     }${money(
       item.amount
     )}
+
   </div>
 
 </label>
@@ -2127,6 +2224,7 @@ function renderPreview(
         }
       )
       .join("");
+
 
   $$(
     ".smc-rp-check",
@@ -2139,9 +2237,6 @@ function renderPreview(
       );
     }
   );
-
-  importButton.disabled =
-    false;
 
   updateSelectedText();
 }
@@ -2212,62 +2307,107 @@ function updateSelectedText() {
 
 
 /* =========================================================
-   ADD PAYCHECK TO PLANNER
+   ROW CREATION HELPERS
 ========================================================= */
 
-function addIncomeToPlanner(
-  item
+/*
+  IMPORTANT FIX:
+
+  The old importer could rely on the planner's
+  addPaycheck() parameters and then potentially interact
+  with another row-creation path.
+
+  This version uses ONE row-creation action only.
+
+  It records every existing row BEFORE creation.
+  After creation it identifies the exact new DOM row.
+  Then it fills THAT row directly.
+
+  No second paycheck row is created.
+*/
+
+
+function findNewRow(
+  beforeRows,
+  selector
 ) {
+  const afterRows =
+    $$(selector);
+
+  return (
+    afterRows.find(
+      row =>
+        !beforeRows.includes(
+          row
+        )
+    ) ||
+    null
+  );
+}
+
+
+async function createPaycheckRow() {
+  const beforeRows =
+    $$(".paycheck-entry");
+
   /*
-    Preferred path:
-    the existing planner already has addPaycheck().
+    Use the planner's normal Add Paycheck function,
+    but deliberately call it WITHOUT values.
+
+    We fill the newly created row ourselves.
   */
 
-  if (
-    typeof window.addPaycheck ===
-    "function"
-  ) {
-    window.addPaycheck(
-      item.name,
-      item.date,
-      item.amount
-    );
-
-    return true;
-  }
-
-  /*
-    Some browsers/scripts may expose the function
-    globally without it appearing as an own property
-    of window. Try direct global resolution safely.
-  */
+  let creationAttempted =
+    false;
 
   try {
     if (
-      typeof addPaycheck ===
+      typeof window.addPaycheck ===
       "function"
     ) {
-      addPaycheck(
-        item.name,
-        item.date,
-        item.amount
-      );
+      window.addPaycheck();
 
-      return true;
+      creationAttempted =
+        true;
     }
-  } catch (_) {
-    // continue to fallback
+  } catch (error) {
+    console.error(
+      "addPaycheck() failed:",
+      error
+    );
   }
 
+
   /*
-    Fallback:
-    click the existing Add Paycheck control,
-    then fill the newest paycheck row.
+    Wait briefly for DOM creation.
   */
 
-  const before =
-    $$(".paycheck-entry")
-      .length;
+  if (
+    creationAttempted
+  ) {
+    await wait(40);
+
+    const created =
+      findNewRow(
+        beforeRows,
+        ".paycheck-entry"
+      );
+
+    if (
+      created
+    ) {
+      return created;
+    }
+  }
+
+
+  /*
+    Only if addPaycheck() did NOT produce a row
+    do we try the button.
+
+    This is the key difference from the previous
+    implementation.
+  */
 
   const addButton =
     $("#addPaycheck") ||
@@ -2277,330 +2417,263 @@ function addIncomeToPlanner(
     );
 
   if (
-    addButton
+    !addButton
   ) {
-    addButton.click();
+    return null;
   }
 
-  const entries =
-    $$(".paycheck-entry");
+  addButton.click();
+
+  await wait(40);
+
+  return findNewRow(
+    beforeRows,
+    ".paycheck-entry"
+  );
+}
+
+
+async function createBillRow() {
+  const beforeRows =
+    $$(".bill-entry");
+
+  let creationAttempted =
+    false;
+
+  try {
+    if (
+      typeof window.addBill ===
+      "function"
+    ) {
+      window.addBill();
+
+      creationAttempted =
+        true;
+    }
+  } catch (error) {
+    console.error(
+      "addBill() failed:",
+      error
+    );
+  }
+
 
   if (
-    entries.length <=
-    before
+    creationAttempted
   ) {
-    return false;
+    await wait(40);
+
+    const created =
+      findNewRow(
+        beforeRows,
+        ".bill-entry"
+      );
+
+    if (
+      created
+    ) {
+      return created;
+    }
   }
 
-  const entry =
-    entries[
-      entries.length - 1
-    ];
 
-  const name =
+  const addButton =
+    $("#addBill") ||
+    $("#addBillButton") ||
     $(
-      ".paycheck-name",
-      entry
-    );
-
-  const date =
-    $(
-      ".paycheck-date",
-      entry
-    );
-
-  const amount =
-    $(
-      ".paycheck-amount",
-      entry
+      '[data-action="add-bill"]'
     );
 
   if (
-    name
+    !addButton
   ) {
-    name.value =
-      item.name;
-
-    dispatchInput(
-      name
-    );
+    return null;
   }
 
-  if (
-    date
-  ) {
-    date.value =
-      item.date;
+  addButton.click();
 
-    dispatchInput(
-      date
-    );
-  }
+  await wait(40);
 
-  if (
-    amount
-  ) {
-    amount.value =
-      item.amount;
-
-    dispatchInput(
-      amount
-    );
-  }
-
-  return true;
+  return findNewRow(
+    beforeRows,
+    ".bill-entry"
+  );
 }
 
 
 /* =========================================================
-   ADD EXPENSE TO PLANNER
+   PAYCHECK IMPORT
 ========================================================= */
 
-function addExpenseToPlanner(
-  item
-) {
-  const before =
-    $$(".bill-entry")
-      .length;
-
+async function addIncomeToPlanner(item) {
   /*
-    Existing planner's addBill() takes no parameters.
+    Re-check first.
   */
 
   if (
-    typeof window.addBill ===
-    "function"
+    isDuplicate(
+      item
+    )
   ) {
-    window.addBill();
-  } else {
-    try {
-      if (
-        typeof addBill ===
-        "function"
-      ) {
-        addBill();
+    return {
+      success: false,
+      duplicate: true
+    };
+  }
+
+
+  const row =
+    await createPaycheckRow();
+
+  if (!row) {
+    console.error(
+      "Recurring import could not create paycheck row:",
+      item
+    );
+
+    return {
+      success: false,
+      duplicate: false
+    };
+  }
+
+
+  /*
+    Fill ONLY the exact row that was just created.
+  */
+
+  const nameInput =
+    $(
+      ".paycheck-name",
+      row
+    );
+
+  const dateInput =
+    $(
+      ".paycheck-date",
+      row
+    );
+
+  const amountInput =
+    $(
+      ".paycheck-amount",
+      row
+    );
+
+
+  if (
+    !nameInput ||
+    !dateInput ||
+    !amountInput
+  ) {
+    console.error(
+      "New paycheck row is missing expected fields.",
+      row
+    );
+
+    return {
+      success: false,
+      duplicate: false
+    };
+  }
+
+
+  setInputValue(
+    nameInput,
+    item.name
+  );
+
+  setInputValue(
+    dateInput,
+    item.date
+  );
+
+  setInputValue(
+    amountInput,
+    item.amount
+  );
+
+
+  /*
+    Allow planner listeners to finish.
+  */
+
+  await wait(25);
+
+
+  /*
+    Verify that THIS SAME ROW now contains
+    the requested recurring paycheck.
+  */
+
+  const verifiedName =
+    String(
+      nameInput.value ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const verifiedDate =
+    dateKey(
+      dateInput.value
+    );
+
+  const verifiedAmount =
+    numberValue(
+      amountInput.value
+    );
+
+
+  const success =
+    verifiedName ===
+      String(
+        item.name
+      )
+        .trim()
+        .toLowerCase() &&
+
+    verifiedDate ===
+      dateKey(
+        item.date
+      ) &&
+
+    amountsMatch(
+      verifiedAmount,
+      item.amount
+    );
+
+
+  if (!success) {
+    console.error(
+      "Recurring paycheck row verification failed.",
+      {
+        expected: item,
+        actual: {
+          name:
+            nameInput.value,
+
+          date:
+            dateInput.value,
+
+          amount:
+            amountInput.value
+        }
       }
-    } catch (_) {
-      // continue
-    }
-  }
-
-  let entries =
-    $$(".bill-entry");
-
-  /*
-    Fallback to the planner's Add Bill button
-    if addBill() was not globally exposed.
-  */
-
-  if (
-    entries.length <=
-    before
-  ) {
-    const addButton =
-      $("#addBill") ||
-      $("#addBillButton") ||
-      $(
-        '[data-action="add-bill"]'
-      );
-
-    if (
-      addButton
-    ) {
-      addButton.click();
-    }
-
-    entries =
-      $$(".bill-entry");
-  }
-
-  if (
-    entries.length <=
-    before
-  ) {
-    return false;
-  }
-
-  const entry =
-    entries[
-      entries.length - 1
-    ];
-
-  const name =
-    $(
-      ".bill-name",
-      entry
-    );
-
-  const amount =
-    $(
-      ".bill-amount",
-      entry
-    );
-
-  const type =
-    $(
-      ".bill-type",
-      entry
-    );
-
-  const priority =
-    $(
-      ".bill-priority",
-      entry
-    );
-
-  const dueDate =
-    $(
-      ".bill-due-date",
-      entry
-    );
-
-  if (
-    name
-  ) {
-    name.value =
-      item.name;
-
-    dispatchInput(
-      name
     );
   }
 
-  if (
-    amount
-  ) {
-    amount.value =
-      item.amount;
 
-    dispatchInput(
-      amount
-    );
-  }
-
-  if (
-    type
-  ) {
-    type.value =
-      item.expenseType ===
-      "flexible"
-        ? "flexible"
-        : "fixed";
-
-    dispatchChange(
-      type
-    );
-  }
-
-  if (
-    priority
-  ) {
-    setPriorityValue(
-      priority,
-      item.priority
-    );
-
-    dispatchChange(
-      priority
-    );
-  }
-
-  /*
-    For recurring expenses we know the actual
-    generated occurrence date, so use that date.
-
-    This keeps recurring monthly/semi-monthly
-    bills tied to the correct occurrence.
-  */
-
-  if (
-    dueDate
-  ) {
-    dueDate.value =
-      item.date;
-
-    dispatchInput(
-      dueDate
-    );
-
-    dispatchChange(
-      dueDate
-    );
-  }
-
-  /*
-    If the recurring bill was saved as Flexible,
-    make sure its generated occurrence still has
-    a usable timing constraint.
-
-    The planner may reveal the flex controls only
-    after the type change event above.
-  */
-
-  if (
-    item.expenseType ===
-    "flexible"
-  ) {
-    const flexRule =
-      $(
-        ".flex-rule",
-        entry
-      );
-
-    if (
-      flexRule
-    ) {
-      /*
-        "bydate" is the safest import behavior:
-        the bill can be optimized but must still
-        be handled by its recurring occurrence date.
-      */
-
-      const byDateOption =
-        [...flexRule.options]
-          .some(
-            option =>
-              option.value ===
-              "bydate"
-          );
-
-      if (
-        byDateOption
-      ) {
-        flexRule.value =
-          "bydate";
-
-        dispatchChange(
-          flexRule
-        );
-      }
-    }
-
-    const flexByDate =
-      $(
-        ".flex-by-date",
-        entry
-      );
-
-    if (
-      flexByDate
-    ) {
-      flexByDate.value =
-        item.date;
-
-      dispatchInput(
-        flexByDate
-      );
-
-      dispatchChange(
-        flexByDate
-      );
-    }
-  }
-
-  return true;
+  return {
+    success,
+    duplicate: false
+  };
 }
 
+
+/* =========================================================
+   BILL PRIORITY
+========================================================= */
 
 function setPriorityValue(
   select,
@@ -2631,6 +2704,12 @@ function setPriorityValue(
       "lower",
       "lower_priority",
       "lower priority"
+    ],
+
+    lower_priority: [
+      "lower",
+      "lower_priority",
+      "lower priority"
     ]
   };
 
@@ -2642,14 +2721,15 @@ function setPriorityValue(
 
   const match =
     [...select.options]
-      .find(option =>
-        candidates.includes(
-          String(
-            option.value
+      .find(
+        option =>
+          candidates.includes(
+            String(
+              option.value
+            )
+              .trim()
+              .toLowerCase()
           )
-            .trim()
-            .toLowerCase()
-        )
       );
 
   if (
@@ -2661,25 +2741,23 @@ function setPriorityValue(
     return;
   }
 
-  /*
-    Last fallback:
-    compare visible option text.
-  */
 
   const textMatch =
     [...select.options]
-      .find(option =>
-        String(
-          option.textContent
-        )
-          .trim()
-          .toLowerCase()
-          .includes(
-            wanted ===
-            "lower"
-              ? "lower"
-              : wanted
+      .find(
+        option =>
+          String(
+            option.textContent
           )
+            .trim()
+            .toLowerCase()
+            .includes(
+              wanted.includes(
+                "lower"
+              )
+                ? "lower"
+                : wanted
+            )
       );
 
   if (
@@ -2692,39 +2770,260 @@ function setPriorityValue(
 
 
 /* =========================================================
-   EVENT HELPERS
+   EXPENSE IMPORT
 ========================================================= */
 
-function dispatchInput(
-  element
-) {
-  element.dispatchEvent(
-    new Event(
-      "input",
-      {
-        bubbles: true
-      }
+async function addExpenseToPlanner(item) {
+  if (
+    isDuplicate(
+      item
     )
-  );
-}
+  ) {
+    return {
+      success: false,
+      duplicate: true
+    };
+  }
 
 
-function dispatchChange(
-  element
-) {
-  element.dispatchEvent(
-    new Event(
-      "change",
-      {
-        bubbles: true
-      }
-    )
+  const row =
+    await createBillRow();
+
+  if (!row) {
+    console.error(
+      "Recurring import could not create bill row:",
+      item
+    );
+
+    return {
+      success: false,
+      duplicate: false
+    };
+  }
+
+
+  const nameInput =
+    $(
+      ".bill-name",
+      row
+    );
+
+  const amountInput =
+    $(
+      ".bill-amount",
+      row
+    );
+
+  const typeInput =
+    $(
+      ".bill-type",
+      row
+    );
+
+  const priorityInput =
+    $(
+      ".bill-priority",
+      row
+    );
+
+  const dueDateInput =
+    $(
+      ".bill-due-date",
+      row
+    );
+
+
+  if (
+    !nameInput ||
+    !amountInput
+  ) {
+    console.error(
+      "New bill row is missing expected fields.",
+      row
+    );
+
+    return {
+      success: false,
+      duplicate: false
+    };
+  }
+
+
+  setInputValue(
+    nameInput,
+    item.name
   );
+
+  setInputValue(
+    amountInput,
+    item.amount
+  );
+
+
+  if (
+    typeInput
+  ) {
+    typeInput.value =
+      item.expenseType ===
+      "flexible"
+        ? "flexible"
+        : "fixed";
+
+    dispatchChange(
+      typeInput
+    );
+  }
+
+
+  if (
+    priorityInput
+  ) {
+    setPriorityValue(
+      priorityInput,
+      item.priority
+    );
+
+    dispatchChange(
+      priorityInput
+    );
+  }
+
+
+  if (
+    dueDateInput
+  ) {
+    setInputValue(
+      dueDateInput,
+      item.date
+    );
+  }
+
+
+  /*
+    Flexible recurring expenses:
+    constrain the optimizer to the occurrence date.
+  */
+
+  if (
+    item.expenseType ===
+    "flexible"
+  ) {
+    await wait(20);
+
+    const flexRule =
+      $(
+        ".flex-rule",
+        row
+      );
+
+    if (
+      flexRule
+    ) {
+      const hasByDate =
+        [...flexRule.options]
+          .some(
+            option =>
+              option.value ===
+              "bydate"
+          );
+
+      if (
+        hasByDate
+      ) {
+        flexRule.value =
+          "bydate";
+
+        dispatchChange(
+          flexRule
+        );
+      }
+    }
+
+
+    await wait(15);
+
+
+    const flexByDate =
+      $(
+        ".flex-by-date",
+        row
+      );
+
+    if (
+      flexByDate
+    ) {
+      setInputValue(
+        flexByDate,
+        item.date
+      );
+    }
+  }
+
+
+  await wait(25);
+
+
+  /*
+    Verify the exact bill row.
+  */
+
+  const verifiedName =
+    String(
+      nameInput.value ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const verifiedAmount =
+    numberValue(
+      amountInput.value
+    );
+
+  const success =
+    verifiedName ===
+      String(
+        item.name
+      )
+        .trim()
+        .toLowerCase() &&
+
+    amountsMatch(
+      verifiedAmount,
+      item.amount
+    );
+
+
+  if (!success) {
+    console.error(
+      "Recurring expense row verification failed.",
+      {
+        expected: item,
+        actual: {
+          name:
+            nameInput.value,
+
+          amount:
+            amountInput.value,
+
+          date:
+            dueDateInput?.value ||
+            ""
+        }
+      }
+    );
+  }
+
+
+  return {
+    success,
+    duplicate: false
+  };
 }
 
 
 /* =========================================================
-   IMPORT
+   IMPORT SELECTED ITEMS
 ========================================================= */
 
 async function importSelected() {
@@ -2739,6 +3038,7 @@ async function importSelected() {
     return;
   }
 
+
   const button =
     $("#smcRPImport");
 
@@ -2752,19 +3052,24 @@ async function importSelected() {
       "Adding...";
   }
 
+
   let addedIncome = 0;
   let addedExpenses = 0;
   let skipped = 0;
   let failed = 0;
 
+
+  /*
+    Import sequentially instead of all at once.
+
+    This makes row detection deterministic:
+    create one row -> fill it -> verify it ->
+    then move to the next recurring item.
+  */
+
   for (
     const item of items
   ) {
-    /*
-      Check duplicates again immediately before
-      importing. This protects against double-clicks
-      and planner changes while the modal is open.
-    */
 
     if (
       isDuplicate(
@@ -2776,55 +3081,79 @@ async function importSelected() {
       continue;
     }
 
-    let success =
-      false;
+
+    let result = {
+      success: false,
+      duplicate: false
+    };
+
 
     if (
       item.kind ===
       "income"
     ) {
-      success =
-        addIncomeToPlanner(
+      result =
+        await addIncomeToPlanner(
           item
         );
 
       if (
-        success
+        result.success
       ) {
         addedIncome++;
       }
+
     } else {
-      success =
-        addExpenseToPlanner(
+
+      result =
+        await addExpenseToPlanner(
           item
         );
 
       if (
-        success
+        result.success
       ) {
         addedExpenses++;
       }
     }
 
+
     if (
-      !success
+      result.duplicate
+    ) {
+      skipped++;
+
+      continue;
+    }
+
+
+    if (
+      !result.success
     ) {
       failed++;
     }
+
+
+    /*
+      Tiny pause before creating the next row.
+      This prevents dynamic planner handlers from
+      colliding with the next import.
+    */
+
+    await wait(35);
   }
 
+
   /*
-    Give dynamic planner controls a moment to finish
-    their own change handlers before optimizing.
+    Let planner handlers settle.
   */
 
-  await new Promise(
-    resolve =>
-      setTimeout(
-        resolve,
-        180
-      )
-  );
+  await wait(150);
+
+
+  /*
+    Automatically rebuild the optimized plan.
+  */
 
   const optimize =
     $("#optimizeButton");
@@ -2832,17 +3161,16 @@ async function importSelected() {
   if (
     optimize &&
     (
-      addedIncome >
-        0 ||
-      addedExpenses >
-        0
+      addedIncome > 0 ||
+      addedExpenses > 0
     )
   ) {
     optimize.click();
   }
 
+
   /*
-    Refresh other live components if available.
+    Refresh live dashboard / forecast.
   */
 
   try {
@@ -2851,11 +3179,18 @@ async function importSelected() {
       ?.refresh?.();
   } catch (_) {}
 
+
   try {
     window
       .StretchMyCheckForecast
       ?.refresh?.();
   } catch (_) {}
+
+
+  /*
+    Tell other Stretch My Check modules
+    that recurring data was imported.
+  */
 
   window.dispatchEvent(
     new CustomEvent(
@@ -2876,6 +3211,7 @@ async function importSelected() {
     )
   );
 
+
   if (
     button
   ) {
@@ -2883,7 +3219,9 @@ async function importSelected() {
       "Add Selected to My Plan";
   }
 
+
   const parts = [];
+
 
   if (
     addedIncome
@@ -2898,6 +3236,7 @@ async function importSelected() {
     );
   }
 
+
   if (
     addedExpenses
   ) {
@@ -2910,6 +3249,7 @@ async function importSelected() {
       } added`
     );
   }
+
 
   if (
     skipped
@@ -2924,6 +3264,7 @@ async function importSelected() {
     );
   }
 
+
   if (
     failed
   ) {
@@ -2932,15 +3273,15 @@ async function importSelected() {
     );
   }
 
-  showMessage(
+
+  const resultMessage =
     parts.length
       ? `${parts.join(" • ")}.`
-      : "Nothing needed to be added."
-  );
+      : "Nothing needed to be added.";
+
 
   /*
-    Re-check every preview row so successfully
-    imported items immediately show as duplicates.
+    Recalculate duplicate state immediately.
   */
 
   previewItems =
@@ -2955,34 +3296,26 @@ async function importSelected() {
       })
     );
 
+
   /*
-    Re-render after a short delay so the user can
-    see exactly what was imported and what is now
-    protected from duplication.
+    Re-render using the planner's updated range.
   */
 
-  setTimeout(
-    () => {
-      const range =
-        getPlanningRange();
+  const range =
+    getPlanningRange();
 
-      renderPreview(
-        range
-      );
+  renderPreview(
+    range
+  );
 
-      showMessage(
-        parts.length
-          ? `${parts.join(" • ")}.`
-          : "Nothing needed to be added."
-      );
-    },
-    120
+  showMessage(
+    resultMessage
   );
 }
 
 
 /* =========================================================
-   LIVE REFRESH
+   LIVE REFRESH EVENTS
 ========================================================= */
 
 window.addEventListener(
@@ -3016,7 +3349,7 @@ window.addEventListener(
 
 
 /* =========================================================
-   INITIALIZE
+   INITIALIZATION
 ========================================================= */
 
 async function init() {
@@ -3053,45 +3386,70 @@ async function init() {
 
 
 function waitForApp() {
-  if (
-    init()
-  ) {
-    return;
-  }
+  /*
+    Try immediately.
+  */
 
-  const observer =
-    new MutationObserver(
-      () => {
-        if (
-          init()
-        ) {
-          observer.disconnect();
-        }
-      }
-    );
-
-  observer.observe(
-    document.documentElement,
-    {
-      childList: true,
-      subtree: true
-    }
-  );
-
-  setTimeout(
-    () => {
+  init().then(
+    success => {
       if (
-        !initialized
+        success
       ) {
-        init();
+        return;
       }
-    },
-    1500
+
+      /*
+        App shell may still be building.
+      */
+
+      const observer =
+        new MutationObserver(
+          async () => {
+            const ready =
+              await init();
+
+            if (
+              ready
+            ) {
+              observer.disconnect();
+            }
+          }
+        );
+
+      observer.observe(
+        document.documentElement,
+        {
+          childList: true,
+          subtree: true
+        }
+      );
+
+
+      /*
+        Extra fallback.
+      */
+
+      setTimeout(
+        async () => {
+          if (
+            !initialized
+          ) {
+            await init();
+          }
+        },
+        1500
+      );
+    }
   );
 }
 
 
+/* =========================================================
+   PUBLIC API
+========================================================= */
+
 window.StretchMyCheckRecurringPlanner = {
+
   refresh:
     refreshCard,
 
@@ -3128,6 +3486,10 @@ window.StretchMyCheckRecurringPlanner = {
       )
 };
 
+
+/* =========================================================
+   START
+========================================================= */
 
 waitForApp();
 
