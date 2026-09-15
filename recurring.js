@@ -1,5678 +1,3514 @@
 (() => {
-  "use strict";
+"use strict";
 
-  /* =========================================================
-     STRETCH MY CHECK
-     RECURRING FINANCES
-     PART 1 — STATE + HELPERS + RECURRENCE ENGINE
-  ========================================================= */
+const sb = window.supabaseClient;
 
-  const sb =
-    window.supabaseClient;
+if (!sb) {
+  console.error("Recurring Finances: Supabase client missing.");
+  return;
+}
 
-  if (!sb) {
-    console.error(
-      "Stretch My Check Recurring Finances: Supabase client is unavailable."
-    );
+let incomes = [];
+let expenses = [];
+let editKind = null;
+let editItem = null;
+let page = null;
+let ready = false;
 
-    return;
+const $ = (s, root = document) => root.querySelector(s);
+
+const $$ = (s, root = document) =>
+  [...root.querySelectorAll(s)];
+
+const num = v =>
+  Number.isFinite(parseFloat(v))
+    ? parseFloat(v)
+    : 0;
+
+const cash = v =>
+  new Intl.NumberFormat(
+    "en-US",
+    {
+      style: "currency",
+      currency: "USD"
+    }
+  ).format(num(v));
+
+const esc = v =>
+  String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const pad = n =>
+  String(n).padStart(2, "0");
+
+const key = d =>
+  `${d.getFullYear()}-${pad(
+    d.getMonth() + 1
+  )}-${pad(d.getDate())}`;
+
+const parseDate = v => {
+  if (!v) {
+    return null;
   }
 
-  /* =========================================================
-     STATE
-  ========================================================= */
-
-  let recurringIncome =
-    [];
-
-  let recurringExpenses =
-    [];
-
-  let editingItem =
-    null;
-
-  let editingKind =
-    null;
-
-  let initialized =
-    false;
-
-  /* =========================================================
-     MONEY HELPERS
-  ========================================================= */
-
-  function money(value) {
-    const number =
-      parseFloat(value);
-
-    return Number.isFinite(number)
-      ? number
-      : 0;
-  }
-
-  function roundMoney(value) {
-    return (
-      Math.round(
-        (
-          money(value) +
-          Number.EPSILON
-        ) *
-          100
-      ) /
-      100
-    );
-  }
-
-  function currency(value) {
-    return new Intl.NumberFormat(
-      "en-US",
-      {
-        style:
-          "currency",
-
-        currency:
-          "USD"
-      }
-    ).format(
-      money(value)
+  if (v instanceof Date) {
+    return new Date(
+      v.getFullYear(),
+      v.getMonth(),
+      v.getDate()
     );
   }
 
-  /* =========================================================
-     TEXT HELPERS
-  ========================================================= */
+  const p =
+    String(v)
+      .split("-")
+      .map(Number);
 
-  function esc(value) {
-    return String(
-      value ?? ""
-    )
-      .replace(
-        /&/g,
-        "&amp;"
-      )
-      .replace(
-        /</g,
-        "&lt;"
-      )
-      .replace(
-        />/g,
-        "&gt;"
-      )
-      .replace(
-        /"/g,
-        "&quot;"
-      )
-      .replace(
-        /'/g,
-        "&#039;"
-      );
-  }
-
-  function plural(
-    count,
-    singular,
-    pluralForm = null
+  if (
+    p.length === 3 &&
+    p.every(Number.isFinite)
   ) {
-    return count === 1
-      ? singular
-      : (
-          pluralForm ||
-          `${singular}s`
-        );
+    return new Date(
+      p[0],
+      p[1] - 1,
+      p[2]
+    );
   }
 
-  /* =========================================================
-     USER
-  ========================================================= */
+  const d =
+    new Date(v);
 
-  async function currentUser() {
+  return Number.isNaN(
+    d.getTime()
+  )
+    ? null
+    : d;
+};
+
+const today = () => {
+  const d =
+    new Date();
+
+  return new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate()
+  );
+};
+
+const addDays = (
+  d,
+  n
+) => {
+  const x =
+    new Date(d);
+
+  x.setDate(
+    x.getDate() + n
+  );
+
+  return x;
+};
+
+const addMonths = (
+  d,
+  n
+) =>
+  new Date(
+    d.getFullYear(),
+    d.getMonth() + n,
+    1
+  );
+
+const dim = (
+  y,
+  m
+) =>
+  new Date(
+    y,
+    m + 1,
+    0
+  ).getDate();
+
+const clamp = (
+  y,
+  m,
+  d
+) =>
+  new Date(
+    y,
+    m,
+    Math.min(
+      Math.max(
+        parseInt(d) || 1,
+        1
+      ),
+      dim(y, m)
+    )
+  );
+
+const shortDate = v => {
+  const d =
+    parseDate(v);
+
+  return d
+    ? new Intl.DateTimeFormat(
+        "en-US",
+        {
+          month: "short",
+          day: "numeric"
+        }
+      ).format(d)
+    : "No date";
+};
+
+const freqLabel = v =>
+  ({
+    weekly: "Weekly",
+    biweekly:
+      "Every 2 Weeks",
+    semimonthly:
+      "Twice a Month",
+    monthly: "Monthly",
+    yearly: "Yearly"
+  })[v] ||
+  "Recurring";
+
+const priority = v => {
+  const value =
+    String(
+      v || "essential"
+    )
+      .toLowerCase()
+      .replace(
+        /[_ ]priority/g,
+        ""
+      );
+
+  if (
+    value === "lower"
+  ) {
+    return "lower";
+  }
+
+  if (
+    value === "important"
+  ) {
+    return "important";
+  }
+
+  return "essential";
+};
+
+const priorityLabel = v =>
+  priority(v) === "lower"
+    ? "Lower Priority"
+    : priority(v) ===
+        "important"
+      ? "Important"
+      : "Essential";
+
+
+async function user() {
+  try {
     const {
-      data,
-      error
+      data: {
+        user
+      }
     } =
       await sb.auth
         .getUser();
 
-    if (error) {
-      console.error(
-        "Recurring Finances user lookup failed:",
-        error
-      );
+    return user || null;
+  } catch (e) {
+    console.error(e);
 
-      return null;
-    }
+    return null;
+  }
+}
 
-    return (
-      data?.user ||
-      null
-    );
+
+function styles() {
+  if (
+    $("#smcRecurringStylesV2")
+  ) {
+    return;
   }
 
-  /* =========================================================
-     LOCAL DATE HELPERS
-
-     We deliberately work with local calendar dates instead of
-     UTC timestamps because these are bill/paycheck dates.
-  ========================================================= */
-
-  function todayLocal() {
-    const now =
-      new Date();
-
-    return new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
+  const s =
+    document.createElement(
+      "style"
     );
-  }
 
-  function dateOnly(value) {
-    if (!value) {
-      return null;
-    }
+  s.id =
+    "smcRecurringStylesV2";
 
-    if (
-      value instanceof
-      Date
-    ) {
-      return new Date(
-        value.getFullYear(),
-        value.getMonth(),
-        value.getDate()
-      );
-    }
+  s.textContent = `
+#smcRecurringPage {
+  padding-bottom: 48px;
+}
 
-    const match =
-      String(value)
-        .match(
-          /^(\d{4})-(\d{2})-(\d{2})$/
-        );
+.smc-r-shell {
+  display: grid;
+  gap: 24px;
+}
 
-    if (match) {
-      return new Date(
-        Number(match[1]),
-        Number(match[2]) - 1,
-        Number(match[3])
-      );
-    }
-
-    const parsed =
-      new Date(value);
-
-    if (
-      Number.isNaN(
-        parsed.getTime()
-      )
-    ) {
-      return null;
-    }
-
-    return new Date(
-      parsed.getFullYear(),
-      parsed.getMonth(),
-      parsed.getDate()
+.smc-r-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
     );
-  }
+  gap: 16px;
+}
 
-  function dateKey(value) {
-    const date =
-      dateOnly(value);
+.smc-r-card,
+.smc-r-panel,
+.smc-r-empty,
+.smc-r-signed {
+  background:
+    linear-gradient(
+      145deg,
+      #11202a,
+      #0b1820
+    );
 
-    if (!date) {
-      return "";
-    }
+  border:
+    1px solid
+    rgba(
+      132,
+      175,
+      192,
+      .17
+    );
 
-    const year =
-      date.getFullYear();
+  border-radius: 18px;
 
-    const month =
-      String(
-        date.getMonth() +
-          1
-      ).padStart(
+  color: #f4f8fa;
+}
+
+.smc-r-card {
+  padding: 20px;
+  min-height: 112px;
+  box-sizing: border-box;
+}
+
+.smc-r-label {
+  color: #a9bcc5;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.smc-r-value {
+  margin-top: 13px;
+  font-size: 26px;
+  font-weight: 850;
+  color: #fff;
+}
+
+.smc-r-card.in
+.smc-r-value {
+  color: #5ce7b1;
+}
+
+.smc-r-card.out
+.smc-r-value,
+.smc-r-value.bad {
+  color: #ff8d91;
+}
+
+.smc-r-value.good {
+  color: #45e1c0;
+}
+
+.smc-r-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 24px;
+  align-items: start;
+}
+
+.smc-r-panel {
+  overflow: hidden;
+}
+
+.smc-r-head {
+  display: flex;
+  align-items: center;
+  justify-content:
+    space-between;
+  gap: 16px;
+
+  padding:
+    20px 22px;
+
+  border-bottom:
+    1px solid
+    rgba(
+      132,
+      175,
+      192,
+      .13
+    );
+}
+
+.smc-r-head h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+}
+
+.smc-r-head p {
+  margin:
+    5px 0 0;
+
+  color: #9bb0ba;
+  font-size: 12px;
+}
+
+.smc-r-add,
+.smc-r-primary {
+  border:
+    1px solid
+    rgba(
+      69,
+      225,
+      192,
+      .35
+    );
+
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #187b74,
+      #258f87
+    );
+
+  color: #fff;
+  font-weight: 780;
+  cursor: pointer;
+
+  padding:
+    9px 14px;
+}
+
+.smc-r-list {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.smc-r-item {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+
+  gap: 16px;
+
+  align-items: center;
+
+  padding: 16px;
+
+  border:
+    1px solid
+    rgba(
+      132,
+      175,
+      192,
+      .14
+    );
+
+  border-radius: 15px;
+
+  background: #12242e;
+}
+
+.smc-r-item.paused {
+  opacity: .65;
+}
+
+.smc-r-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.smc-r-meta {
+  margin-top: 6px;
+  color: #9eb2bc;
+  font-size: 11px;
+}
+
+.smc-r-amount {
+  font-size: 17px;
+  font-weight: 820;
+  text-align: right;
+}
+
+.smc-r-item.income
+.smc-r-amount {
+  color: #5ce7b1;
+}
+
+.smc-r-item.expense
+.smc-r-amount {
+  color: #ff8d91;
+}
+
+.smc-r-actions {
+  display: flex;
+
+  justify-content:
+    flex-end;
+
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.smc-r-small {
+  border:
+    1px solid
+    rgba(
+      132,
+      175,
+      192,
+      .18
+    );
+
+  border-radius: 9px;
+
+  padding:
+    6px 9px;
+
+  background:
+    rgba(
+      49,
+      103,
+      112,
+      .16
+    );
+
+  color: #dce9ed;
+
+  font-size: 10px;
+  font-weight: 750;
+
+  cursor: pointer;
+}
+
+.smc-r-empty {
+  margin: 18px;
+
+  padding:
+    25px 20px;
+
+  text-align: center;
+
+  background:
+    rgba(
+      9,
+      25,
+      33,
+      .7
+    );
+}
+
+.smc-r-empty strong {
+  display: block;
+
+  color: #fff;
+
+  margin-bottom: 6px;
+}
+
+.smc-r-empty span {
+  color: #9eb2bc;
+  font-size: 12px;
+}
+
+.smc-r-preview {
+  padding:
+    20px 22px 22px;
+}
+
+.smc-r-preview h2 {
+  margin: 0;
+
+  color: #fff;
+
+  font-size: 18px;
+}
+
+.smc-r-preview > p {
+  color: #9bb0ba;
+
+  font-size: 12px;
+}
+
+.smc-r-months {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap: 15px;
+
+  margin-top: 18px;
+}
+
+.smc-r-month {
+  border:
+    1px solid
+    rgba(
+      132,
+      175,
+      192,
+      .14
+    );
+
+  border-radius: 15px;
+
+  background: #10212b;
+
+  overflow: hidden;
+}
+
+.smc-r-monthhead {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  gap: 10px;
+
+  padding:
+    14px 15px;
+
+  border-bottom:
+    1px solid
+    rgba(
+      132,
+      175,
+      192,
+      .12
+    );
+}
+
+.smc-r-monthhead strong {
+  font-size: 13px;
+}
+
+.smc-r-monthhead span {
+  color: #8fa6b1;
+
+  font-size: 10px;
+}
+
+.smc-r-occ {
+  display: grid;
+
+  grid-template-columns:
+    48px 1fr auto;
+
+  gap: 10px;
+
+  padding:
+    11px 14px;
+
+  border-top:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      .055
+    );
+
+  font-size: 11px;
+}
+
+.smc-r-occ:first-child {
+  border-top: 0;
+}
+
+.smc-r-date {
+  color: #9db1bb;
+}
+
+.smc-r-occ
+.income {
+  color: #5ce7b1;
+
+  font-weight: 800;
+}
+
+.smc-r-occ
+.expense {
+  color: #ff8d91;
+
+  font-weight: 800;
+}
+
+.smc-r-signed {
+  padding: 32px;
+
+  text-align: center;
+}
+
+.smc-r-signed h2 {
+  margin:
+    0 0 8px;
+}
+
+.smc-r-signed p {
+  margin: 0;
+
+  color: #a2b5be;
+}
+
+.smc-r-modalbg {
+  position: fixed;
+  inset: 0;
+
+  z-index: 12000;
+
+  display: none;
+
+  align-items: center;
+
+  justify-content:
+    center;
+
+  padding: 20px;
+
+  background:
+    rgba(
+      1,
+      7,
+      11,
+      .78
+    );
+
+  backdrop-filter:
+    blur(8px);
+}
+
+.smc-r-modalbg.show {
+  display: flex;
+}
+
+.smc-r-modal {
+  width:
+    min(
+      620px,
+      100%
+    );
+
+  max-height:
+    calc(
+      100vh - 40px
+    );
+
+  overflow: auto;
+
+  padding: 24px;
+
+  box-sizing:
+    border-box;
+
+  border:
+    1px solid
+    rgba(
+      132,
+      175,
+      192,
+      .2
+    );
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #12232d,
+      #0b1820
+    );
+
+  color: #f4f8fa;
+}
+
+.smc-r-modalhead {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  gap: 20px;
+
+  margin-bottom: 22px;
+}
+
+.smc-r-modalhead h2 {
+  margin: 0;
+}
+
+.smc-r-modalhead p {
+  margin:
+    6px 0 0;
+
+  color: #9eb2bc;
+
+  font-size: 12px;
+}
+
+.smc-r-close {
+  width: 36px;
+  height: 36px;
+
+  border:
+    1px solid
+    rgba(
+      132,
+      175,
+      192,
+      .18
+    );
+
+  border-radius: 50%;
+
+  background: #132731;
+
+  color: #dce7eb;
+
+  font-size: 20px;
+
+  cursor: pointer;
+}
+
+.smc-r-form {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 15px;
+}
+
+.smc-r-field {
+  display: grid;
+
+  gap: 7px;
+}
+
+.smc-r-field.full {
+  grid-column:
+    1 / -1;
+}
+
+.smc-r-field label {
+  color: #b6c9d1;
+
+  font-size: 12px;
+
+  font-weight: 750;
+}
+
+.smc-r-field input,
+.smc-r-field select,
+.smc-r-field textarea {
+  width: 100%;
+
+  min-height: 44px;
+
+  box-sizing:
+    border-box;
+
+  border:
+    1px solid
+    rgba(
+      111,
+      163,
+      179,
+      .27
+    );
+
+  border-radius: 11px;
+
+  padding:
+    10px 12px;
+
+  background: #071923;
+
+  color: #f7fbfc;
+
+  font: inherit;
+
+  font-size: 14px;
+}
+
+.smc-r-field textarea {
+  min-height: 88px;
+
+  resize: vertical;
+}
+
+.smc-r-note {
+  color: #879faa;
+
+  font-size: 10px;
+}
+
+.smc-r-msg {
+  display: none;
+
+  margin-top: 16px;
+
+  padding:
+    11px 13px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      116,
+      121,
+      .25
+    );
+
+  border-radius: 11px;
+
+  background:
+    rgba(
+      126,
+      42,
+      49,
+      .16
+    );
+
+  color: #ffb0b3;
+
+  font-size: 12px;
+}
+
+.smc-r-msg.show {
+  display: block;
+}
+
+.smc-r-modalactions {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  gap: 12px;
+
+  margin-top: 22px;
+}
+
+.smc-r-right {
+  display: flex;
+
+  gap: 9px;
+
+  margin-left: auto;
+}
+
+.smc-r-secondary,
+.smc-r-danger {
+  border-radius: 999px;
+
+  padding:
+    9px 15px;
+
+  font-weight: 750;
+
+  cursor: pointer;
+}
+
+.smc-r-secondary {
+  border:
+    1px solid
+    rgba(
+      132,
+      175,
+      192,
+      .2
+    );
+
+  background: #142731;
+
+  color: #dce8ec;
+}
+
+.smc-r-danger {
+  display: none;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      116,
+      121,
+      .3
+    );
+
+  background:
+    rgba(
+      155,
+      48,
+      56,
+      .18
+    );
+
+  color: #ff9ba0;
+}
+
+.smc-r-danger.show {
+  display: block;
+}
+
+.smc-r-badge {
+  margin-left: 7px;
+
+  padding:
+    3px 7px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      157,
+      85,
+      .26
+    );
+
+  border-radius: 999px;
+
+  color: #ffb47b;
+
+  font-size: 9px;
+}
+
+@media(
+  max-width: 1050px
+) {
+  .smc-r-summary {
+    grid-template-columns:
+      repeat(
         2,
-        "0"
+        1fr
       );
-
-    const day =
-      String(
-        date.getDate()
-      ).padStart(
-        2,
-        "0"
-      );
-
-    return `${year}-${month}-${day}`;
   }
 
-  function formatDate(value) {
-    const date =
-      dateOnly(value);
+  .smc-r-grid,
+  .smc-r-months {
+    grid-template-columns:
+      1fr;
+  }
+}
 
-    if (!date) {
-      return "Not set";
-    }
+@media(
+  max-width: 760px
+) {
+  .smc-r-summary {
+    grid-template-columns:
+      1fr 1fr;
 
-    return date.toLocaleDateString(
-      "en-US",
-      {
-        month:
-          "short",
-
-        day:
-          "numeric",
-
-        year:
-          "numeric"
-      }
-    );
+    gap: 11px;
   }
 
-  function formatShortDate(value) {
-    const date =
-      dateOnly(value);
+  .smc-r-card {
+    padding: 16px;
 
-    if (!date) {
-      return "Not set";
-    }
-
-    return date.toLocaleDateString(
-      "en-US",
-      {
-        month:
-          "short",
-
-        day:
-          "numeric"
-      }
-    );
+    min-height: 100px;
   }
 
-  function compareDates(
-    a,
-    b
-  ) {
-    const first =
-      dateOnly(a);
-
-    const second =
-      dateOnly(b);
-
-    if (
-      !first ||
-      !second
-    ) {
-      return 0;
-    }
-
-    return (
-      first.getTime() -
-      second.getTime()
-    );
+  .smc-r-value {
+    font-size: 21px;
   }
 
-  function addDays(
-    value,
-    days
-  ) {
-    const date =
-      dateOnly(value);
+  .smc-r-item {
+    grid-template-columns:
+      1fr;
+  }
 
-    if (!date) {
-      return null;
-    }
+  .smc-r-amount {
+    text-align: left;
+  }
 
-    const result =
-      new Date(date);
+  .smc-r-actions {
+    justify-content:
+      flex-start;
+  }
 
-    result.setDate(
-      result.getDate() +
-        days
+  .smc-r-form {
+    grid-template-columns:
+      1fr;
+  }
+
+  .smc-r-field.full {
+    grid-column: auto;
+  }
+
+  .smc-r-modal {
+    padding: 19px;
+  }
+}
+`;
+
+  document.head
+    .appendChild(s);
+}
+
+
+function build() {
+  const main =
+    $(
+      "#smcAppShell .smc-main"
     );
 
-    return result;
+  if (!main) {
+    return false;
   }
 
-  /* =========================================================
-     MONTH HELPERS
-  ========================================================= */
+  page =
+    $("#smcRecurringPage");
 
-  function daysInMonth(
-    year,
-    monthIndex
-  ) {
-    return new Date(
-      year,
-      monthIndex + 1,
-      0
-    ).getDate();
-  }
-
-  function safeMonthDate(
-    year,
-    monthIndex,
-    requestedDay
-  ) {
-    const maximum =
-      daysInMonth(
-        year,
-        monthIndex
-      );
-
-    const safeDay =
-      Math.min(
-        Math.max(
-          Number(
-            requestedDay
-          ) || 1,
-          1
-        ),
-        maximum
-      );
-
-    return new Date(
-      year,
-      monthIndex,
-      safeDay
-    );
-  }
-
-  function addMonthsSafe(
-    value,
-    count,
-    requestedDay = null
-  ) {
-    const date =
-      dateOnly(value);
-
-    if (!date) {
-      return null;
-    }
-
-    const target =
-      new Date(
-        date.getFullYear(),
-        date.getMonth() +
-          count,
-        1
-      );
-
-    const day =
-      requestedDay ??
-      date.getDate();
-
-    return safeMonthDate(
-      target.getFullYear(),
-      target.getMonth(),
-      day
-    );
-  }
-
-  /* =========================================================
-     FREQUENCY LABELS
-  ========================================================= */
-
-  function frequencyLabel(
-    frequency
-  ) {
-    const labels = {
-      weekly:
-        "Weekly",
-
-      biweekly:
-        "Every 2 Weeks",
-
-      semimonthly:
-        "Twice Monthly",
-
-      monthly:
-        "Monthly"
-    };
-
-    return (
-      labels[
-        frequency
-      ] ||
-      frequency ||
-      "Recurring"
-    );
-  }
-
-  function priorityLabel(
-    priority
-  ) {
-    const labels = {
-      essential:
-        "Essential",
-
-      important:
-        "Important",
-
-      lower:
-        "Lower Priority"
-    };
-
-    return (
-      labels[
-        priority
-      ] ||
-      "Essential"
-    );
-  }
-
-  function expenseTypeLabel(
-    type
-  ) {
-    return type ===
-      "flexible"
-      ? "Flexible"
-      : "Fixed";
-  }
-
-  /* =========================================================
-     SEMI-MONTHLY DATE GENERATOR
-
-     Example:
-       first_day  = 11
-       second_day = 25
-
-     For days such as 31:
-       February -> Feb 28/29
-       April    -> Apr 30
-  ========================================================= */
-
-  function semiMonthlyDatesForMonth(
-    year,
-    monthIndex,
-    firstDay,
-    secondDay
-  ) {
-    const days =
-      [
-        Number(firstDay),
-        Number(secondDay)
-      ]
-        .filter(
-          day =>
-            Number.isFinite(day) &&
-            day >= 1 &&
-            day <= 31
-        )
-        .sort(
-          (
-            a,
-            b
-          ) =>
-            a - b
-        );
-
-    const results =
-      days.map(
-        day =>
-          safeMonthDate(
-            year,
-            monthIndex,
-            day
-          )
-      );
-
-    /*
-      If two requested dates collapse onto the same final day
-      of a short month, keep only one calendar occurrence.
-    */
-
-    const unique =
-      new Map();
-
-    results.forEach(
-      date => {
-        unique.set(
-          dateKey(date),
-          date
-        );
-      }
-    );
-
-    return [
-      ...unique.values()
-    ].sort(
-      (
-        a,
-        b
-      ) =>
-        a.getTime() -
-        b.getTime()
-    );
-  }
-
-  /* =========================================================
-     MONTHLY DATE GENERATOR
-  ========================================================= */
-
-  function monthlyDates(
-    dueDay,
-    startDate,
-    endDate
-  ) {
-    const start =
-      dateOnly(startDate);
-
-    const end =
-      dateOnly(endDate);
-
-    if (
-      !start ||
-      !end ||
-      !dueDay
-    ) {
-      return [];
-    }
-
-    const dates =
-      [];
-
-    let cursor =
-      new Date(
-        start.getFullYear(),
-        start.getMonth(),
-        1
-      );
-
-    const lastMonth =
-      new Date(
-        end.getFullYear(),
-        end.getMonth(),
-        1
-      );
-
-    while (
-      cursor <=
-      lastMonth
-    ) {
-      const occurrence =
-        safeMonthDate(
-          cursor.getFullYear(),
-          cursor.getMonth(),
-          dueDay
-        );
-
-      if (
-        occurrence >=
-          start &&
-        occurrence <=
-          end
-      ) {
-        dates.push(
-          occurrence
-        );
-      }
-
-      cursor =
-        new Date(
-          cursor.getFullYear(),
-          cursor.getMonth() +
-            1,
-          1
-        );
-    }
-
-    return dates;
-  }
-
-  /* =========================================================
-     SEMI-MONTHLY RANGE GENERATOR
-  ========================================================= */
-
-  function semiMonthlyDates(
-    firstDay,
-    secondDay,
-    startDate,
-    endDate
-  ) {
-    const start =
-      dateOnly(startDate);
-
-    const end =
-      dateOnly(endDate);
-
-    if (
-      !start ||
-      !end
-    ) {
-      return [];
-    }
-
-    const dates =
-      [];
-
-    let cursor =
-      new Date(
-        start.getFullYear(),
-        start.getMonth(),
-        1
-      );
-
-    const lastMonth =
-      new Date(
-        end.getFullYear(),
-        end.getMonth(),
-        1
-      );
-
-    while (
-      cursor <=
-      lastMonth
-    ) {
-      const monthDates =
-        semiMonthlyDatesForMonth(
-          cursor.getFullYear(),
-          cursor.getMonth(),
-          firstDay,
-          secondDay
-        );
-
-      monthDates.forEach(
-        occurrence => {
-          if (
-            occurrence >=
-              start &&
-            occurrence <=
-              end
-          ) {
-            dates.push(
-              occurrence
-            );
-          }
-        }
-      );
-
-      cursor =
-        new Date(
-          cursor.getFullYear(),
-          cursor.getMonth() +
-            1,
-          1
-        );
-    }
-
-    return dates.sort(
-      (
-        a,
-        b
-      ) =>
-        a.getTime() -
-        b.getTime()
-    );
-  }
-
-  /* =========================================================
-     WEEKLY / BIWEEKLY RANGE GENERATOR
-  ========================================================= */
-
-  function intervalDates(
-    anchorDate,
-    intervalDays,
-    startDate,
-    endDate
-  ) {
-    const anchor =
-      dateOnly(
-        anchorDate
-      );
-
-    const start =
-      dateOnly(
-        startDate
-      );
-
-    const end =
-      dateOnly(
-        endDate
-      );
-
-    if (
-      !anchor ||
-      !start ||
-      !end
-    ) {
-      return [];
-    }
-
-    const interval =
-      Math.max(
-        1,
-        Number(
-          intervalDays
-        ) || 1
-      );
-
-    let cursor =
-      new Date(
-        anchor
-      );
-
-    /*
-      Move forward when anchor is before our requested range.
-    */
-
-    if (
-      cursor <
-      start
-    ) {
-      const difference =
-        start.getTime() -
-        cursor.getTime();
-
-      const dayDifference =
-        Math.floor(
-          difference /
-          86400000
-        );
-
-      const jumps =
-        Math.floor(
-          dayDifference /
-          interval
-        );
-
-      cursor =
-        addDays(
-          cursor,
-          jumps *
-            interval
-        );
-
-      while (
-        cursor <
-        start
-      ) {
-        cursor =
-          addDays(
-            cursor,
-            interval
-          );
-      }
-    }
-
-    /*
-      If the saved anchor happens to be after the requested
-      start, we simply begin from that anchor.
-    */
-
-    const dates =
-      [];
-
-    while (
-      cursor &&
-      cursor <=
-        end
-    ) {
-      if (
-        cursor >=
-        start
-      ) {
-        dates.push(
-          new Date(
-            cursor
-          )
-        );
-      }
-
-      cursor =
-        addDays(
-          cursor,
-          interval
-        );
-    }
-
-    return dates;
-  }
-
-  /* =========================================================
-     GENERAL INCOME OCCURRENCES
-  ========================================================= */
-
-  function incomeOccurrences(
-    item,
-    startDate,
-    endDate
-  ) {
-    if (
-      !item ||
-      item.active ===
-        false
-    ) {
-      return [];
-    }
-
-    const frequency =
-      item.frequency;
-
-    if (
-      frequency ===
-      "weekly"
-    ) {
-      return intervalDates(
-        item.next_date,
-        7,
-        startDate,
-        endDate
-      );
-    }
-
-    if (
-      frequency ===
-      "biweekly"
-    ) {
-      return intervalDates(
-        item.next_date,
-        14,
-        startDate,
-        endDate
-      );
-    }
-
-    if (
-      frequency ===
-      "monthly"
-    ) {
-      const anchor =
-        dateOnly(
-          item.next_date
-        );
-
-      if (!anchor) {
-        return [];
-      }
-
-      return monthlyDates(
-        anchor.getDate(),
-        startDate,
-        endDate
-      );
-    }
-
-    if (
-      frequency ===
-      "semimonthly"
-    ) {
-      return semiMonthlyDates(
-        item.first_day,
-        item.second_day,
-        startDate,
-        endDate
-      );
-    }
-
-    return [];
-  }
-
-  /* =========================================================
-     GENERAL EXPENSE OCCURRENCES
-  ========================================================= */
-
-  function expenseOccurrences(
-    item,
-    startDate,
-    endDate
-  ) {
-    if (
-      !item ||
-      item.active ===
-        false
-    ) {
-      return [];
-    }
-
-    const frequency =
-      item.frequency;
-
-    if (
-      frequency ===
-      "weekly"
-    ) {
-      return intervalDates(
-        item.next_date,
-        7,
-        startDate,
-        endDate
-      );
-    }
-
-    if (
-      frequency ===
-      "biweekly"
-    ) {
-      return intervalDates(
-        item.next_date,
-        14,
-        startDate,
-        endDate
-      );
-    }
-
-    if (
-      frequency ===
-      "monthly"
-    ) {
-      return monthlyDates(
-        item.due_day,
-        startDate,
-        endDate
-      );
-    }
-
-    if (
-      frequency ===
-      "semimonthly"
-    ) {
-      return semiMonthlyDates(
-        item.due_day,
-        item.second_due_day,
-        startDate,
-        endDate
-      );
-    }
-
-    return [];
-  }
-
-  /* =========================================================
-     NEXT OCCURRENCE
-  ========================================================= */
-
-  function nextIncomeOccurrence(
-    item,
-    fromDate =
-      todayLocal()
-  ) {
-    const start =
-      dateOnly(
-        fromDate
-      );
-
-    const end =
-      addMonthsSafe(
-        start,
-        18
-      );
-
-    return (
-      incomeOccurrences(
-        item,
-        start,
-        end
-      )[0] ||
-      null
-    );
-  }
-
-  function nextExpenseOccurrence(
-    item,
-    fromDate =
-      todayLocal()
-  ) {
-    const start =
-      dateOnly(
-        fromDate
-      );
-
-    const end =
-      addMonthsSafe(
-        start,
-        18
-      );
-
-    return (
-      expenseOccurrences(
-        item,
-        start,
-        end
-      )[0] ||
-      null
-    );
-  }
-
-  /* =========================================================
-     UPCOMING OCCURRENCE COLLECTION
-  ========================================================= */
-
-  function upcomingOccurrences(
-    startDate =
-      todayLocal(),
-    monthsAhead =
-      3
-  ) {
-    const start =
-      dateOnly(
-        startDate
-      );
-
-    const end =
-      addMonthsSafe(
-        start,
-        monthsAhead
-      );
-
-    const occurrences =
-      [];
-
-    recurringIncome
-      .filter(
-        item =>
-          item.active !==
-          false
-      )
-      .forEach(
-        item => {
-          incomeOccurrences(
-            item,
-            start,
-            end
-          ).forEach(
-            date => {
-              occurrences.push({
-                kind:
-                  "income",
-
-                sourceId:
-                  item.id,
-
-                name:
-                  item.income_name,
-
-                amount:
-                  roundMoney(
-                    item.amount
-                  ),
-
-                frequency:
-                  item.frequency,
-
-                date,
-
-                dateKey:
-                  dateKey(
-                    date
-                  ),
-
-                source:
-                  item
-              });
-            }
-          );
-        }
-      );
-
-    recurringExpenses
-      .filter(
-        item =>
-          item.active !==
-          false
-      )
-      .forEach(
-        item => {
-          expenseOccurrences(
-            item,
-            start,
-            end
-          ).forEach(
-            date => {
-              occurrences.push({
-                kind:
-                  "expense",
-
-                sourceId:
-                  item.id,
-
-                name:
-                  item.expense_name,
-
-                amount:
-                  roundMoney(
-                    item.amount
-                  ),
-
-                frequency:
-                  item.frequency,
-
-                expenseType:
-                  item.expense_type,
-
-                priority:
-                  item.priority,
-
-                date,
-
-                dateKey:
-                  dateKey(
-                    date
-                  ),
-
-                source:
-                  item
-              });
-            }
-          );
-        }
-      );
-
-    occurrences.sort(
-      (
-        a,
-        b
-      ) => {
-        const difference =
-          compareDates(
-            a.date,
-            b.date
-          );
-
-        if (
-          difference !==
-          0
-        ) {
-          return difference;
-        }
-
-        /*
-          Income appears before expenses on the same day.
-        */
-
-        if (
-          a.kind !==
-          b.kind
-        ) {
-          return a.kind ===
-            "income"
-            ? -1
-            : 1;
-        }
-
-        return String(
-          a.name
-        ).localeCompare(
-          String(
-            b.name
-          )
-        );
-      }
-    );
-
-    return occurrences;
-  }
-
-  /* =========================================================
-     APPROXIMATE MONTHLY TOTALS
-  ========================================================= */
-
-  function monthlyMultiplier(
-    frequency
-  ) {
-    switch (
-      frequency
-    ) {
-      case "weekly":
-        return (
-          52 /
-          12
-        );
-
-      case "biweekly":
-        return (
-          26 /
-          12
-        );
-
-      case "semimonthly":
-        return 2;
-
-      case "monthly":
-      default:
-        return 1;
-    }
-  }
-
-  function estimatedMonthlyIncome() {
-    return roundMoney(
-      recurringIncome
-        .filter(
-          item =>
-            item.active !==
-            false
-        )
-        .reduce(
-          (
-            total,
-            item
-          ) =>
-            total +
-            (
-              money(
-                item.amount
-              ) *
-              monthlyMultiplier(
-                item.frequency
-              )
-            ),
-          0
-        )
-    );
-  }
-
-  function estimatedMonthlyExpenses() {
-    return roundMoney(
-      recurringExpenses
-        .filter(
-          item =>
-            item.active !==
-            false
-        )
-        .reduce(
-          (
-            total,
-            item
-          ) =>
-            total +
-            (
-              money(
-                item.amount
-              ) *
-              monthlyMultiplier(
-                item.frequency
-              )
-            ),
-          0
-        )
-    );
-  }
-
-  function estimatedMonthlyRoom() {
-    return roundMoney(
-      estimatedMonthlyIncome() -
-      estimatedMonthlyExpenses()
-    );
-  }
-
-  /* =========================================================
-     ACTIVE COUNTS
-  ========================================================= */
-
-  function activeIncomeCount() {
-    return recurringIncome
-      .filter(
-        item =>
-          item.active !==
-          false
-      )
-      .length;
-  }
-
-  function activeExpenseCount() {
-    return recurringExpenses
-      .filter(
-        item =>
-          item.active !==
-          false
-      )
-      .length;
-  }
-    /* =========================================================
-     PAGE / MODAL REFERENCES
-  ========================================================= */
-
-  let recurringPage =
-    null;
-
-  let recurringApp =
-    null;
-
-  let recurringModal =
-    null;
-
-  let recurringModalTitle =
-    null;
-
-  let recurringModalBody =
-    null;
-
-  let recurringMessage =
-    null;
-
-  /* =========================================================
-     STYLES
-  ========================================================= */
-
-  function installStyles() {
-    const STYLE_ID =
-      "smcRecurringStylesV1";
-
-    if (
-      document.getElementById(
-        STYLE_ID
-      )
-    ) {
-      return;
-    }
-
-    const style =
-      document.createElement(
-        "style"
-      );
-
-    style.id =
-      STYLE_ID;
-
-    style.textContent = `
-
-      /* =====================================================
-         RECURRING PAGE
-      ===================================================== */
-
-      #smcRecurringPage {
-        padding-bottom: 48px;
-      }
-
-      #smcRecurringApp {
-        display: grid;
-        gap: 24px;
-      }
-
-      .smc-recurring-summary {
-        display: grid;
-        grid-template-columns:
-          repeat(
-            4,
-            minmax(0, 1fr)
-          );
-        gap: 16px;
-      }
-
-      .smc-recurring-summary-card {
-        min-width: 0;
-        padding: 19px;
-        border: 1px solid
-          rgba(116, 170, 190, .17);
-        border-radius: 16px;
-        background:
-          linear-gradient(
-            145deg,
-            #10232d,
-            #0c1a22
-          );
-      }
-
-      .smc-recurring-summary-label {
-        margin-bottom: 8px;
-        color: #9db5bf;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: .055em;
-        text-transform: uppercase;
-      }
-
-      .smc-recurring-summary-value {
-        color: #ffffff;
-        font-size: 24px;
-        font-weight: 850;
-        line-height: 1.15;
-      }
-
-      .smc-recurring-summary-value.good {
-        color: #58e2bf;
-      }
-
-      .smc-recurring-summary-value.tight {
-        color: #f4c86b;
-      }
-
-      .smc-recurring-summary-value.negative {
-        color: #ff8c8c;
-      }
-
-      .smc-recurring-summary-note {
-        margin-top: 7px;
-        color: #96adb7;
-        font-size: 11px;
-        line-height: 1.5;
-      }
-
-      /* =====================================================
-         MAIN WORKSPACE
-      ===================================================== */
-
-      .smc-recurring-workspace {
-        display: grid;
-        grid-template-columns:
-          minmax(0, 1fr)
-          minmax(0, 1fr);
-        gap: 22px;
-        align-items: start;
-      }
-
-      .smc-recurring-section {
-        min-width: 0;
-        overflow: hidden;
-        border: 1px solid
-          rgba(116, 170, 190, .17);
-        border-radius: 18px;
-        background:
-          linear-gradient(
-            145deg,
-            #10232d,
-            #0c1a22
-          );
-      }
-
-      .smc-recurring-section-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 14px;
-        padding: 20px;
-        border-bottom: 1px solid
-          rgba(116, 170, 190, .13);
-      }
-
-      .smc-recurring-section-heading {
-        min-width: 0;
-      }
-
-      .smc-recurring-section-heading h2 {
-        margin: 0;
-        color: #ffffff;
-        font-size: 19px;
-        line-height: 1.2;
-      }
-
-      .smc-recurring-section-heading p {
-        margin: 6px 0 0;
-        color: #9db2bb;
-        font-size: 12px;
-        line-height: 1.55;
-      }
-
-      .smc-recurring-add-button {
-        flex: 0 0 auto;
-        min-height: 41px;
-        padding: 9px 15px;
-        border: 1px solid
-          rgba(69, 225, 192, .30);
-        border-radius: 999px;
-        background:
-          rgba(33, 128, 113, .15);
-        color: #65e7c8;
-        font-size: 12px;
-        font-weight: 850;
-        cursor: pointer;
-        transition:
-          background .15s ease,
-          border-color .15s ease,
-          transform .15s ease;
-      }
-
-      .smc-recurring-add-button:hover {
-        background:
-          rgba(33, 128, 113, .25);
-        border-color:
-          rgba(69, 225, 192, .50);
-        transform:
-          translateY(-1px);
-      }
-
-      .smc-recurring-list {
-        display: grid;
-        gap: 14px;
-        padding: 18px;
-      }
-
-      /* =====================================================
-         RECURRING ITEM CARDS
-      ===================================================== */
-
-      .smc-recurring-card {
-        min-width: 0;
-        padding: 17px;
-        border: 1px solid
-          rgba(116, 170, 190, .15);
-        border-radius: 15px;
-        background: #0b1c25;
-      }
-
-      .smc-recurring-card.paused {
-        opacity: .68;
-      }
-
-      .smc-recurring-card-top {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .smc-recurring-card-main {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        min-width: 0;
-      }
-
-      .smc-recurring-icon {
-        display: grid;
-        place-items: center;
-        flex: 0 0 auto;
-        width: 42px;
-        height: 42px;
-        border: 1px solid
-          rgba(69, 225, 192, .20);
-        border-radius: 13px;
-        background:
-          rgba(69, 225, 192, .08);
-        font-size: 20px;
-      }
-
-      .smc-recurring-card-title-wrap {
-        min-width: 0;
-      }
-
-      .smc-recurring-card-title {
-        overflow: hidden;
-        color: #ffffff;
-        font-size: 15px;
-        font-weight: 850;
-        line-height: 1.3;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .smc-recurring-card-frequency {
-        margin-top: 4px;
-        color: #91abb5;
-        font-size: 11px;
-        line-height: 1.4;
-      }
-
-      .smc-recurring-status {
-        flex: 0 0 auto;
-        padding: 5px 8px;
-        border: 1px solid
-          rgba(69, 225, 192, .23);
-        border-radius: 999px;
-        background:
-          rgba(69, 225, 192, .08);
-        color: #62e3c3;
-        font-size: 10px;
-        font-weight: 850;
-        letter-spacing: .035em;
-        text-transform: uppercase;
-      }
-
-      .smc-recurring-status.paused {
-        border-color:
-          rgba(180, 196, 204, .18);
-        background:
-          rgba(180, 196, 204, .06);
-        color: #a9bbc2;
-      }
-
-      .smc-recurring-amount {
-        margin-top: 17px;
-        color: #ffffff;
-        font-size: 23px;
-        font-weight: 850;
-        line-height: 1.1;
-      }
-
-      .smc-recurring-amount.income {
-        color: #5be1bf;
-      }
-
-      .smc-recurring-amount-label {
-        margin-top: 4px;
-        color: #8fa8b2;
-        font-size: 10px;
-        font-weight: 750;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-      }
-
-      .smc-recurring-card-details {
-        display: grid;
-        grid-template-columns:
-          repeat(
-            2,
-            minmax(0, 1fr)
-          );
-        gap: 10px;
-        margin-top: 16px;
-      }
-
-      .smc-recurring-detail {
-        min-width: 0;
-        padding: 10px 11px;
-        border: 1px solid
-          rgba(116, 170, 190, .12);
-        border-radius: 11px;
-        background: #091820;
-      }
-
-      .smc-recurring-detail-label {
-        color: #8fa7b1;
-        font-size: 10px;
-        font-weight: 750;
-        letter-spacing: .035em;
-        text-transform: uppercase;
-      }
-
-      .smc-recurring-detail-value {
-        margin-top: 5px;
-        overflow: hidden;
-        color: #f5f8f9;
-        font-size: 12px;
-        font-weight: 750;
-        line-height: 1.4;
-        text-overflow: ellipsis;
-      }
-
-      .smc-recurring-card-actions {
-        display: grid;
-        grid-template-columns:
-          1fr 1fr;
-        gap: 9px;
-        margin-top: 15px;
-      }
-
-      .smc-recurring-card-button {
-        min-height: 39px;
-        padding: 8px 11px;
-        border: 1px solid
-          rgba(116, 170, 190, .20);
-        border-radius: 11px;
-        background: #102630;
-        color: #f3f7f8;
-        font-size: 12px;
-        font-weight: 800;
-        cursor: pointer;
-      }
-
-      .smc-recurring-card-button:hover {
-        border-color:
-          rgba(69, 225, 192, .35);
-      }
-
-      .smc-recurring-card-button.pause {
-        color: #b8cad1;
-      }
-
-      /* =====================================================
-         EMPTY STATES
-      ===================================================== */
-
-      .smc-recurring-empty {
-        padding: 36px 20px;
-        text-align: center;
-        border: 1px dashed
-          rgba(116, 170, 190, .18);
-        border-radius: 14px;
-        background:
-          rgba(5, 18, 24, .24);
-      }
-
-      .smc-recurring-empty-icon {
-        font-size: 27px;
-      }
-
-      .smc-recurring-empty h3 {
-        margin: 12px 0 6px;
-        color: #ffffff;
-        font-size: 16px;
-      }
-
-      .smc-recurring-empty p {
-        max-width: 390px;
-        margin: 0 auto;
-        color: #9db2bb;
-        font-size: 12px;
-        line-height: 1.6;
-      }
-
-      .smc-recurring-empty button {
-        margin-top: 16px;
-      }
-
-      /* =====================================================
-         UPCOMING PREVIEW
-      ===================================================== */
-
-      .smc-recurring-preview {
-        overflow: hidden;
-        border: 1px solid
-          rgba(116, 170, 190, .17);
-        border-radius: 18px;
-        background:
-          linear-gradient(
-            145deg,
-            #10232d,
-            #0c1a22
-          );
-      }
-
-      .smc-recurring-preview-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 20px;
-        border-bottom: 1px solid
-          rgba(116, 170, 190, .13);
-      }
-
-      .smc-recurring-preview-header h2 {
-        margin: 0;
-        color: #ffffff;
-        font-size: 19px;
-      }
-
-      .smc-recurring-preview-header p {
-        margin: 6px 0 0;
-        color: #9db2bb;
-        font-size: 12px;
-        line-height: 1.55;
-      }
-
-      .smc-recurring-preview-window {
-        flex: 0 0 auto;
-        padding: 7px 10px;
-        border: 1px solid
-          rgba(69, 225, 192, .20);
-        border-radius: 999px;
-        background:
-          rgba(69, 225, 192, .07);
-        color: #65e7c8;
-        font-size: 10px;
-        font-weight: 800;
-        text-transform: uppercase;
-      }
-
-      .smc-recurring-timeline {
-        display: grid;
-        gap: 10px;
-        padding: 18px;
-      }
-
-      .smc-recurring-event {
-        display: grid;
-        grid-template-columns:
-          95px
-          minmax(0, 1fr)
-          auto;
-        gap: 13px;
-        align-items: center;
-        padding: 12px 13px;
-        border: 1px solid
-          rgba(116, 170, 190, .12);
-        border-radius: 12px;
-        background: #091a22;
-      }
-
-      .smc-recurring-event-date {
-        color: #a6bac2;
-        font-size: 11px;
-        font-weight: 750;
-      }
-
-      .smc-recurring-event-main {
-        min-width: 0;
-      }
-
-      .smc-recurring-event-name {
-        overflow: hidden;
-        color: #ffffff;
-        font-size: 12px;
-        font-weight: 800;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .smc-recurring-event-type {
-        margin-top: 3px;
-        color: #8fa8b2;
-        font-size: 10px;
-      }
-
-      .smc-recurring-event-amount {
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 850;
-        white-space: nowrap;
-      }
-
-      .smc-recurring-event-amount.income {
-        color: #5be1bf;
-      }
-
-      .smc-recurring-event-amount.expense {
-        color: #f1c17b;
-      }
-
-      /* =====================================================
-         SIGNED OUT
-      ===================================================== */
-
-      .smc-recurring-signed-out {
-        padding: 30px;
-        border: 1px solid
-          rgba(116, 170, 190, .17);
-        border-radius: 18px;
-        background:
-          linear-gradient(
-            145deg,
-            #10232d,
-            #0c1a22
-          );
-        text-align: center;
-      }
-
-      .smc-recurring-signed-out h2 {
-        margin: 0 0 8px;
-        color: #ffffff;
-        font-size: 20px;
-      }
-
-      .smc-recurring-signed-out p {
-        margin: 0;
-        color: #9eb3bc;
-        font-size: 12px;
-        line-height: 1.6;
-      }
-
-      /* =====================================================
-         MODAL
-      ===================================================== */
-
-      .smc-recurring-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 99999;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 22px;
-        overflow-y: auto;
-        background:
-          rgba(2, 9, 13, .78);
-        backdrop-filter:
-          blur(5px);
-      }
-
-      .smc-recurring-modal-backdrop.open {
-        display: flex;
-      }
-
-      .smc-recurring-modal {
-        width: min(
-          620px,
-          100%
-        );
-        max-height:
-          calc(100vh - 44px);
-        overflow-y: auto;
-        border: 1px solid
-          rgba(116, 170, 190, .22);
-        border-radius: 19px;
-        background: #0d2029;
-        box-shadow:
-          0 24px 80px
-          rgba(0, 0, 0, .45);
-      }
-
-      .smc-recurring-modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 19px 20px;
-        border-bottom: 1px solid
-          rgba(116, 170, 190, .14);
-      }
-
-      .smc-recurring-modal-header h2 {
-        margin: 0;
-        color: #ffffff;
-        font-size: 19px;
-      }
-
-      .smc-recurring-modal-close {
-        display: grid;
-        place-items: center;
-        width: 37px;
-        height: 37px;
-        border: 1px solid
-          rgba(116, 170, 190, .18);
-        border-radius: 11px;
-        background: #102630;
-        color: #d8e3e7;
-        font-size: 19px;
-        cursor: pointer;
-      }
-
-      .smc-recurring-modal-body {
-        display: grid;
-        gap: 15px;
-        padding: 20px;
-      }
-
-      .smc-recurring-field {
-        display: grid;
-        gap: 7px;
-      }
-
-      .smc-recurring-field label {
-        color: #b9cad0 !important;
-        font-size: 12px !important;
-        font-weight: 750;
-      }
-
-      .smc-recurring-field input,
-      .smc-recurring-field select,
-      .smc-recurring-field textarea {
-        width: 100%;
-        box-sizing: border-box;
-        min-height: 43px;
-        padding: 10px 12px;
-        border: 1px solid
-          rgba(116, 170, 190, .20);
-        border-radius: 11px;
-        outline: none;
-        background: #081820;
-        color: #f4f8f9;
-        font-size: 14px !important;
-      }
-
-      .smc-recurring-field textarea {
-        min-height: 86px;
-        resize: vertical;
-      }
-
-      .smc-recurring-field input:focus,
-      .smc-recurring-field select:focus,
-      .smc-recurring-field textarea:focus {
-        border-color:
-          rgba(69, 225, 192, .55);
-        box-shadow:
-          0 0 0 3px
-          rgba(69, 225, 192, .07);
-      }
-
-      .smc-recurring-field-note {
-        color: #8fa8b2;
-        font-size: 11px;
-        line-height: 1.5;
-      }
-
-      .smc-recurring-grid-2 {
-        display: grid;
-        grid-template-columns:
-          repeat(
-            2,
-            minmax(0, 1fr)
-          );
-        gap: 13px;
-      }
-
-      .smc-recurring-schedule-fields {
-        display: grid;
-        gap: 13px;
-      }
-
-      .smc-recurring-message {
-        display: none;
-        padding: 11px 12px;
-        border: 1px solid
-          rgba(255, 135, 135, .24);
-        border-radius: 10px;
-        background:
-          rgba(255, 110, 110, .07);
-        color: #ffb0b0;
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .smc-recurring-message.show {
-        display: block;
-      }
-
-      .smc-recurring-modal-actions {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 9px;
-        padding-top: 5px;
-      }
-
-      .smc-recurring-modal-actions button {
-        min-height: 41px;
-        padding: 9px 14px;
-        border-radius: 11px;
-        font-size: 12px;
-        font-weight: 850;
-        cursor: pointer;
-      }
-
-      .smc-recurring-save {
-        border: 1px solid
-          rgba(69, 225, 192, .35);
-        background: #1a8f79;
-        color: #ffffff;
-      }
-
-      .smc-recurring-cancel {
-        border: 1px solid
-          rgba(116, 170, 190, .20);
-        background: #102630;
-        color: #dce6e9;
-      }
-
-      .smc-recurring-delete {
-        margin-right: auto;
-        border: 1px solid
-          rgba(255, 116, 116, .24);
-        background:
-          rgba(255, 100, 100, .07);
-        color: #ff9d9d;
-      }
-
-      /* =====================================================
-         RESPONSIVE
-      ===================================================== */
-
-      @media (
-        max-width: 1100px
-      ) {
-
-        .smc-recurring-summary {
-          grid-template-columns:
-            repeat(
-              2,
-              minmax(0, 1fr)
-            );
-        }
-
-        .smc-recurring-workspace {
-          grid-template-columns:
-            1fr;
-        }
-
-      }
-
-      @media (
-        max-width: 720px
-      ) {
-
-        #smcRecurringApp {
-          gap: 18px;
-        }
-
-        .smc-recurring-summary {
-          grid-template-columns:
-            1fr;
-          gap: 12px;
-        }
-
-        .smc-recurring-section-header,
-        .smc-recurring-preview-header {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .smc-recurring-add-button {
-          width: 100%;
-        }
-
-        .smc-recurring-card-details {
-          grid-template-columns:
-            1fr;
-        }
-
-        .smc-recurring-event {
-          grid-template-columns:
-            1fr auto;
-        }
-
-        .smc-recurring-event-date {
-          grid-column:
-            1 / -1;
-        }
-
-        .smc-recurring-grid-2 {
-          grid-template-columns:
-            1fr;
-        }
-
-        .smc-recurring-modal-actions {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .smc-recurring-modal-actions button {
-          width: 100%;
-        }
-
-        .smc-recurring-delete {
-          margin-right: 0;
-        }
-
-      }
-
-    `;
-
-    document.head
-      .appendChild(
-        style
-      );
-  }
-
-  /* =========================================================
-     FIND APP CONTENT AREA
-  ========================================================= */
-
-  function appContentArea() {
-    return (
-      document.querySelector(
-        "#smcAppShell .smc-main-content"
-      ) ||
-      document.querySelector(
-        "#smcAppShell main"
-      ) ||
-      document.getElementById(
-        "smcAppContent"
-      )
-    );
-  }
-
-  /* =========================================================
-     BUILD PAGE
-  ========================================================= */
-
-  function buildPage() {
-    installStyles();
-
-    if (
-      document.getElementById(
-        "smcRecurringPage"
-      )
-    ) {
-      recurringPage =
-        document.getElementById(
-          "smcRecurringPage"
-        );
-
-      recurringApp =
-        document.getElementById(
-          "smcRecurringApp"
-        );
-
-      return true;
-    }
-
-    const content =
-      appContentArea();
-
-    if (!content) {
-      return false;
-    }
-
-    recurringPage =
-      document.createElement(
-        "section"
-      );
-
-    recurringPage.id =
-      "smcRecurringPage";
-
-    recurringPage.className =
-      "smc-page";
-
-    recurringPage.style.display =
-      "none";
-
-    recurringPage.innerHTML = `
-      <div
-        class="smc-page-heading"
-      >
-        <h1>
-          Recurring Finances
-        </h1>
-
-        <p>
-          Set up the money that repeats so you don't have to rebuild your budget every payday.
-        </p>
-      </div>
-
-      <div
-        id="smcRecurringSignedOut"
-        class="smc-recurring-signed-out"
-        style="display:none;"
-      >
-        <h2>
-          Sign in to use Recurring Finances
-        </h2>
-
-        <p>
-          Your recurring paychecks and bills are saved securely to your account.
-        </p>
-      </div>
-
-      <div
-        id="smcRecurringApp"
-      >
-
-        <div
-          id="smcRecurringSummary"
-          class="smc-recurring-summary"
-        ></div>
-
-        <div
-          class="smc-recurring-workspace"
-        >
-
-          <section
-            class="smc-recurring-section"
-          >
-            <div
-              class="smc-recurring-section-header"
-            >
-              <div
-                class="smc-recurring-section-heading"
-              >
-                <h2>
-                  Recurring Income
-                </h2>
-
-                <p>
-                  Add paychecks and other income you receive on a regular schedule.
-                </p>
-              </div>
-
-              <button
-                id="smcAddRecurringIncome"
-                class="smc-recurring-add-button"
-                type="button"
-              >
-                + Add Income
-              </button>
-            </div>
-
-            <div
-              id="smcRecurringIncomeList"
-              class="smc-recurring-list"
-            ></div>
-          </section>
-
-          <section
-            class="smc-recurring-section"
-          >
-            <div
-              class="smc-recurring-section-header"
-            >
-              <div
-                class="smc-recurring-section-heading"
-              >
-                <h2>
-                  Recurring Bills & Expenses
-                </h2>
-
-                <p>
-                  Save regular bills and expenses with their normal timing and priority.
-                </p>
-              </div>
-
-              <button
-                id="smcAddRecurringExpense"
-                class="smc-recurring-add-button"
-                type="button"
-              >
-                + Add Expense
-              </button>
-            </div>
-
-            <div
-              id="smcRecurringExpenseList"
-              class="smc-recurring-list"
-            ></div>
-          </section>
-
-        </div>
-
-        <section
-          class="smc-recurring-preview"
-        >
-          <div
-            class="smc-recurring-preview-header"
-          >
-            <div>
-              <h2>
-                What's Coming Up
-              </h2>
-
-              <p>
-                A preview of your active recurring income and expenses over the next 3 months.
-              </p>
-            </div>
-
-            <div
-              class="smc-recurring-preview-window"
-            >
-              Next 3 Months
-            </div>
-          </div>
-
-          <div
-            id="smcRecurringTimeline"
-            class="smc-recurring-timeline"
-          ></div>
-        </section>
-
-      </div>
-    `;
-
-    content.appendChild(
-      recurringPage
-    );
-
-    recurringApp =
-      document.getElementById(
-        "smcRecurringApp"
-      );
-
-    document
-      .getElementById(
-        "smcAddRecurringIncome"
-      )
-      ?.addEventListener(
-        "click",
-        () =>
-          showRecurringForm(
-            "income"
-          )
-      );
-
-    document
-      .getElementById(
-        "smcAddRecurringExpense"
-      )
-      ?.addEventListener(
-        "click",
-        () =>
-          showRecurringForm(
-            "expense"
-          )
-      );
-
-    buildModal();
-
+  if (page) {
     return true;
   }
 
-  /* =========================================================
-     BUILD MODAL
-  ========================================================= */
+  page =
+    document.createElement(
+      "section"
+    );
 
-  function buildModal() {
-    if (
-      document.getElementById(
-        "smcRecurringModalBackdrop"
-      )
-    ) {
-      recurringModal =
-        document.getElementById(
-          "smcRecurringModalBackdrop"
-        );
+  page.id =
+    "smcRecurringPage";
 
-      recurringModalTitle =
-        document.getElementById(
-          "smcRecurringModalTitle"
-        );
+  page.className =
+    "smc-page";
 
-      recurringModalBody =
-        document.getElementById(
-          "smcRecurringModalBody"
-        );
+  page.dataset.pageName =
+    "recurring";
 
-      return;
-    }
+  page.innerHTML = `
+<div class="smc-page-heading">
+  <div>
+    <h1>
+      Recurring Finances
+    </h1>
 
-    recurringModal =
-      document.createElement(
-        "div"
-      );
+    <p>
+      Set up the money that repeats so Stretch My Check can help you plan ahead.
+    </p>
+  </div>
+</div>
 
-    recurringModal.id =
-      "smcRecurringModalBackdrop";
+<div
+  id="smcRSigned"
+  class="smc-r-signed"
+  style="display:none"
+>
+  <h2>
+    Sign in to use Recurring Finances
+  </h2>
 
-    recurringModal.className =
-      "smc-recurring-modal-backdrop";
+  <p>
+    Your recurring paychecks and expenses are saved to your account.
+  </p>
+</div>
 
-    recurringModal.innerHTML = `
+<div
+  id="smcRApp"
+  class="smc-r-shell"
+  style="display:none"
+>
+  <div class="smc-r-summary">
+
+    <div class="smc-r-card in">
+      <div class="smc-r-label">
+        Estimated Monthly Income
+      </div>
+
       <div
-        class="smc-recurring-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="smcRecurringModalTitle"
+        id="smcRIncome"
+        class="smc-r-value"
       >
-        <div
-          class="smc-recurring-modal-header"
-        >
-          <h2
-            id="smcRecurringModalTitle"
-          >
-            Recurring Finance
+        $0.00
+      </div>
+    </div>
+
+    <div class="smc-r-card out">
+      <div class="smc-r-label">
+        Estimated Monthly Expenses
+      </div>
+
+      <div
+        id="smcRExpenses"
+        class="smc-r-value"
+      >
+        $0.00
+      </div>
+    </div>
+
+    <div class="smc-r-card">
+      <div class="smc-r-label">
+        Estimated Monthly Room
+      </div>
+
+      <div
+        id="smcRRoom"
+        class="smc-r-value good"
+      >
+        $0.00
+      </div>
+    </div>
+
+    <div class="smc-r-card">
+      <div class="smc-r-label">
+        Active Recurring Items
+      </div>
+
+      <div
+        id="smcRCount"
+        class="smc-r-value"
+      >
+        0
+      </div>
+    </div>
+
+  </div>
+
+  <div class="smc-r-grid">
+
+    <section class="smc-r-panel">
+      <div class="smc-r-head">
+        <div>
+          <h2>
+            Recurring Income
           </h2>
 
-          <button
-            id="smcRecurringModalClose"
-            class="smc-recurring-modal-close"
-            type="button"
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
-
-        <div
-          id="smcRecurringModalBody"
-          class="smc-recurring-modal-body"
-        ></div>
-      </div>
-    `;
-
-    document.body
-      .appendChild(
-        recurringModal
-      );
-
-    recurringModalTitle =
-      document.getElementById(
-        "smcRecurringModalTitle"
-      );
-
-    recurringModalBody =
-      document.getElementById(
-        "smcRecurringModalBody"
-      );
-
-    document
-      .getElementById(
-        "smcRecurringModalClose"
-      )
-      ?.addEventListener(
-        "click",
-        closeRecurringModal
-      );
-
-    recurringModal
-      .addEventListener(
-        "click",
-        event => {
-          if (
-            event.target ===
-            recurringModal
-          ) {
-            closeRecurringModal();
-          }
-        }
-      );
-
-    document
-      .addEventListener(
-        "keydown",
-        event => {
-          if (
-            event.key ===
-              "Escape" &&
-            recurringModal
-              ?.classList
-              .contains(
-                "open"
-              )
-          ) {
-            closeRecurringModal();
-          }
-        }
-      );
-  }
-
-  /* =========================================================
-     MODAL OPEN / CLOSE
-  ========================================================= */
-
-  function openRecurringModal() {
-    if (!recurringModal) {
-      buildModal();
-    }
-
-    recurringModal
-      ?.classList
-      .add(
-        "open"
-      );
-
-    document.body.style.overflow =
-      "hidden";
-  }
-
-  function closeRecurringModal() {
-    recurringModal
-      ?.classList
-      .remove(
-        "open"
-      );
-
-    document.body.style.overflow =
-      "";
-
-    editingItem =
-      null;
-
-    editingKind =
-      null;
-
-    recurringMessage =
-      null;
-  }
-
-  /* =========================================================
-     MODAL MESSAGE
-  ========================================================= */
-
-  function clearRecurringMessage() {
-    if (
-      recurringMessage
-    ) {
-      recurringMessage
-        .classList
-        .remove(
-          "show"
-        );
-
-      recurringMessage.textContent =
-        "";
-    }
-  }
-
-  function showRecurringMessage(
-    message
-  ) {
-    if (
-      !recurringMessage
-    ) {
-      recurringMessage =
-        document.getElementById(
-          "smcRecurringMessage"
-        );
-    }
-
-    if (
-      !recurringMessage
-    ) {
-      return;
-    }
-
-    recurringMessage.textContent =
-      message;
-
-    recurringMessage
-      .classList
-      .add(
-        "show"
-      );
-  }
-
-  /* =========================================================
-     SCHEDULE DESCRIPTION
-  ========================================================= */
-
-  function incomeScheduleText(
-    item
-  ) {
-    if (!item) {
-      return "";
-    }
-
-    if (
-      item.frequency ===
-        "weekly"
-    ) {
-      return `Weekly starting ${formatDate(
-        item.next_date
-      )}`;
-    }
-
-    if (
-      item.frequency ===
-        "biweekly"
-    ) {
-      return `Every 2 weeks starting ${formatDate(
-        item.next_date
-      )}`;
-    }
-
-    if (
-      item.frequency ===
-        "monthly"
-    ) {
-      const anchor =
-        dateOnly(
-          item.next_date
-        );
-
-      return anchor
-        ? `Monthly around day ${anchor.getDate()}`
-        : "Monthly";
-    }
-
-    if (
-      item.frequency ===
-        "semimonthly"
-    ) {
-      return `Twice monthly — days ${
-        item.first_day ||
-        "?"
-      } & ${
-        item.second_day ||
-        "?"
-      }`;
-    }
-
-    return frequencyLabel(
-      item.frequency
-    );
-  }
-
-  function expenseScheduleText(
-    item
-  ) {
-    if (!item) {
-      return "";
-    }
-
-    if (
-      item.frequency ===
-        "weekly"
-    ) {
-      return `Weekly starting ${formatDate(
-        item.next_date
-      )}`;
-    }
-
-    if (
-      item.frequency ===
-        "biweekly"
-    ) {
-      return `Every 2 weeks starting ${formatDate(
-        item.next_date
-      )}`;
-    }
-
-    if (
-      item.frequency ===
-        "monthly"
-    ) {
-      return `Monthly — day ${
-        item.due_day ||
-        "?"
-      }`;
-    }
-
-    if (
-      item.frequency ===
-        "semimonthly"
-    ) {
-      return `Twice monthly — days ${
-        item.due_day ||
-        "?"
-      } & ${
-        item.second_due_day ||
-        "?"
-      }`;
-    }
-
-    return frequencyLabel(
-      item.frequency
-    );
-  }
-
-  /* =========================================================
-     SUMMARY RENDER
-  ========================================================= */
-
-  function renderSummary() {
-    const target =
-      document.getElementById(
-        "smcRecurringSummary"
-      );
-
-    if (!target) {
-      return;
-    }
-
-    const income =
-      estimatedMonthlyIncome();
-
-    const expenses =
-      estimatedMonthlyExpenses();
-
-    const room =
-      estimatedMonthlyRoom();
-
-    let roomClass =
-      "good";
-
-    if (
-      room <
-      0
-    ) {
-      roomClass =
-        "negative";
-    } else if (
-      room <
-      100
-    ) {
-      roomClass =
-        "tight";
-    }
-
-    target.innerHTML = `
-      <div
-        class="smc-recurring-summary-card"
-      >
-        <div
-          class="smc-recurring-summary-label"
-        >
-          Monthly Income
-        </div>
-
-        <div
-          class="smc-recurring-summary-value"
-        >
-          ${currency(
-            income
-          )}
-        </div>
-
-        <div
-          class="smc-recurring-summary-note"
-        >
-          ${
-            activeIncomeCount()
-          }
-          active
-          ${plural(
-            activeIncomeCount(),
-            "income source"
-          )}
-        </div>
-      </div>
-
-      <div
-        class="smc-recurring-summary-card"
-      >
-        <div
-          class="smc-recurring-summary-label"
-        >
-          Monthly Expenses
-        </div>
-
-        <div
-          class="smc-recurring-summary-value"
-        >
-          ${currency(
-            expenses
-          )}
-        </div>
-
-        <div
-          class="smc-recurring-summary-note"
-        >
-          ${
-            activeExpenseCount()
-          }
-          active
-          ${plural(
-            activeExpenseCount(),
-            "expense"
-          )}
-        </div>
-      </div>
-
-      <div
-        class="smc-recurring-summary-card"
-      >
-        <div
-          class="smc-recurring-summary-label"
-        >
-          Estimated Room
-        </div>
-
-        <div
-          class="smc-recurring-summary-value ${roomClass}"
-        >
-          ${currency(
-            room
-          )}
-        </div>
-
-        <div
-          class="smc-recurring-summary-note"
-        >
-          Income minus recurring expenses
-        </div>
-      </div>
-
-      <div
-        class="smc-recurring-summary-card"
-      >
-        <div
-          class="smc-recurring-summary-label"
-        >
-          Active Items
-        </div>
-
-        <div
-          class="smc-recurring-summary-value"
-        >
-          ${
-            activeIncomeCount() +
-            activeExpenseCount()
-          }
-        </div>
-
-        <div
-          class="smc-recurring-summary-note"
-        >
-          Paused items are not included
-        </div>
-      </div>
-    `;
-  }
-
-  /* =========================================================
-     EMPTY STATE
-  ========================================================= */
-
-  function recurringEmptyState(
-    kind
-  ) {
-    const income =
-      kind ===
-      "income";
-
-    return `
-      <div
-        class="smc-recurring-empty"
-      >
-        <div
-          class="smc-recurring-empty-icon"
-        >
-          ${
-            income
-              ? "💵"
-              : "🧾"
-          }
-        </div>
-
-        <h3>
-          ${
-            income
-              ? "Add your regular income"
-              : "Add your regular bills"
-          }
-        </h3>
-
-        <p>
-          ${
-            income
-              ? "Save paychecks or other repeating income once and Stretch My Check will remember the schedule."
-              : "Save rent, utilities, subscriptions, insurance, and other repeating expenses so you don't have to enter them every time."
-          }
-        </p>
-
-        <button
-          class="smc-recurring-add-button"
-          type="button"
-          data-recurring-empty-add="${
-            income
-              ? "income"
-              : "expense"
-          }"
-        >
-          ${
-            income
-              ? "+ Add Income"
-              : "+ Add Expense"
-          }
-        </button>
-      </div>
-    `;
-  }
-    /* =========================================================
-     RENDER INCOME CARDS
-  ========================================================= */
-
-  function renderIncomeList() {
-    const target =
-      document.getElementById(
-        "smcRecurringIncomeList"
-      );
-
-    if (!target) {
-      return;
-    }
-
-    if (
-      !recurringIncome.length
-    ) {
-      target.innerHTML =
-        recurringEmptyState(
-          "income"
-        );
-
-      bindEmptyButtons();
-
-      return;
-    }
-
-    target.innerHTML =
-      recurringIncome
-        .map(
-          item => {
-            const active =
-              item.active !==
-              false;
-
-            const next =
-              active
-                ? nextIncomeOccurrence(
-                    item
-                  )
-                : null;
-
-            return `
-              <article
-                class="
-                  smc-recurring-card
-                  ${
-                    active
-                      ? ""
-                      : "paused"
-                  }
-                "
-              >
-
-                <div
-                  class="smc-recurring-card-top"
-                >
-
-                  <div
-                    class="smc-recurring-card-main"
-                  >
-
-                    <div
-                      class="smc-recurring-icon"
-                    >
-                      💵
-                    </div>
-
-                    <div
-                      class="smc-recurring-card-title-wrap"
-                    >
-
-                      <div
-                        class="smc-recurring-card-title"
-                      >
-                        ${esc(
-                          item.income_name
-                        )}
-                      </div>
-
-                      <div
-                        class="smc-recurring-card-frequency"
-                      >
-                        ${esc(
-                          incomeScheduleText(
-                            item
-                          )
-                        )}
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  <div
-                    class="
-                      smc-recurring-status
-                      ${
-                        active
-                          ? ""
-                          : "paused"
-                      }
-                    "
-                  >
-                    ${
-                      active
-                        ? "Active"
-                        : "Paused"
-                    }
-                  </div>
-
-                </div>
-
-                <div
-                  class="smc-recurring-amount income"
-                >
-                  ${currency(
-                    item.amount
-                  )}
-                </div>
-
-                <div
-                  class="smc-recurring-amount-label"
-                >
-                  Per Payment
-                </div>
-
-                <div
-                  class="smc-recurring-card-details"
-                >
-
-                  <div
-                    class="smc-recurring-detail"
-                  >
-
-                    <div
-                      class="smc-recurring-detail-label"
-                    >
-                      Frequency
-                    </div>
-
-                    <div
-                      class="smc-recurring-detail-value"
-                    >
-                      ${esc(
-                        frequencyLabel(
-                          item.frequency
-                        )
-                      )}
-                    </div>
-
-                  </div>
-
-                  <div
-                    class="smc-recurring-detail"
-                  >
-
-                    <div
-                      class="smc-recurring-detail-label"
-                    >
-                      Next Payment
-                    </div>
-
-                    <div
-                      class="smc-recurring-detail-value"
-                    >
-                      ${
-                        active
-                          ? formatDate(
-                              next
-                            )
-                          : "Paused"
-                      }
-                    </div>
-
-                  </div>
-
-                </div>
-
-                <div
-                  class="smc-recurring-card-actions"
-                >
-
-                  <button
-                    class="smc-recurring-card-button"
-                    type="button"
-                    data-recurring-edit-income="${
-                      item.id
-                    }"
-                  >
-                    Manage
-                  </button>
-
-                  <button
-                    class="smc-recurring-card-button pause"
-                    type="button"
-                    data-recurring-toggle-income="${
-                      item.id
-                    }"
-                  >
-                    ${
-                      active
-                        ? "Pause"
-                        : "Resume"
-                    }
-                  </button>
-
-                </div>
-
-              </article>
-            `;
-          }
-        )
-        .join("");
-
-    target
-      .querySelectorAll(
-        "[data-recurring-edit-income]"
-      )
-      .forEach(
-        button => {
-          button.onclick =
-            () => {
-              const item =
-                recurringIncome.find(
-                  entry =>
-                    Number(
-                      entry.id
-                    ) ===
-                    Number(
-                      button.dataset
-                        .recurringEditIncome
-                    )
-                );
-
-              if (item) {
-                showRecurringForm(
-                  "income",
-                  item
-                );
-              }
-            };
-        }
-      );
-
-    target
-      .querySelectorAll(
-        "[data-recurring-toggle-income]"
-      )
-      .forEach(
-        button => {
-          button.onclick =
-            () =>
-              toggleRecurringItem(
-                "income",
-                button.dataset
-                  .recurringToggleIncome
-              );
-        }
-      );
-  }
-
-  /* =========================================================
-     RENDER EXPENSE CARDS
-  ========================================================= */
-
-  function renderExpenseList() {
-    const target =
-      document.getElementById(
-        "smcRecurringExpenseList"
-      );
-
-    if (!target) {
-      return;
-    }
-
-    if (
-      !recurringExpenses.length
-    ) {
-      target.innerHTML =
-        recurringEmptyState(
-          "expense"
-        );
-
-      bindEmptyButtons();
-
-      return;
-    }
-
-    target.innerHTML =
-      recurringExpenses
-        .map(
-          item => {
-            const active =
-              item.active !==
-              false;
-
-            const next =
-              active
-                ? nextExpenseOccurrence(
-                    item
-                  )
-                : null;
-
-            return `
-              <article
-                class="
-                  smc-recurring-card
-                  ${
-                    active
-                      ? ""
-                      : "paused"
-                  }
-                "
-              >
-
-                <div
-                  class="smc-recurring-card-top"
-                >
-
-                  <div
-                    class="smc-recurring-card-main"
-                  >
-
-                    <div
-                      class="smc-recurring-icon"
-                    >
-                      🧾
-                    </div>
-
-                    <div
-                      class="smc-recurring-card-title-wrap"
-                    >
-
-                      <div
-                        class="smc-recurring-card-title"
-                      >
-                        ${esc(
-                          item.expense_name
-                        )}
-                      </div>
-
-                      <div
-                        class="smc-recurring-card-frequency"
-                      >
-                        ${esc(
-                          expenseScheduleText(
-                            item
-                          )
-                        )}
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  <div
-                    class="
-                      smc-recurring-status
-                      ${
-                        active
-                          ? ""
-                          : "paused"
-                      }
-                    "
-                  >
-                    ${
-                      active
-                        ? "Active"
-                        : "Paused"
-                    }
-                  </div>
-
-                </div>
-
-                <div
-                  class="smc-recurring-amount"
-                >
-                  ${currency(
-                    item.amount
-                  )}
-                </div>
-
-                <div
-                  class="smc-recurring-amount-label"
-                >
-                  Per Expense
-                </div>
-
-                <div
-                  class="smc-recurring-card-details"
-                >
-
-                  <div
-                    class="smc-recurring-detail"
-                  >
-
-                    <div
-                      class="smc-recurring-detail-label"
-                    >
-                      Priority
-                    </div>
-
-                    <div
-                      class="smc-recurring-detail-value"
-                    >
-                      ${esc(
-                        priorityLabel(
-                          item.priority
-                        )
-                      )}
-                    </div>
-
-                  </div>
-
-                  <div
-                    class="smc-recurring-detail"
-                  >
-
-                    <div
-                      class="smc-recurring-detail-label"
-                    >
-                      Next Due
-                    </div>
-
-                    <div
-                      class="smc-recurring-detail-value"
-                    >
-                      ${
-                        active
-                          ? formatDate(
-                              next
-                            )
-                          : "Paused"
-                      }
-                    </div>
-
-                  </div>
-
-                  <div
-                    class="smc-recurring-detail"
-                  >
-
-                    <div
-                      class="smc-recurring-detail-label"
-                    >
-                      Type
-                    </div>
-
-                    <div
-                      class="smc-recurring-detail-value"
-                    >
-                      ${esc(
-                        expenseTypeLabel(
-                          item.expense_type
-                        )
-                      )}
-                    </div>
-
-                  </div>
-
-                  <div
-                    class="smc-recurring-detail"
-                  >
-
-                    <div
-                      class="smc-recurring-detail-label"
-                    >
-                      Frequency
-                    </div>
-
-                    <div
-                      class="smc-recurring-detail-value"
-                    >
-                      ${esc(
-                        frequencyLabel(
-                          item.frequency
-                        )
-                      )}
-                    </div>
-
-                  </div>
-
-                </div>
-
-                <div
-                  class="smc-recurring-card-actions"
-                >
-
-                  <button
-                    class="smc-recurring-card-button"
-                    type="button"
-                    data-recurring-edit-expense="${
-                      item.id
-                    }"
-                  >
-                    Manage
-                  </button>
-
-                  <button
-                    class="smc-recurring-card-button pause"
-                    type="button"
-                    data-recurring-toggle-expense="${
-                      item.id
-                    }"
-                  >
-                    ${
-                      active
-                        ? "Pause"
-                        : "Resume"
-                    }
-                  </button>
-
-                </div>
-
-              </article>
-            `;
-          }
-        )
-        .join("");
-
-    target
-      .querySelectorAll(
-        "[data-recurring-edit-expense]"
-      )
-      .forEach(
-        button => {
-          button.onclick =
-            () => {
-              const item =
-                recurringExpenses.find(
-                  entry =>
-                    Number(
-                      entry.id
-                    ) ===
-                    Number(
-                      button.dataset
-                        .recurringEditExpense
-                    )
-                );
-
-              if (item) {
-                showRecurringForm(
-                  "expense",
-                  item
-                );
-              }
-            };
-        }
-      );
-
-    target
-      .querySelectorAll(
-        "[data-recurring-toggle-expense]"
-      )
-      .forEach(
-        button => {
-          button.onclick =
-            () =>
-              toggleRecurringItem(
-                "expense",
-                button.dataset
-                  .recurringToggleExpense
-              );
-        }
-      );
-  }
-
-  /* =========================================================
-     EMPTY BUTTONS
-  ========================================================= */
-
-  function bindEmptyButtons() {
-    document
-      .querySelectorAll(
-        "[data-recurring-empty-add]"
-      )
-      .forEach(
-        button => {
-          button.onclick =
-            () =>
-              showRecurringForm(
-                button.dataset
-                  .recurringEmptyAdd
-              );
-        }
-      );
-  }
-
-  /* =========================================================
-     UPCOMING TIMELINE
-  ========================================================= */
-
-  function renderTimeline() {
-    const target =
-      document.getElementById(
-        "smcRecurringTimeline"
-      );
-
-    if (!target) {
-      return;
-    }
-
-    const occurrences =
-      upcomingOccurrences(
-        todayLocal(),
-        3
-      );
-
-    if (
-      !occurrences.length
-    ) {
-      target.innerHTML = `
-        <div
-          class="smc-recurring-empty"
-        >
-          <div
-            class="smc-recurring-empty-icon"
-          >
-            📅
-          </div>
-
-          <h3>
-            Nothing scheduled yet
-          </h3>
-
           <p>
-            Add recurring income and expenses above and your upcoming money timeline will appear here.
+            Paychecks and other money you receive on a schedule.
           </p>
         </div>
-      `;
 
-      return;
-    }
-
-    target.innerHTML =
-      occurrences
-        .slice(
-          0,
-          30
-        )
-        .map(
-          occurrence => `
-            <div
-              class="smc-recurring-event"
-            >
-
-              <div
-                class="smc-recurring-event-date"
-              >
-                ${formatShortDate(
-                  occurrence.date
-                )}
-              </div>
-
-              <div
-                class="smc-recurring-event-main"
-              >
-
-                <div
-                  class="smc-recurring-event-name"
-                >
-                  ${esc(
-                    occurrence.name
-                  )}
-                </div>
-
-                <div
-                  class="smc-recurring-event-type"
-                >
-                  ${
-                    occurrence.kind ===
-                    "income"
-                      ? "Income"
-                      : `${
-                          priorityLabel(
-                            occurrence.priority
-                          )
-                        } expense`
-                  }
-                  •
-                  ${esc(
-                    frequencyLabel(
-                      occurrence.frequency
-                    )
-                  )}
-                </div>
-
-              </div>
-
-              <div
-                class="
-                  smc-recurring-event-amount
-                  ${
-                    occurrence.kind
-                  }
-                "
-              >
-                ${
-                  occurrence.kind ===
-                  "income"
-                    ? "+"
-                    : "−"
-                }${currency(
-                  occurrence.amount
-                )}
-              </div>
-
-            </div>
-          `
-        )
-        .join("");
-  }
-
-  /* =========================================================
-     MAIN RENDER
-  ========================================================= */
-
-  function renderRecurring() {
-    renderSummary();
-    renderIncomeList();
-    renderExpenseList();
-    renderTimeline();
-  }
-
-  /* =========================================================
-     SCHEDULE FIELDS
-  ========================================================= */
-
-  function scheduleFieldsHtml(
-    kind,
-    frequency,
-    item = null
-  ) {
-    const income =
-      kind ===
-      "income";
-
-    if (
-      frequency ===
-        "weekly" ||
-      frequency ===
-        "biweekly"
-    ) {
-      return `
-        <div
-          class="smc-recurring-field"
+        <button
+          id="smcRAddIncome"
+          class="smc-r-add"
         >
-          <label>
-            ${
-              income
-                ? "Next payday"
-                : "Next due date"
-            }
-          </label>
+          + Add Income
+        </button>
+      </div>
 
-          <input
-            id="smcRecurringNextDate"
-            type="date"
-            value="${esc(
-              item?.next_date ||
-              ""
-            )}"
-          >
-
-          <div
-            class="smc-recurring-field-note"
-          >
-            Choose one real upcoming date. Stretch My Check will calculate the repeating schedule from there.
-          </div>
-        </div>
-      `;
-    }
-
-    if (
-      frequency ===
-      "monthly"
-    ) {
-      if (
-        income
-      ) {
-        return `
-          <div
-            class="smc-recurring-field"
-          >
-            <label>
-              Next payday
-            </label>
-
-            <input
-              id="smcRecurringNextDate"
-              type="date"
-              value="${esc(
-                item?.next_date ||
-                ""
-              )}"
-            >
-
-            <div
-              class="smc-recurring-field-note"
-            >
-              The day of this date becomes the normal monthly payday.
-            </div>
-          </div>
-        `;
-      }
-
-      return `
-        <div
-          class="smc-recurring-field"
-        >
-          <label>
-            Normal due day
-          </label>
-
-          <input
-            id="smcRecurringDueDay"
-            type="number"
-            min="1"
-            max="31"
-            step="1"
-            value="${esc(
-              item?.due_day ||
-              ""
-            )}"
-            placeholder="1"
-          >
-
-          <div
-            class="smc-recurring-field-note"
-          >
-            If you choose the 29th, 30th, or 31st, shorter months automatically use their final valid day.
-          </div>
-        </div>
-      `;
-    }
-
-    if (
-      frequency ===
-      "semimonthly"
-    ) {
-      return `
-        <div
-          class="smc-recurring-grid-2"
-        >
-
-          <div
-            class="smc-recurring-field"
-          >
-            <label>
-              First day
-            </label>
-
-            <input
-              id="smcRecurringFirstDay"
-              type="number"
-              min="1"
-              max="31"
-              step="1"
-              value="${esc(
-                income
-                  ? (
-                      item?.first_day ||
-                      ""
-                    )
-                  : (
-                      item?.due_day ||
-                      ""
-                    )
-              )}"
-              placeholder="11"
-            >
-          </div>
-
-          <div
-            class="smc-recurring-field"
-          >
-            <label>
-              Second day
-            </label>
-
-            <input
-              id="smcRecurringSecondDay"
-              type="number"
-              min="1"
-              max="31"
-              step="1"
-              value="${esc(
-                income
-                  ? (
-                      item?.second_day ||
-                      ""
-                    )
-                  : (
-                      item?.second_due_day ||
-                      ""
-                    )
-              )}"
-              placeholder="25"
-            >
-          </div>
-
-        </div>
-
-        <div
-          class="smc-recurring-field-note"
-        >
-          Example: 11 and 25 means this happens twice each month on those dates.
-        </div>
-      `;
-    }
-
-    return "";
-  }
-
-  /* =========================================================
-     REFRESH DYNAMIC SCHEDULE FIELDS
-  ========================================================= */
-
-  function refreshScheduleFields() {
-    const frequency =
-      document.getElementById(
-        "smcRecurringFrequency"
-      )?.value;
-
-    const target =
-      document.getElementById(
-        "smcRecurringScheduleFields"
-      );
-
-    if (
-      !frequency ||
-      !target
-    ) {
-      return;
-    }
-
-    target.innerHTML =
-      scheduleFieldsHtml(
-        editingKind,
-        frequency,
-        editingItem
-      );
-  }
-
-  /* =========================================================
-     SHOW ADD / EDIT FORM
-  ========================================================= */
-
-  function showRecurringForm(
-    kind,
-    item = null
-  ) {
-    if (
-      kind !==
-        "income" &&
-      kind !==
-        "expense"
-    ) {
-      return;
-    }
-
-    buildModal();
-
-    editingKind =
-      kind;
-
-    editingItem =
-      item
-        ? {
-            ...item
-          }
-        : null;
-
-    const income =
-      kind ===
-      "income";
-
-    const existing =
-      Boolean(
-        item?.id
-      );
-
-    const frequency =
-      item?.frequency ||
-      (
-        income
-          ? "weekly"
-          : "monthly"
-      );
-
-    recurringModalTitle.textContent =
-      existing
-        ? (
-            income
-              ? "Manage Recurring Income"
-              : "Manage Recurring Expense"
-          )
-        : (
-            income
-              ? "Add Recurring Income"
-              : "Add Recurring Expense"
-          );
-
-    recurringModalBody.innerHTML = `
       <div
-        class="smc-recurring-field"
+        id="smcRIncomeList"
+      ></div>
+    </section>
+
+    <section class="smc-r-panel">
+      <div class="smc-r-head">
+        <div>
+          <h2>
+            Recurring Expenses
+          </h2>
+
+          <p>
+            Bills and expenses that come back on a regular schedule.
+          </p>
+        </div>
+
+        <button
+          id="smcRAddExpense"
+          class="smc-r-add"
+        >
+          + Add Expense
+        </button>
+      </div>
+
+      <div
+        id="smcRExpenseList"
+      ></div>
+    </section>
+
+  </div>
+
+  <section class="smc-r-panel">
+    <div class="smc-r-preview">
+      <h2>
+        3-Month Preview
+      </h2>
+
+      <p>
+        A look ahead at your active recurring income and expenses.
+      </p>
+
+      <div
+        id="smcRPreview"
+        class="smc-r-months"
+      ></div>
+    </div>
+  </section>
+</div>
+
+<div
+  id="smcRModalBg"
+  class="smc-r-modalbg"
+  aria-hidden="true"
+>
+  <div
+    class="smc-r-modal"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="smc-r-modalhead">
+      <div>
+        <h2 id="smcRTitle">
+          Add Recurring Item
+        </h2>
+
+        <p id="smcRSub">
+          Add money that repeats.
+        </p>
+      </div>
+
+      <button
+        id="smcRClose"
+        class="smc-r-close"
+        aria-label="Close"
       >
-        <label>
-          ${
-            income
-              ? "Income name"
-              : "Expense name"
-          }
+        ×
+      </button>
+    </div>
+
+    <div class="smc-r-form">
+
+      <div class="smc-r-field full">
+        <label
+          id="smcRNameLabel"
+          for="smcRName"
+        >
+          Name
         </label>
 
         <input
-          id="smcRecurringName"
-          type="text"
-          maxlength="80"
-          value="${esc(
-            income
-              ? (
-                  item?.income_name ||
-                  ""
-                )
-              : (
-                  item?.expense_name ||
-                  ""
-                )
-          )}"
-          placeholder="${
-            income
-              ? "Weekly Paycheck"
-              : "Rent"
-          }"
+          id="smcRName"
+          maxlength="120"
         >
       </div>
 
-      <div
-        class="smc-recurring-field"
-      >
-        <label>
+      <div class="smc-r-field">
+        <label
+          for="smcRAmount"
+        >
           Amount
         </label>
 
         <input
-          id="smcRecurringAmount"
+          id="smcRAmount"
           type="number"
-          min="0"
-          step="0.01"
-          value="${esc(
-            item?.amount ??
-            ""
-          )}"
-          placeholder="${
-            income
-              ? "1100"
-              : "1300"
-          }"
+          min=".01"
+          step=".01"
         >
       </div>
 
-      ${
-        income
-          ? ""
-          : `
-            <div
-              class="smc-recurring-grid-2"
-            >
-
-              <div
-                class="smc-recurring-field"
-              >
-                <label>
-                  Expense type
-                </label>
-
-                <select
-                  id="smcRecurringExpenseType"
-                >
-                  <option
-                    value="fixed"
-                    ${
-                      (
-                        item?.expense_type ||
-                        "fixed"
-                      ) ===
-                      "fixed"
-                        ? "selected"
-                        : ""
-                    }
-                  >
-                    Fixed
-                  </option>
-
-                  <option
-                    value="flexible"
-                    ${
-                      item?.expense_type ===
-                      "flexible"
-                        ? "selected"
-                        : ""
-                    }
-                  >
-                    Flexible
-                  </option>
-                </select>
-              </div>
-
-              <div
-                class="smc-recurring-field"
-              >
-                <label>
-                  Priority
-                </label>
-
-                <select
-                  id="smcRecurringPriority"
-                >
-                  <option
-                    value="essential"
-                    ${
-                      (
-                        item?.priority ||
-                        "essential"
-                      ) ===
-                      "essential"
-                        ? "selected"
-                        : ""
-                    }
-                  >
-                    Essential
-                  </option>
-
-                  <option
-                    value="important"
-                    ${
-                      item?.priority ===
-                      "important"
-                        ? "selected"
-                        : ""
-                    }
-                  >
-                    Important
-                  </option>
-
-                  <option
-                    value="lower"
-                    ${
-                      item?.priority ===
-                      "lower"
-                        ? "selected"
-                        : ""
-                    }
-                  >
-                    Lower Priority
-                  </option>
-                </select>
-              </div>
-
-            </div>
-          `
-      }
-
-      <div
-        class="smc-recurring-field"
-      >
-        <label>
+      <div class="smc-r-field">
+        <label
+          for="smcRFrequency"
+        >
           Frequency
         </label>
 
         <select
-          id="smcRecurringFrequency"
+          id="smcRFrequency"
         >
-          <option
-            value="weekly"
-            ${
-              frequency ===
-              "weekly"
-                ? "selected"
-                : ""
-            }
-          >
+          <option value="weekly">
             Weekly
           </option>
 
-          <option
-            value="biweekly"
-            ${
-              frequency ===
-              "biweekly"
-                ? "selected"
-                : ""
-            }
-          >
+          <option value="biweekly">
             Every 2 Weeks
           </option>
 
-          <option
-            value="semimonthly"
-            ${
-              frequency ===
-              "semimonthly"
-                ? "selected"
-                : ""
-            }
-          >
-            Twice Monthly
+          <option value="semimonthly">
+            Twice a Month
           </option>
 
-          <option
-            value="monthly"
-            ${
-              frequency ===
-              "monthly"
-                ? "selected"
-                : ""
-            }
-          >
+          <option value="monthly">
             Monthly
+          </option>
+
+          <option value="yearly">
+            Yearly
+          </option>
+        </select>
+      </div>
+
+      <div class="smc-r-field">
+        <label
+          for="smcRNext"
+        >
+          Next Date
+        </label>
+
+        <input
+          id="smcRNext"
+          type="date"
+        >
+
+        <div class="smc-r-note">
+          Use the next date this item will happen.
+        </div>
+      </div>
+
+      <div
+        id="smcRFirstWrap"
+        class="smc-r-field"
+        style="display:none"
+      >
+        <label
+          for="smcRFirst"
+        >
+          First Day
+        </label>
+
+        <input
+          id="smcRFirst"
+          type="number"
+          min="1"
+          max="31"
+        >
+      </div>
+
+      <div
+        id="smcRSecondWrap"
+        class="smc-r-field"
+        style="display:none"
+      >
+        <label
+          for="smcRSecond"
+        >
+          Second Day
+        </label>
+
+        <input
+          id="smcRSecond"
+          type="number"
+          min="1"
+          max="31"
+        >
+      </div>
+
+      <div
+        id="smcRTypeWrap"
+        class="smc-r-field"
+        style="display:none"
+      >
+        <label
+          for="smcRType"
+        >
+          Expense Type
+        </label>
+
+        <select
+          id="smcRType"
+        >
+          <option value="fixed">
+            Fixed
+          </option>
+
+          <option value="flexible">
+            Flexible
           </option>
         </select>
       </div>
 
       <div
-        id="smcRecurringScheduleFields"
-        class="smc-recurring-schedule-fields"
+        id="smcRPriorityWrap"
+        class="smc-r-field"
+        style="display:none"
       >
-        ${scheduleFieldsHtml(
-          kind,
-          frequency,
-          item
-        )}
+        <label
+          for="smcRPriority"
+        >
+          Priority
+        </label>
+
+        <select
+          id="smcRPriority"
+        >
+          <option value="essential">
+            Essential
+          </option>
+
+          <option value="important">
+            Important
+          </option>
+
+          <option value="lower">
+            Lower Priority
+          </option>
+        </select>
       </div>
 
-      <div
-        class="smc-recurring-field"
-      >
-        <label>
-          Notes
-          <span
-            style="
-              color:#829aa5;
-              font-weight:500;
-            "
-          >
-            (optional)
-          </span>
+      <div class="smc-r-field full">
+        <label
+          for="smcRNotes"
+        >
+          Notes (optional)
         </label>
 
         <textarea
-          id="smcRecurringNotes"
+          id="smcRNotes"
           maxlength="500"
-          placeholder="Anything you want to remember about this item..."
-        >${esc(
-          item?.notes ||
-          ""
-        )}</textarea>
+        ></textarea>
       </div>
 
-      <div
-        id="smcRecurringMessage"
-        class="smc-recurring-message"
-      ></div>
+    </div>
 
-      <div
-        class="smc-recurring-modal-actions"
+    <div
+      id="smcRMsg"
+      class="smc-r-msg"
+    ></div>
+
+    <div class="smc-r-modalactions">
+      <button
+        id="smcRDelete"
+        class="smc-r-danger"
       >
+        Delete
+      </button>
 
-        ${
-          existing
-            ? `
-              <button
-                id="smcRecurringDelete"
-                class="smc-recurring-delete"
-                type="button"
-              >
-                Delete
-              </button>
-            `
-            : ""
-        }
-
+      <div class="smc-r-right">
         <button
-          id="smcRecurringCancel"
-          class="smc-recurring-cancel"
-          type="button"
+          id="smcRCancel"
+          class="smc-r-secondary"
         >
           Cancel
         </button>
 
         <button
-          id="smcRecurringSave"
-          class="smc-recurring-save"
-          type="button"
+          id="smcRSave"
+          class="smc-r-primary"
         >
-          ${
-            existing
-              ? "Save Changes"
-              : (
-                  income
-                    ? "Add Income"
-                    : "Add Expense"
-                )
-          }
+          Save
         </button>
-
       </div>
-    `;
+    </div>
 
-    recurringMessage =
-      document.getElementById(
-        "smcRecurringMessage"
-      );
+  </div>
+</div>
+`;
 
-    document
-      .getElementById(
-        "smcRecurringFrequency"
-      )
-      ?.addEventListener(
-        "change",
-        () => {
-          /*
-            When changing frequency, don't reuse schedule fields
-            from the previous frequency.
-          */
+  const bottom =
+    $(
+      ".smc-bottom-nav",
+      main
+    );
 
-          editingItem =
-            editingItem
-              ? {
-                  ...editingItem,
-                  next_date:
-                    null,
-                  first_day:
-                    null,
-                  second_day:
-                    null,
-                  due_day:
-                    null,
-                  second_due_day:
-                    null
-                }
-              : null;
-
-          refreshScheduleFields();
-        }
-      );
-
-    document
-      .getElementById(
-        "smcRecurringCancel"
-      )
-      ?.addEventListener(
-        "click",
-        closeRecurringModal
-      );
-
-    document
-      .getElementById(
-        "smcRecurringSave"
-      )
-      ?.addEventListener(
-        "click",
-        saveRecurringItem
-      );
-
-    document
-      .getElementById(
-        "smcRecurringDelete"
-      )
-      ?.addEventListener(
-        "click",
-        deleteRecurringItem
-      );
-
-    clearRecurringMessage();
-
-    openRecurringModal();
-
-    window.setTimeout(
-      () => {
-        document
-          .getElementById(
-            "smcRecurringName"
-          )
-          ?.focus();
-      },
-      60
+  if (bottom) {
+    main.insertBefore(
+      page,
+      bottom
+    );
+  } else {
+    main.appendChild(
+      page
     );
   }
 
-  /* =========================================================
-     READ / VALIDATE SCHEDULE
-  ========================================================= */
-
-  function readScheduleValues(
-    kind,
-    frequency
-  ) {
-    const income =
-      kind ===
-      "income";
-
-    const schedule = {
-      next_date:
-        null,
-
-      first_day:
-        null,
-
-      second_day:
-        null,
-
-      due_day:
-        null,
-
-      second_due_day:
-        null
-    };
-
-    if (
-      frequency ===
-        "weekly" ||
-      frequency ===
-        "biweekly"
-    ) {
-      const nextDate =
-        document.getElementById(
-          "smcRecurringNextDate"
-        )?.value ||
-        "";
-
-      if (!nextDate) {
-        return {
-          error:
-            income
-              ? "Choose the next payday."
-              : "Choose the next due date."
-        };
-      }
-
-      schedule.next_date =
-        nextDate;
-
-      return {
-        schedule
-      };
-    }
-
-    if (
-      frequency ===
-      "monthly"
-    ) {
-      if (
-        income
-      ) {
-        const nextDate =
-          document.getElementById(
-            "smcRecurringNextDate"
-          )?.value ||
-          "";
-
-        if (!nextDate) {
-          return {
-            error:
-              "Choose the next payday."
-          };
-        }
-
-        schedule.next_date =
-          nextDate;
-
-        return {
-          schedule
-        };
-      }
-
-      const dueDay =
-        parseInt(
-          document.getElementById(
-            "smcRecurringDueDay"
-          )?.value ||
-          "",
-          10
-        );
-
-      if (
-        !Number.isInteger(
-          dueDay
-        ) ||
-        dueDay <
-          1 ||
-        dueDay >
-          31
-      ) {
-        return {
-          error:
-            "Enter a due day between 1 and 31."
-        };
-      }
-
-      schedule.due_day =
-        dueDay;
-
-      return {
-        schedule
-      };
-    }
-
-    if (
-      frequency ===
-      "semimonthly"
-    ) {
-      const firstDay =
-        parseInt(
-          document.getElementById(
-            "smcRecurringFirstDay"
-          )?.value ||
-          "",
-          10
-        );
-
-      const secondDay =
-        parseInt(
-          document.getElementById(
-            "smcRecurringSecondDay"
-          )?.value ||
-          "",
-          10
-        );
-
-      if (
-        !Number.isInteger(
-          firstDay
-        ) ||
-        firstDay <
-          1 ||
-        firstDay >
-          31 ||
-        !Number.isInteger(
-          secondDay
-        ) ||
-        secondDay <
-          1 ||
-        secondDay >
-          31
-      ) {
-        return {
-          error:
-            "Enter two valid days between 1 and 31."
-        };
-      }
-
-      if (
-        firstDay ===
-        secondDay
-      ) {
-        return {
-          error:
-            "Choose two different days for a twice-monthly schedule."
-        };
-      }
-
-      const ordered =
-        [
-          firstDay,
-          secondDay
-        ].sort(
-          (
-            a,
-            b
-          ) =>
-            a - b
-        );
-
-      if (
-        income
-      ) {
-        schedule.first_day =
-          ordered[0];
-
-        schedule.second_day =
-          ordered[1];
-
-      } else {
-        schedule.due_day =
-          ordered[0];
-
-        schedule.second_due_day =
-          ordered[1];
-      }
-
-      return {
-        schedule
-      };
-    }
-
-    return {
-      error:
-        "Choose a valid frequency."
-    };
-  }
-    /* =========================================================
-     SAVE RECURRING ITEM
-  ========================================================= */
-
-  async function saveRecurringItem() {
-    clearRecurringMessage();
-
-    const user =
-      await currentUser();
-
-    if (!user) {
-      showRecurringMessage(
-        "Sign in before saving recurring finances."
-      );
-
-      return;
-    }
-
-    const name =
-      document
-        .getElementById(
-          "smcRecurringName"
-        )
-        ?.value
-        .trim() ||
-      "";
-
-    const amount =
-      roundMoney(
-        document
-          .getElementById(
-            "smcRecurringAmount"
-          )
-          ?.value
-      );
-
-    const frequency =
-      document
-        .getElementById(
-          "smcRecurringFrequency"
-        )
-        ?.value ||
-      "";
-
-    const notes =
-      document
-        .getElementById(
-          "smcRecurringNotes"
-        )
-        ?.value
-        .trim() ||
-      "";
-
-    if (!name) {
-      showRecurringMessage(
-        editingKind ===
+  $("#smcRAddIncome")
+    .onclick =
+      () =>
+        openForm(
           "income"
-          ? "Enter a name for this income."
-          : "Enter a name for this expense."
-      );
+        );
 
-      return;
-    }
+  $("#smcRAddExpense")
+    .onclick =
+      () =>
+        openForm(
+          "expense"
+        );
 
-    if (
-      !Number.isFinite(
-        amount
-      ) ||
-      amount <= 0
-    ) {
-      showRecurringMessage(
-        "Enter an amount greater than $0."
-      );
+  $("#smcRClose")
+    .onclick =
+      closeForm;
 
-      return;
-    }
+  $("#smcRCancel")
+    .onclick =
+      closeForm;
 
-    const scheduleResult =
-      readScheduleValues(
-        editingKind,
-        frequency
-      );
+  $("#smcRSave")
+    .onclick =
+      save;
 
-    if (
-      scheduleResult.error
-    ) {
-      showRecurringMessage(
-        scheduleResult.error
-      );
+  $("#smcRDelete")
+    .onclick =
+      remove;
 
-      return;
-    }
+  $("#smcRFrequency")
+    .onchange =
+      scheduleFields;
 
-    const schedule =
-      scheduleResult.schedule;
-
-    const existing =
-      Boolean(
-        editingItem?.id
-      );
-
-    /* =======================================================
-       SAVE INCOME
-    ======================================================= */
-
-    if (
-      editingKind ===
-      "income"
-    ) {
-      const payload = {
-        user_id:
-          user.id,
-
-        income_name:
-          name,
-
-        amount,
-
-        frequency,
-
-        next_date:
-          schedule.next_date,
-
-        first_day:
-          schedule.first_day,
-
-        second_day:
-          schedule.second_day,
-
-        active:
-          existing
-            ? editingItem.active !==
-              false
-            : true,
-
-        notes:
-          notes ||
-          null,
-
-        updated_at:
-          new Date()
-            .toISOString()
+  $("#smcRModalBg")
+    .onclick =
+      e => {
+        if (
+          e.target.id ===
+          "smcRModalBg"
+        ) {
+          closeForm();
+        }
       };
 
-      let error =
-        null;
+  return true;
+}
 
-      if (
-        existing
-      ) {
-        const result =
-          await sb
-            .from(
-              "recurring_income"
-            )
-            .update(
-              payload
-            )
-            .eq(
-              "id",
-              editingItem.id
-            )
-            .eq(
-              "user_id",
-              user.id
-            );
 
-        error =
-          result.error;
-
-      } else {
-        const result =
-          await sb
-            .from(
-              "recurring_income"
-            )
-            .insert(
-              payload
-            );
-
-        error =
-          result.error;
-      }
-
-      if (error) {
-        console.error(
-          "Recurring income save failed:",
-          error
-        );
-
-        showRecurringMessage(
-          error.message ||
-          "Could not save this recurring income."
-        );
-
-        return;
-      }
-
-    /* =======================================================
-       SAVE EXPENSE
-    ======================================================= */
-
-    } else if (
-      editingKind ===
-      "expense"
-    ) {
-      const expenseType =
-        document
-          .getElementById(
-            "smcRecurringExpenseType"
-          )
-          ?.value ||
-        "fixed";
-
-      const priority =
-        document
-          .getElementById(
-            "smcRecurringPriority"
-          )
-          ?.value ||
-        "essential";
-
-      const payload = {
-        user_id:
-          user.id,
-
-        expense_name:
-          name,
-
-        amount,
-
-        expense_type:
-          expenseType,
-
-        priority,
-
-        frequency,
-
-        next_date:
-          schedule.next_date,
-
-        due_day:
-          schedule.due_day,
-
-        second_due_day:
-          schedule.second_due_day,
-
-        active:
-          existing
-            ? editingItem.active !==
-              false
-            : true,
-
-        notes:
-          notes ||
-          null,
-
-        updated_at:
-          new Date()
-            .toISOString()
-      };
-
-      let error =
-        null;
-
-      if (
-        existing
-      ) {
-        const result =
-          await sb
-            .from(
-              "recurring_expenses"
-            )
-            .update(
-              payload
-            )
-            .eq(
-              "id",
-              editingItem.id
-            )
-            .eq(
-              "user_id",
-              user.id
-            );
-
-        error =
-          result.error;
-
-      } else {
-        const result =
-          await sb
-            .from(
-              "recurring_expenses"
-            )
-            .insert(
-              payload
-            );
-
-        error =
-          result.error;
-      }
-
-      if (error) {
-        console.error(
-          "Recurring expense save failed:",
-          error
-        );
-
-        showRecurringMessage(
-          error.message ||
-          "Could not save this recurring expense."
-        );
-
-        return;
-      }
-
-    } else {
-      showRecurringMessage(
-        "Could not determine what type of recurring item to save."
-      );
-
-      return;
-    }
-
-    closeRecurringModal();
-
-    await loadRecurringFinances();
-  }
-
-  /* =========================================================
-     DELETE RECURRING ITEM
-  ========================================================= */
-
-  async function deleteRecurringItem() {
-    if (
-      !editingItem?.id ||
-      !editingKind
-    ) {
-      return;
-    }
-
-    const label =
-      editingKind ===
-        "income"
-        ? (
-            editingItem.income_name ||
-            "this income"
-          )
-        : (
-            editingItem.expense_name ||
-            "this expense"
-          );
-
-    const confirmed =
-      window.confirm(
-        `Delete "${label}"? This cannot be undone.`
-      );
-
-    if (
-      !confirmed
-    ) {
-      return;
-    }
-
-    const user =
-      await currentUser();
-
-    if (!user) {
-      showRecurringMessage(
-        "You are not signed in."
-      );
-
-      return;
-    }
-
-    const table =
-      editingKind ===
-        "income"
-        ? "recurring_income"
-        : "recurring_expenses";
-
-    const {
-      error
-    } =
-      await sb
-        .from(
-          table
-        )
-        .delete()
-        .eq(
-          "id",
-          editingItem.id
-        )
-        .eq(
-          "user_id",
-          user.id
-        );
-
-    if (error) {
-      console.error(
-        "Recurring item delete failed:",
-        error
-      );
-
-      showRecurringMessage(
-        error.message ||
-        "Could not delete this recurring item."
-      );
-
-      return;
-    }
-
-    closeRecurringModal();
-
-    await loadRecurringFinances();
-  }
-
-  /* =========================================================
-     PAUSE / RESUME
-  ========================================================= */
-
-  async function toggleRecurringItem(
-    kind,
-    id
-  ) {
-    const user =
-      await currentUser();
-
-    if (!user) {
-      return;
-    }
-
-    const collection =
-      kind ===
-        "income"
-        ? recurringIncome
-        : recurringExpenses;
-
-    const item =
-      collection.find(
-        entry =>
-          Number(
-            entry.id
-          ) ===
-          Number(
-            id
-          )
-      );
-
-    if (!item) {
-      return;
-    }
-
-    const table =
-      kind ===
-        "income"
-        ? "recurring_income"
-        : "recurring_expenses";
-
-    const newActive =
-      item.active ===
-        false;
-
-    const {
-      error
-    } =
-      await sb
-        .from(
-          table
-        )
-        .update({
-          active:
-            newActive,
-
-          updated_at:
-            new Date()
-              .toISOString()
-        })
-        .eq(
-          "id",
-          item.id
-        )
-        .eq(
-          "user_id",
-          user.id
-        );
-
-    if (error) {
-      console.error(
-        "Recurring pause/resume failed:",
-        error
-      );
-
-      window.alert(
-        error.message ||
-        "Could not update this recurring item."
-      );
-
-      return;
-    }
-
-    await loadRecurringFinances();
-  }
-
-  /* =========================================================
-     LOAD RECURRING FINANCES
-  ========================================================= */
-
-  async function loadRecurringFinances() {
-    const user =
-      await currentUser();
-
-    const signedOut =
-      document.getElementById(
-        "smcRecurringSignedOut"
-      );
-
-    const app =
-      document.getElementById(
-        "smcRecurringApp"
-      );
-
-    if (!user) {
-      recurringIncome =
-        [];
-
-      recurringExpenses =
-        [];
-
-      if (
-        signedOut
-      ) {
-        signedOut.style.display =
-          "block";
-      }
-
-      if (
-        app
-      ) {
-        app.style.display =
-          "none";
-      }
-
-      return;
-    }
-
-    if (
-      signedOut
-    ) {
-      signedOut.style.display =
-        "none";
-    }
-
-    if (
-      app
-    ) {
-      app.style.display =
-        "";
-    }
-
-    const [
-      incomeResult,
-      expenseResult
-    ] =
-      await Promise.all([
-        sb
-          .from(
-            "recurring_income"
-          )
-          .select("*")
-          .eq(
-            "user_id",
-            user.id
-          )
-          .order(
-            "updated_at",
-            {
-              ascending:
-                false
-            }
-          ),
-
-        sb
-          .from(
-            "recurring_expenses"
-          )
-          .select("*")
-          .eq(
-            "user_id",
-            user.id
-          )
-          .order(
-            "updated_at",
-            {
-              ascending:
-                false
-            }
-          )
-      ]);
-
-    if (
-      incomeResult.error
-    ) {
-      console.error(
-        "Recurring income load failed:",
-        incomeResult.error
-      );
-
-      recurringIncome =
-        [];
-
-    } else {
-      recurringIncome =
-        incomeResult.data ||
-        [];
-    }
-
-    if (
-      expenseResult.error
-    ) {
-      console.error(
-        "Recurring expenses load failed:",
-        expenseResult.error
-      );
-
-      recurringExpenses =
-        [];
-
-    } else {
-      recurringExpenses =
-        expenseResult.data ||
-        [];
-    }
-
-    renderRecurring();
-
-    window.dispatchEvent(
-      new CustomEvent(
-        "stretchmycheck:recurring-updated",
-        {
-          detail: {
-            income:
-              [
-                ...recurringIncome
-              ],
-
-            expenses:
-              [
-                ...recurringExpenses
-              ]
-          }
-        }
-      )
+function nav() {
+  const n =
+    $(
+      "#smcAppShell .smc-sidebar .smc-nav"
     );
+
+  if (!n) {
+    return false;
   }
-
-  /* =========================================================
-     PAGE VISIBILITY
-  ========================================================= */
-
-  function currentRoute() {
-    return (
-      window.location.hash
-        .replace(
-          "#",
-          ""
-        )
-        .trim()
-        .toLowerCase() ||
-      "home"
-    );
-  }
-
-  function updateRecurringVisibility() {
-    if (
-      !recurringPage
-    ) {
-      return;
-    }
-
-    recurringPage.style.display =
-      currentRoute() ===
-        "recurring"
-        ? ""
-        : "none";
-  }
-
-  /* =========================================================
-     ADD RECURRING NAV ITEM
-
-     This creates a sidebar button without requiring us to
-     rewrite the working app-shell.js yet.
-  ========================================================= */
-
-  function installRecurringNavigation() {
-    if (
-      document.querySelector(
-        '[data-smc-route="recurring"]'
-      )
-    ) {
-      return true;
-    }
-
-    const planLink =
-      document.querySelector(
-        '[data-smc-route="plan"]'
-      );
-
-    const toolsLink =
-      document.querySelector(
-        '[data-smc-route="tools"]'
-      );
-
-    const reference =
-      toolsLink ||
-      planLink;
-
-    if (
-      !reference ||
-      !reference.parentNode
-    ) {
-      return false;
-    }
-
-    const button =
-      document.createElement(
-        reference.tagName
-      );
-
-    /*
-      Copy the existing navigation item's classes so this
-      automatically matches the app shell.
-    */
-
-    button.className =
-      reference.className;
-
-    if (
-      button.tagName
-        .toLowerCase() ===
-      "a"
-    ) {
-      button.href =
-        "#recurring";
-    } else {
-      button.type =
-        "button";
-
-      button.onclick =
-        () => {
-          window.location.hash =
-            "recurring";
-        };
-    }
-
-    button.dataset.smcRoute =
-      "recurring";
-
-    button.innerHTML = `
-      <span
-        aria-hidden="true"
-      >
-        🔁
-      </span>
-
-      <span>
-        Recurring
-      </span>
-    `;
-
-    if (
-      toolsLink
-    ) {
-      toolsLink.parentNode
-        .insertBefore(
-          button,
-          toolsLink
-        );
-
-    } else {
-      reference.parentNode
-        .insertBefore(
-          button,
-          reference.nextSibling
-        );
-    }
-
-    return true;
-  }
-
-  /* =========================================================
-     ACTIVE NAV STATE
-  ========================================================= */
-
-  function updateRecurringNavigation() {
-    const route =
-      currentRoute();
-
-    document
-      .querySelectorAll(
-        "[data-smc-route]"
-      )
-      .forEach(
-        item => {
-          const itemRoute =
-            item.dataset
-              .smcRoute;
-
-          if (
-            itemRoute ===
-            "recurring"
-          ) {
-            item.classList.toggle(
-              "active",
-              route ===
-                "recurring"
-            );
-          } else if (
-            route ===
-            "recurring"
-          ) {
-            item.classList.remove(
-              "active"
-            );
-          }
-        }
-      );
-  }
-
-  /* =========================================================
-     REFRESH PAGE
-  ========================================================= */
-
-  function refreshRecurringPage() {
-    if (
-      !initialized
-    ) {
-      return;
-    }
-
-    renderRecurring();
-
-    updateRecurringVisibility();
-
-    updateRecurringNavigation();
-  }
-
-  /* =========================================================
-     INITIALIZE
-  ========================================================= */
-
-  function initRecurring() {
-    if (
-      initialized &&
-      document.getElementById(
-        "smcRecurringPage"
-      )
-    ) {
-      installRecurringNavigation();
-
-      updateRecurringVisibility();
-
-      updateRecurringNavigation();
-
-      return true;
-    }
-
-    if (
-      !buildPage()
-    ) {
-      return false;
-    }
-
-    installRecurringNavigation();
-
-    initialized =
-      true;
-
-    updateRecurringVisibility();
-
-    updateRecurringNavigation();
-
-    loadRecurringFinances();
-
-    return true;
-  }
-
-  /* =========================================================
-     WAIT FOR APP SHELL
-  ========================================================= */
 
   if (
-    !initRecurring()
+    n.querySelector(
+      '[data-page="recurring"]'
+    )
   ) {
-    const observer =
-      new MutationObserver(
-        () => {
-          if (
-            initRecurring()
-          ) {
-            observer.disconnect();
-          }
-        }
-      );
+    return true;
+  }
 
-    observer.observe(
-      document.body,
-      {
-        childList:
-          true,
-
-        subtree:
-          true
-      }
+  const b =
+    document.createElement(
+      "button"
     );
 
-    window.setTimeout(
-      initRecurring,
-      700
+  b.className =
+    "smc-nav-button";
+
+  b.type =
+    "button";
+
+  b.dataset.page =
+    "recurring";
+
+  b.innerHTML = `
+<svg
+  width="22"
+  height="22"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  <rect
+    x="3"
+    y="5"
+    width="18"
+    height="16"
+    rx="2"
+  />
+
+  <path
+    d="M16 3v4"
+  />
+
+  <path
+    d="M8 3v4"
+  />
+
+  <path
+    d="M3 10h18"
+  />
+
+  <path
+    d="M8 14h3"
+  />
+
+  <path
+    d="M13 14h3"
+  />
+</svg>
+
+<span>
+  Recurring
+</span>
+`;
+
+  const tools =
+    n.querySelector(
+      '[data-page="tools"]'
+    );
+
+  if (tools) {
+    n.insertBefore(
+      b,
+      tools
+    );
+  } else {
+    n.appendChild(
+      b
     );
   }
 
-  /* =========================================================
-     ROUTE CHANGES
-  ========================================================= */
+  b.onclick =
+    e => {
+      e.preventDefault();
 
-  window.addEventListener(
-    "hashchange",
-    () => {
-      window.setTimeout(
+      openPage(true);
+    };
+
+  return true;
+}
+
+
+function openPage(
+  hash = true
+) {
+  $$(
+    "#smcAppShell .smc-page"
+  ).forEach(
+    p =>
+      p.classList.remove(
+        "active"
+      )
+  );
+
+  page?.classList.add(
+    "active"
+  );
+
+  $$(
+    "#smcAppShell .smc-nav-button, #smcAppShell .smc-mobile-nav-button"
+  ).forEach(
+    b =>
+      b.classList.toggle(
+        "active",
+        b.dataset.page ===
+          "recurring"
+      )
+  );
+
+  if (
+    hash &&
+    location.hash !==
+      "#recurring"
+  ) {
+    history.replaceState(
+      null,
+      "",
+      "#recurring"
+    );
+  }
+
+  load();
+}
+
+
+function route() {
+  if (
+    location.hash
+      .replace(
+        "#",
+        ""
+      )
+      .toLowerCase() ===
+    "recurring"
+  ) {
+    openPage(false);
+  }
+}
+
+
+function scheduleFields() {
+  const semi =
+    $("#smcRFrequency")
+      .value ===
+    "semimonthly";
+
+  $("#smcRFirstWrap")
+    .style.display =
+      semi
+        ? ""
+        : "none";
+
+  $("#smcRSecondWrap")
+    .style.display =
+      semi
+        ? ""
+        : "none";
+}
+
+
+function msg(
+  t = ""
+) {
+  const e =
+    $("#smcRMsg");
+
+  e.textContent =
+    t;
+
+  e.classList.toggle(
+    "show",
+    !!t
+  );
+}
+
+
+function closeForm() {
+  $("#smcRModalBg")
+    ?.classList.remove(
+      "show"
+    );
+
+  editKind =
+    null;
+
+  editItem =
+    null;
+
+  msg();
+}
+
+
+function openForm(
+  kind,
+  item = null
+) {
+  editKind =
+    kind;
+
+  editItem =
+    item
+      ? {
+          ...item
+        }
+      : null;
+
+  const inc =
+    kind ===
+    "income";
+
+  const editing =
+    !!item?.id;
+
+  $("#smcRTitle")
+    .textContent =
+      editing
+        ? inc
+          ? "Edit Recurring Income"
+          : "Edit Recurring Expense"
+        : inc
+          ? "Add Recurring Income"
+          : "Add Recurring Expense";
+
+  $("#smcRSub")
+    .textContent =
+      inc
+        ? "Save a paycheck or other income that repeats."
+        : "Save a bill or expense that repeats.";
+
+  $("#smcRNameLabel")
+    .textContent =
+      inc
+        ? "Income Name"
+        : "Expense Name";
+
+  $("#smcRName")
+    .value =
+      inc
+        ? item?.income_name ||
+          ""
+        : item?.expense_name ||
+          "";
+
+  $("#smcRAmount")
+    .value =
+      item?.amount ??
+      "";
+
+  $("#smcRFrequency")
+    .value =
+      item?.frequency ||
+      "monthly";
+
+  $("#smcRNext")
+    .value =
+      item?.next_date ||
+      "";
+
+  $("#smcRFirst")
+    .value =
+      inc
+        ? item?.first_day ??
+          ""
+        : item?.due_day ??
+          "";
+
+  $("#smcRSecond")
+    .value =
+      inc
+        ? item?.second_day ??
+          ""
+        : item?.second_due_day ??
+          "";
+
+  $("#smcRType")
+    .value =
+      item?.expense_type ||
+      "fixed";
+
+  $("#smcRPriority")
+    .value =
+      priority(
+        item?.priority
+      );
+
+  $("#smcRNotes")
+    .value =
+      item?.notes ||
+      "";
+
+  $("#smcRTypeWrap")
+    .style.display =
+      inc
+        ? "none"
+        : "";
+
+  $("#smcRPriorityWrap")
+    .style.display =
+      inc
+        ? "none"
+        : "";
+
+  $("#smcRDelete")
+    .classList.toggle(
+      "show",
+      editing
+    );
+
+  scheduleFields();
+
+  msg();
+
+  $("#smcRModalBg")
+    .classList.add(
+      "show"
+    );
+
+  setTimeout(
+    () =>
+      $("#smcRName")
+        .focus(),
+    30
+  );
+}
+
+
+function schedule(
+  kind,
+  freq
+) {
+  const d =
+    parseDate(
+      $("#smcRNext")
+        .value
+    );
+
+  if (!d) {
+    return {
+      error:
+        "Choose the next date this recurring item will happen."
+    };
+  }
+
+  if (
+    freq ===
+    "semimonthly"
+  ) {
+    const a =
+      parseInt(
+        $("#smcRFirst")
+          .value
+      );
+
+    const b =
+      parseInt(
+        $("#smcRSecond")
+          .value
+      );
+
+    if (
+      !(
+        a >= 1 &&
+        a <= 31 &&
+        b >= 1 &&
+        b <= 31
+      )
+    ) {
+      return {
+        error:
+          "Enter both monthly days from 1 to 31."
+      };
+    }
+
+    if (
+      a === b
+    ) {
+      return {
+        error:
+          "The two monthly days need to be different."
+      };
+    }
+
+    const lo =
+      Math.min(
+        a,
+        b
+      );
+
+    const hi =
+      Math.max(
+        a,
+        b
+      );
+
+    return {
+      value:
+        kind ===
+        "income"
+          ? {
+              next_date:
+                key(d),
+
+              first_day:
+                lo,
+
+              second_day:
+                hi
+            }
+          : {
+              next_date:
+                key(d),
+
+              due_day:
+                lo,
+
+              second_due_day:
+                hi
+            }
+    };
+  }
+
+  return {
+    value:
+      kind ===
+      "income"
+        ? {
+            next_date:
+              key(d),
+
+            first_day:
+              freq ===
+              "monthly"
+                ? d.getDate()
+                : null,
+
+            second_day:
+              null
+          }
+        : {
+            next_date:
+              key(d),
+
+            due_day:
+              freq ===
+              "monthly"
+                ? d.getDate()
+                : null,
+
+            second_due_day:
+              null
+          }
+  };
+}
+
+
+async function save() {
+  msg();
+
+  const u =
+    await user();
+
+  if (!u) {
+    msg(
+      "Sign in before saving recurring finances."
+    );
+
+    return;
+  }
+
+  const name =
+    $("#smcRName")
+      .value
+      .trim();
+
+  const amount =
+    Math.round(
+      num(
+        $("#smcRAmount")
+          .value
+      ) *
+        100
+    ) /
+    100;
+
+  const freq =
+    $("#smcRFrequency")
+      .value;
+
+  const notes =
+    $("#smcRNotes")
+      .value
+      .trim();
+
+  if (!name) {
+    msg(
+      "Enter a name."
+    );
+
+    return;
+  }
+
+  if (
+    !(amount > 0)
+  ) {
+    msg(
+      "Enter an amount greater than $0."
+    );
+
+    return;
+  }
+
+  const sch =
+    schedule(
+      editKind,
+      freq
+    );
+
+  if (
+    sch.error
+  ) {
+    msg(
+      sch.error
+    );
+
+    return;
+  }
+
+  const existing =
+    !!editItem?.id;
+
+  let table;
+  let payload;
+
+  if (
+    editKind ===
+    "income"
+  ) {
+    table =
+      "recurring_income";
+
+    payload = {
+      user_id:
+        u.id,
+
+      income_name:
+        name,
+
+      amount,
+
+      frequency:
+        freq,
+
+      ...sch.value,
+
+      active:
+        existing
+          ? editItem.active !==
+            false
+          : true,
+
+      notes:
+        notes ||
+        null,
+
+      updated_at:
+        new Date()
+          .toISOString()
+    };
+  } else {
+    table =
+      "recurring_expenses";
+
+    payload = {
+      user_id:
+        u.id,
+
+      expense_name:
+        name,
+
+      amount,
+
+      expense_type:
+        $("#smcRType")
+          .value,
+
+      priority:
+        priority(
+          $("#smcRPriority")
+            .value
+        ),
+
+      frequency:
+        freq,
+
+      ...sch.value,
+
+      active:
+        existing
+          ? editItem.active !==
+            false
+          : true,
+
+      notes:
+        notes ||
+        null,
+
+      updated_at:
+        new Date()
+          .toISOString()
+    };
+  }
+
+  const q =
+    existing
+      ? sb
+          .from(table)
+          .update(
+            payload
+          )
+          .eq(
+            "id",
+            editItem.id
+          )
+          .eq(
+            "user_id",
+            u.id
+          )
+      : sb
+          .from(table)
+          .insert(
+            payload
+          );
+
+  const {
+    error
+  } =
+    await q;
+
+  if (error) {
+    console.error(
+      error
+    );
+
+    msg(
+      error.message ||
+        "Could not save this recurring item."
+    );
+
+    return;
+  }
+
+  closeForm();
+
+  await load();
+}
+
+
+async function remove() {
+  if (
+    !editItem?.id ||
+    !editKind
+  ) {
+    return;
+  }
+
+  const label =
+    editKind ===
+    "income"
+      ? editItem.income_name
+      : editItem.expense_name;
+
+  if (
+    !confirm(
+      `Delete "${label}"? This cannot be undone.`
+    )
+  ) {
+    return;
+  }
+
+  const u =
+    await user();
+
+  if (!u) {
+    return;
+  }
+
+  const table =
+    editKind ===
+    "income"
+      ? "recurring_income"
+      : "recurring_expenses";
+
+  const {
+    error
+  } =
+    await sb
+      .from(table)
+      .delete()
+      .eq(
+        "id",
+        editItem.id
+      )
+      .eq(
+        "user_id",
+        u.id
+      );
+
+  if (error) {
+    msg(
+      error.message ||
+        "Could not delete this item."
+    );
+
+    return;
+  }
+
+  closeForm();
+
+  await load();
+}
+
+
+async function toggle(
+  kind,
+  id
+) {
+  const u =
+    await user();
+
+  if (!u) {
+    return;
+  }
+
+  const arr =
+    kind ===
+    "income"
+      ? incomes
+      : expenses;
+
+  const item =
+    arr.find(
+      x =>
+        Number(x.id) ===
+        Number(id)
+    );
+
+  if (!item) {
+    return;
+  }
+
+  const table =
+    kind ===
+    "income"
+      ? "recurring_income"
+      : "recurring_expenses";
+
+  const {
+    error
+  } =
+    await sb
+      .from(table)
+      .update({
+        active:
+          item.active ===
+          false,
+
+        updated_at:
+          new Date()
+            .toISOString()
+      })
+      .eq(
+        "id",
+        id
+      )
+      .eq(
+        "user_id",
+        u.id
+      );
+
+  if (error) {
+    alert(
+      error.message ||
+        "Could not update this item."
+    );
+
+    return;
+  }
+
+  await load();
+}
+
+
+function occurrences(
+  item,
+  kind,
+  start,
+  end
+) {
+  const anchor =
+    parseDate(
+      item.next_date
+    );
+
+  if (
+    !anchor ||
+    item.active ===
+      false
+  ) {
+    return [];
+  }
+
+  const out = [];
+
+  const push = d => {
+    if (
+      d >= start &&
+      d <= end &&
+      d >= anchor
+    ) {
+      out.push(d);
+    }
+  };
+
+  const f =
+    item.frequency;
+
+  if (
+    f === "weekly" ||
+    f === "biweekly"
+  ) {
+    const step =
+      f === "weekly"
+        ? 7
+        : 14;
+
+    let d =
+      new Date(
+        anchor
+      );
+
+    while (
+      d < start
+    ) {
+      d =
+        addDays(
+          d,
+          step
+        );
+    }
+
+    while (
+      d <= end
+    ) {
+      push(
+        new Date(d)
+      );
+
+      d =
+        addDays(
+          d,
+          step
+        );
+    }
+  } else if (
+    f === "monthly"
+  ) {
+    const day =
+      kind ===
+      "income"
+        ? parseInt(
+            item.first_day
+          ) ||
+          anchor.getDate()
+        : parseInt(
+            item.due_day
+          ) ||
+          anchor.getDate();
+
+    let m =
+      new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        1
+      );
+
+    while (
+      m <= end
+    ) {
+      push(
+        clamp(
+          m.getFullYear(),
+          m.getMonth(),
+          day
+        )
+      );
+
+      m =
+        addMonths(
+          m,
+          1
+        );
+    }
+  } else if (
+    f ===
+    "semimonthly"
+  ) {
+    const a =
+      kind ===
+      "income"
+        ? parseInt(
+            item.first_day
+          )
+        : parseInt(
+            item.due_day
+          );
+
+    const b =
+      kind ===
+      "income"
+        ? parseInt(
+            item.second_day
+          )
+        : parseInt(
+            item.second_due_day
+          );
+
+    let m =
+      new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        1
+      );
+
+    while (
+      m <= end
+    ) {
+      push(
+        clamp(
+          m.getFullYear(),
+          m.getMonth(),
+          a
+        )
+      );
+
+      push(
+        clamp(
+          m.getFullYear(),
+          m.getMonth(),
+          b
+        )
+      );
+
+      m =
+        addMonths(
+          m,
+          1
+        );
+    }
+  } else if (
+    f === "yearly"
+  ) {
+    for (
+      let y =
+        start.getFullYear();
+
+      y <=
+      end.getFullYear();
+
+      y++
+    ) {
+      push(
+        clamp(
+          y,
+          anchor.getMonth(),
+          anchor.getDate()
+        )
+      );
+    }
+  }
+
+  return [
+    ...new Map(
+      out.map(
+        d => [
+          key(d),
+          d
+        ]
+      )
+    ).values()
+  ].sort(
+    (a, b) =>
+      a - b
+  );
+}
+
+
+const monthly =
+  item =>
+    item.active ===
+    false
+      ? 0
+      : ({
+          weekly:
+            num(
+              item.amount
+            ) *
+            52 /
+            12,
+
+          biweekly:
+            num(
+              item.amount
+            ) *
+            26 /
+            12,
+
+          semimonthly:
+            num(
+              item.amount
+            ) *
+            2,
+
+          monthly:
+            num(
+              item.amount
+            ),
+
+          yearly:
+            num(
+              item.amount
+            ) /
+            12
+        })[
+          item.frequency
+        ] ||
+        0;
+
+
+const monthIncome =
+  () =>
+    incomes.reduce(
+      (
+        s,
+        x
+      ) =>
+        s +
+        monthly(x),
+      0
+    );
+
+
+const monthExpenses =
+  () =>
+    expenses.reduce(
+      (
+        s,
+        x
+      ) =>
+        s +
+        monthly(x),
+      0
+    );
+
+
+function upcoming(
+  months = 3
+) {
+  const start =
+    today();
+
+  const end =
+    addDays(
+      addMonths(
+        new Date(
+          start.getFullYear(),
+          start.getMonth(),
+          1
+        ),
+        months
+      ),
+      -1
+    );
+
+  const out = [];
+
+  incomes.forEach(
+    x =>
+      occurrences(
+        x,
+        "income",
+        start,
+        end
+      ).forEach(
+        d =>
+          out.push({
+            kind:
+              "income",
+
+            id:
+              x.id,
+
+            name:
+              x.income_name,
+
+            amount:
+              num(
+                x.amount
+              ),
+
+            date:
+              d
+          })
+      )
+  );
+
+  expenses.forEach(
+    x =>
+      occurrences(
+        x,
+        "expense",
+        start,
+        end
+      ).forEach(
+        d =>
+          out.push({
+            kind:
+              "expense",
+
+            id:
+              x.id,
+
+            name:
+              x.expense_name,
+
+            amount:
+              num(
+                x.amount
+              ),
+
+            date:
+              d,
+
+            priority:
+              x.priority,
+
+            expense_type:
+              x.expense_type
+          })
+      )
+  );
+
+  return out.sort(
+    (
+      a,
+      b
+    ) =>
+      a.date -
+      b.date
+  );
+}
+
+
+function itemHTML(
+  x,
+  kind
+) {
+  const inc =
+    kind ===
+    "income";
+
+  const name =
+    inc
+      ? x.income_name
+      : x.expense_name;
+
+  const paused =
+    x.active ===
+    false;
+
+  const schedule =
+    x.frequency ===
+    "semimonthly"
+      ? `${freqLabel(
+          x.frequency
+        )} • days ${
+          inc
+            ? x.first_day
+            : x.due_day
+        } & ${
+          inc
+            ? x.second_day
+            : x.second_due_day
+        }`
+      : `${freqLabel(
+          x.frequency
+        )} • next ${shortDate(
+          x.next_date
+        )}`;
+
+  const meta =
+    inc
+      ? schedule
+      : `${schedule} • ${priorityLabel(
+          x.priority
+        )} • ${
+          x.expense_type ===
+          "flexible"
+            ? "Flexible"
+            : "Fixed"
+        }`;
+
+  return `
+<article
+  class="smc-r-item ${kind} ${
+    paused
+      ? "paused"
+      : ""
+  }"
+>
+  <div>
+    <div class="smc-r-name">
+      ${esc(name)}
+
+      ${
+        paused
+          ? '<span class="smc-r-badge">PAUSED</span>'
+          : ""
+      }
+    </div>
+
+    <div class="smc-r-meta">
+      ${esc(meta)}
+    </div>
+  </div>
+
+  <div>
+    <div class="smc-r-amount">
+      ${
+        inc
+          ? "+"
+          : "−"
+      }${cash(
+        x.amount
+      )}
+    </div>
+
+    <div class="smc-r-actions">
+      <button
+        class="smc-r-small"
+        data-a="toggle"
+        data-k="${kind}"
+        data-id="${x.id}"
+      >
+        ${
+          paused
+            ? "Resume"
+            : "Pause"
+        }
+      </button>
+
+      <button
+        class="smc-r-small"
+        data-a="edit"
+        data-k="${kind}"
+        data-id="${x.id}"
+      >
+        Edit
+      </button>
+    </div>
+  </div>
+</article>
+`;
+}
+
+
+function list(
+  kind
+) {
+  const target =
+    $(
+      kind ===
+      "income"
+        ? "#smcRIncomeList"
+        : "#smcRExpenseList"
+    );
+
+  const arr =
+    kind ===
+    "income"
+      ? incomes
+      : expenses;
+
+  if (
+    !arr.length
+  ) {
+    target.innerHTML = `
+<div class="smc-r-empty">
+  <strong>
+    No recurring ${
+      kind ===
+      "income"
+        ? "income"
+        : "expenses"
+    } yet
+  </strong>
+
+  <span>
+    ${
+      kind ===
+      "income"
+        ? "Add a paycheck or other repeating income."
+        : "Add rent, utilities, car payments, subscriptions, or other repeating expenses."
+    }
+  </span>
+</div>
+`;
+
+    return;
+  }
+
+  target.innerHTML = `
+<div class="smc-r-list">
+  ${
+    arr
+      .map(
+        x =>
+          itemHTML(
+            x,
+            kind
+          )
+      )
+      .join("")
+  }
+</div>
+`;
+
+  $$(
+    "[data-a]",
+    target
+  ).forEach(
+    b =>
+      b.onclick =
         () => {
-          if (
-            !initialized
-          ) {
-            initRecurring();
+          const a =
+            b.dataset.k ===
+            "income"
+              ? incomes
+              : expenses;
 
+          const x =
+            a.find(
+              v =>
+                Number(
+                  v.id
+                ) ===
+                Number(
+                  b.dataset.id
+                )
+            );
+
+          if (!x) {
             return;
           }
 
-          updateRecurringVisibility();
-
-          updateRecurringNavigation();
-
-          /*
-            Refresh from Supabase when the user returns to the
-            page so data stays current.
-          */
-
           if (
-            currentRoute() ===
-            "recurring"
+            b.dataset.a ===
+            "edit"
           ) {
-            loadRecurringFinances();
+            openForm(
+              b.dataset.k,
+              x
+            );
+          } else {
+            toggle(
+              b.dataset.k,
+              b.dataset.id
+            );
           }
-        },
-        60
-      );
-    }
+        }
+  );
+}
+
+
+function render() {
+  const mi =
+    monthIncome();
+
+  const me =
+    monthExpenses();
+
+  const room =
+    mi - me;
+
+  $("#smcRIncome")
+    .textContent =
+      cash(mi);
+
+  $("#smcRExpenses")
+    .textContent =
+      cash(me);
+
+  $("#smcRRoom")
+    .textContent =
+      cash(room);
+
+  $("#smcRRoom")
+    .className =
+      `smc-r-value ${
+        room >= 0
+          ? "good"
+          : "bad"
+      }`;
+
+  $("#smcRCount")
+    .textContent =
+      incomes.filter(
+        x =>
+          x.active !==
+          false
+      ).length +
+      expenses.filter(
+        x =>
+          x.active !==
+          false
+      ).length;
+
+  list(
+    "income"
   );
 
-  /* =========================================================
-     AUTH CHANGES
-  ========================================================= */
+  list(
+    "expense"
+  );
 
-  sb.auth
-    .onAuthStateChange(
-      () => {
-        window.setTimeout(
-          () => {
-            if (
-              !initialized
-            ) {
-              initRecurring();
+  const all =
+    upcoming(3);
 
-              return;
-            }
+  const start =
+    today();
 
-            loadRecurringFinances();
-          },
-          180
+  const months = [];
+
+  for (
+    let i = 0;
+    i < 3;
+    i++
+  ) {
+    const m =
+      addMonths(
+        new Date(
+          start.getFullYear(),
+          start.getMonth(),
+          1
+        ),
+        i
+      );
+
+    const end =
+      new Date(
+        m.getFullYear(),
+        m.getMonth() + 1,
+        0
+      );
+
+    const items =
+      all.filter(
+        x =>
+          x.date >= m &&
+          x.date <= end
+      );
+
+    const inn =
+      items
+        .filter(
+          x =>
+            x.kind ===
+            "income"
+        )
+        .reduce(
+          (
+            s,
+            x
+          ) =>
+            s +
+            x.amount,
+          0
         );
+
+    const out =
+      items
+        .filter(
+          x =>
+            x.kind ===
+            "expense"
+        )
+        .reduce(
+          (
+            s,
+            x
+          ) =>
+            s +
+            x.amount,
+          0
+        );
+
+    const label =
+      new Intl.DateTimeFormat(
+        "en-US",
+        {
+          month: "long",
+          year: "numeric"
+        }
+      ).format(m);
+
+    months.push(`
+<div class="smc-r-month">
+
+  <div class="smc-r-monthhead">
+    <strong>
+      ${label}
+    </strong>
+
+    <span>
+      ${cash(
+        inn
+      )} in • ${cash(
+        out
+      )} out
+    </span>
+  </div>
+
+  ${
+    items.length
+      ? items
+          .map(
+            x => `
+<div class="smc-r-occ">
+  <div class="smc-r-date">
+    ${shortDate(
+      x.date
+    )}
+  </div>
+
+  <div>
+    ${esc(
+      x.name
+    )}
+  </div>
+
+  <div class="${x.kind}">
+    ${
+      x.kind ===
+      "income"
+        ? "+"
+        : "−"
+    }${cash(
+      x.amount
+    )}
+  </div>
+</div>
+`
+          )
+          .join("")
+      : `
+<div class="smc-r-empty">
+  No active recurring items scheduled.
+</div>
+`
+  }
+
+</div>
+`);
+  }
+
+  $("#smcRPreview")
+    .innerHTML =
+      months.join("");
+}
+
+
+async function load() {
+  const u =
+    await user();
+
+  if (!u) {
+    incomes = [];
+    expenses = [];
+
+    $("#smcRSigned")
+      .style.display =
+        "block";
+
+    $("#smcRApp")
+      .style.display =
+        "none";
+
+    return;
+  }
+
+  $("#smcRSigned")
+    .style.display =
+      "none";
+
+  $("#smcRApp")
+    .style.display =
+      "";
+
+  const [
+    a,
+    b
+  ] =
+    await Promise.all([
+      sb
+        .from(
+          "recurring_income"
+        )
+        .select("*")
+        .eq(
+          "user_id",
+          u.id
+        )
+        .order(
+          "updated_at",
+          {
+            ascending:
+              false
+          }
+        ),
+
+      sb
+        .from(
+          "recurring_expenses"
+        )
+        .select("*")
+        .eq(
+          "user_id",
+          u.id
+        )
+        .order(
+          "updated_at",
+          {
+            ascending:
+              false
+          }
+        )
+    ]);
+
+  if (
+    a.error
+  ) {
+    console.error(
+      a.error
+    );
+  }
+
+  if (
+    b.error
+  ) {
+    console.error(
+      b.error
+    );
+  }
+
+  incomes =
+    a.data ||
+    [];
+
+  expenses =
+    b.data ||
+    [];
+
+  render();
+
+  window.dispatchEvent(
+    new CustomEvent(
+      "stretchmycheck:recurring-updated",
+      {
+        detail: {
+          income: [
+            ...incomes
+          ],
+
+          expenses: [
+            ...expenses
+          ]
+        }
+      }
+    )
+  );
+}
+
+
+function init() {
+  styles();
+
+  if (
+    !build() ||
+    !nav()
+  ) {
+    return false;
+  }
+
+  ready = true;
+
+  load()
+    .then(
+      route
+    );
+
+  return true;
+}
+
+
+function wait() {
+  if (
+    init()
+  ) {
+    return;
+  }
+
+  const o =
+    new MutationObserver(
+      () => {
+        if (
+          init()
+        ) {
+          o.disconnect();
+        }
       }
     );
 
-  /* =========================================================
-     PROFILE / PLAN EVENTS
-  ========================================================= */
+  o.observe(
+    document.documentElement,
+    {
+      childList:
+        true,
 
-  window.addEventListener(
-    "stretchmycheck:profile-updated",
-    () => {
-      window.setTimeout(
-        refreshRecurringPage,
-        100
-      );
+      subtree:
+        true
     }
   );
 
-  window.addEventListener(
-    "stretchmycheck:plan-loaded",
+  setTimeout(
     () => {
-      window.setTimeout(
-        refreshRecurringPage,
-        100
-      );
-    }
+      if (
+        !ready
+      ) {
+        init();
+      }
+    },
+    1200
+  );
+}
+
+
+if (
+  location.hash ===
+  "#recurring"
+) {
+  setTimeout(
+    route,
+    0
+  );
+}
+
+
+window.addEventListener(
+  "hashchange",
+  route
+);
+
+
+sb.auth
+  .onAuthStateChange(
+    () =>
+      setTimeout(
+        () =>
+          ready
+            ? load()
+            : init(),
+        180
+      )
   );
 
-  /* =========================================================
-     PUBLIC API
 
-     We will use this in the NEXT stage to generate My Plan
-     directly from recurring finances.
-  ========================================================= */
+window.StretchMyCheckRecurring = {
+  refresh:
+    load,
 
-  window.StretchMyCheckRecurring = {
-    refresh:
-      loadRecurringFinances,
+  open:
+    () =>
+      openPage(
+        true
+      ),
 
-    openAddIncome:
-      () =>
-        showRecurringForm(
-          "income"
-        ),
+  openAddIncome:
+    () =>
+      openForm(
+        "income"
+      ),
 
-    openAddExpense:
-      () =>
-        showRecurringForm(
-          "expense"
-        ),
+  openAddExpense:
+    () =>
+      openForm(
+        "expense"
+      ),
 
-    getIncome:
-      () =>
-        recurringIncome.map(
-          item => ({
-            ...item
-          })
-        ),
+  getIncome:
+    () =>
+      incomes.map(
+        x => ({
+          ...x
+        })
+      ),
 
-    getExpenses:
-      () =>
-        recurringExpenses.map(
-          item => ({
-            ...item
-          })
-        ),
+  getExpenses:
+    () =>
+      expenses.map(
+        x => ({
+          ...x
+        })
+      ),
 
-    getUpcoming:
-      (
-        monthsAhead = 3
-      ) =>
-        upcomingOccurrences(
-          todayLocal(),
-          monthsAhead
-        ).map(
-          item => ({
-            ...item,
+  getUpcoming:
+    (
+      m = 3
+    ) =>
+      upcoming(m)
+        .map(
+          x => ({
+            ...x,
+
             date:
-              dateKey(
-                item.date
+              key(
+                x.date
               )
           })
         ),
 
-    getMonthlySummary:
-      () => ({
-        income:
-          estimatedMonthlyIncome(),
+  getMonthlySummary:
+    () => ({
+      income:
+        monthIncome(),
 
-        expenses:
-          estimatedMonthlyExpenses(),
+      expenses:
+        monthExpenses(),
 
-        room:
-          estimatedMonthlyRoom(),
+      room:
+        monthIncome() -
+        monthExpenses(),
 
-        activeIncome:
-          activeIncomeCount(),
+      activeIncome:
+        incomes.filter(
+          x =>
+            x.active !==
+            false
+        ).length,
 
-        activeExpenses:
-          activeExpenseCount()
-      }),
+      activeExpenses:
+        expenses.filter(
+          x =>
+            x.active !==
+            false
+        ).length
+    }),
 
-    getIncomeOccurrences:
-      (
-        item,
-        startDate,
-        endDate
-      ) =>
-        incomeOccurrences(
-          item,
-          startDate,
-          endDate
-        ).map(
-          date =>
-            dateKey(
-              date
-            )
-        ),
+  getIncomeOccurrences:
+    (
+      x,
+      s,
+      e
+    ) =>
+      occurrences(
+        x,
+        "income",
+        parseDate(s),
+        parseDate(e)
+      ).map(
+        key
+      ),
 
-    getExpenseOccurrences:
-      (
-        item,
-        startDate,
-        endDate
-      ) =>
-        expenseOccurrences(
-          item,
-          startDate,
-          endDate
-        ).map(
-          date =>
-            dateKey(
-              date
-            )
-        )
-  };
+  getExpenseOccurrences:
+    (
+      x,
+      s,
+      e
+    ) =>
+      occurrences(
+        x,
+        "expense",
+        parseDate(s),
+        parseDate(e)
+      ).map(
+        key
+      )
+};
+
+
+wait();
 
 })();
