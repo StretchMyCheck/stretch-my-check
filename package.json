@@ -1,0 +1,12 @@
+{
+  "name": "stretch-my-check",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Paycheck planning and personal finance web application.",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
